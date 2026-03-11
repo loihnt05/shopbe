@@ -1,0 +1,84 @@
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.sln.iml
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+.nuget/packages/
+nuget.config
+
+# dotnet
+project.lock.json
+project.fragment.lock.json
+artifacts/
+.dotnet/
+
+# Entity Framework
+*.db
+*.db-shm
+*.db-wal
+migrations/
+
+# Build folders
+out/
+publish/
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+appsettings.local.json
+appsettings.Development.json
+
+# Azure Cosmos DB
+cosmos_emulator.log
+local.settings.json
+
+# Testing
+TestResults/
+coverage/
+.coverage
+
+# Rider
+.idea/
+*.sln.iml

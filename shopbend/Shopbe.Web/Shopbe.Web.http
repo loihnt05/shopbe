@@ -1,0 +1,6 @@
+@Shopbe.Web_HostAddress = http://localhost:5072
+
+GET {{Shopbe.Web_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

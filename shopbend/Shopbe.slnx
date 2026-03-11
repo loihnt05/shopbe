@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Shopbe.Application/Shopbe.Application.csproj" />
+  <Project Path="Shopbe.Domain/Shopbe.Domain.csproj" />
+  <Project Path="Shopbe.Infrastructure/Shopbe.Infrastructure.csproj" />
+  <Project Path="Shopbe.Web/Shopbe.Web.csproj" />
+</Solution>
