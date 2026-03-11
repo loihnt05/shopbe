@@ -8,4 +8,9 @@ public class Product : BaseEntity
     public int StockQuantity { get; set; }
     public string ImageUrl { get; set; } = string.Empty;
     public Guid CategoryId { get; set; }
+    
+    // Navigation Properties
+    public Category? Category { get; set; }
+    public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
 }
