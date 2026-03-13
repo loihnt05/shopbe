@@ -1,11 +1,11 @@
-using Shopbe.Domain.Entities;
+using CategoryEntity = Shopbe.Domain.Entities.Category;
 
 namespace Shopbe.Application.Interfaces;
 public interface ICategoryRepository
 {
-    Task<IEnumerable<Category>> GetAllCategoriesAsync();
-    Task<Category?> GetCategoryByIdAsync(Guid categoryId);
-    Task AddCategoryAsync(Category category);
-    Task UpdateCategoryAsync(Category category);
+    Task<IEnumerable<CategoryEntity>> GetAllCategoriesAsync();
+    Task<CategoryEntity?> GetCategoryByIdAsync(Guid categoryId);
+    Task AddCategoryAsync(CategoryEntity category);
+    Task UpdateCategoryAsync(CategoryEntity category);
     Task DeleteCategoryAsync(Guid categoryId);
 }
