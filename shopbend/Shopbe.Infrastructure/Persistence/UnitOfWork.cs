@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using Shopbe.Application.Interfaces;
+using Shopbe.Infrastructure.Repositories;
 
 namespace Shopbe.Infrastructure.Persistence;
 
@@ -7,9 +8,14 @@ public class UnitOfWork : IUnitOfWork
 {
     private readonly ShopDbContext _context;
     private IDbContextTransaction? _transaction;
+    public IProductRepository Product { get; }
+    public ICategoryRepository Category { get; }
+
     public UnitOfWork(ShopDbContext context)
     {
         _context = context;
+        Product = new ProductRepository(context);
+        Category = new CategoryRepository(context);
     }
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
