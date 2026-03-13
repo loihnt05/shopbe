@@ -14,7 +14,7 @@ public static class DependencyInjection
         services.AddDbContext<ShopDbContext>(options =>
             options.UseNpgsql(connectionString)
         );
-        services.AddScoped<IUnitOfWork, IUnitOfWork>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }
