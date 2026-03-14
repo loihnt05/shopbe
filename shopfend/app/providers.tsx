@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { SessionProvider } from "next-auth/react";
-import { Session } from "inspector/promises";
+import type { Session } from "next-auth";
 
 type ProvidersProps = {
   children: ReactNode;
