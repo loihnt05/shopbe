@@ -1,12 +1,16 @@
 import NextAuth from "next-auth";
 import KeycloakProvider from "next-auth/providers/keycloak";
 
-export default NextAuth({
+const issuer = process.env.KEYCLOAK_ISSUER
+  ? process.env.KEYCLOAK_ISSUER
+  : `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}`;
+
+const handler = NextAuth({
   providers: [
     KeycloakProvider({
       clientId: process.env.KEYCLOAK_CLIENT_ID!,
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
-      issuer: `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}`,
+      issuer,
       authorization: {
         params: {
           scope: "openid profile email",
@@ -26,3 +30,5 @@ export default NextAuth({
   },
   secret: process.env.NEXTAUTH_SECRET,
 });
+
+export { handler as GET, handler as POST };
