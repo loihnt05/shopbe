@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shopbe.Application.Products.Commands.CreateProduct;
 using Shopbe.Application.Products.Commands.DeleteProduct;
@@ -21,6 +22,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll([FromQuery] ProductQueryDto filter, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetAllProductsQuery(filter), cancellationToken);
@@ -28,6 +30,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetProductByIdQuery(id), cancellationToken);
@@ -37,6 +40,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> Create([FromBody] ProductRequestDto request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new CreateProductCommand(request), cancellationToken);
@@ -44,6 +48,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] ProductRequestDto request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new UpdateProductCommand(id, request), cancellationToken);
@@ -51,6 +56,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeleteProductCommand(id), cancellationToken);

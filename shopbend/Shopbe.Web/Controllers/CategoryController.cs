@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shopbe.Application.Category.Commands.CreateCategory;
 using Shopbe.Application.Category.Commands.DeleteCategory;
@@ -21,6 +22,7 @@ public class CategoryController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll([FromQuery] CategoryQueryDto filter, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetAllCategoriesQuery(filter), cancellationToken);
@@ -28,6 +30,7 @@ public class CategoryController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetCategoryByIdQuery(id), cancellationToken);
@@ -37,6 +40,7 @@ public class CategoryController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> Create([FromBody] CategoryRequestDto request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new CreateCategoryCommand(request), cancellationToken);
@@ -44,6 +48,7 @@ public class CategoryController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] CategoryRequestDto request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new UpdateCategoryCommand(id, request), cancellationToken);
@@ -51,6 +56,7 @@ public class CategoryController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeleteCategoryCommand(id), cancellationToken);
