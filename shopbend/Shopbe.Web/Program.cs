@@ -31,7 +31,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = keycloakAuthority;
-        options.RequireHttpsMetadata = builder.Configuration.GetValue("Authentication:Keycloak:RequireHttpsMetadata", !builder.Environment.IsDevelopment());
+        options.RequireHttpsMetadata = builder.Configuration.GetValue("Authentication:Keycloak:RequireHttpsMetadata", 
+                                        !builder.Environment.IsDevelopment());
 
         var validAudiences = builder.Configuration
             .GetSection("Authentication:Keycloak:ValidAudiences")
