@@ -58,9 +58,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 AddRoleClaims(identity, context.Principal.FindFirst("realm_access")?.Value, null);
 
-                foreach (var resourceAccessClaim in context.Principal.FindAll("resource_access"))
+                var resourceAccessClaims = context.Principal
+                    .FindAll("resource_access")
+                    .Select(claim => claim.Value)
+                    .ToList();
+
+                foreach (var resourceAccessClaim in resourceAccessClaims)
                 {
-                    AddRoleClaims(identity, resourceAccessClaim.Value, "resource");
+                    AddRoleClaims(identity, resourceAccessClaim, "resource");
                 }
 
                 return Task.CompletedTask;
