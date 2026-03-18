@@ -4,7 +4,7 @@ namespace Shopbe.Application.Interfaces.Repositories;
 
 public interface IProductVariantRepository
 {
-    Task<IEnumerable<ProductVariant>> GetAllProductVariantAsync();
+    Task<IEnumerable<ProductVariant>> GetAllProductVariantsAsync();
     Task<ProductVariant?> GetProductVariantByIdAsync(Guid productVariantId);
     Task AddProductVariantAsync(ProductVariant productVariant);
     Task UpdateProductVariantAsync(ProductVariant productVariant);

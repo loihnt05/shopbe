@@ -1,8 +1,13 @@
+using Shopbe.Application.Common.Interfaces;
+using Shopbe.Application.Interfaces.Repositories;
+
 namespace Shopbe.Application.Interfaces;
 public interface IUnitOfWork
 {
     IProductRepository Product { get; }
     ICategoryRepository Category { get; }
+    IProductImageRepository ProductImage { get; }
+    IProductVariantRepository ProductVariant { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();
