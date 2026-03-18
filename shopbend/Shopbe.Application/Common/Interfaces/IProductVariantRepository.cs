@@ -1,0 +1,12 @@
+using Shopbe.Domain.Entities;
+
+namespace Shopbe.Application.Interfaces.Repositories;
+
+public interface IProductVariantRepository
+{
+    Task<IEnumerable<ProductVariant>> GetAllProductVariantAsync();
+    Task<ProductVariant?> GetProductVariantByIdAsync(Guid productVariantId);
+    Task AddProductVariantAsync(ProductVariant productVariant);
+    Task UpdateProductVariantAsync(ProductVariant productVariant);
+    Task DeleteProductVariantAsync(Guid productVariantId);
+}
