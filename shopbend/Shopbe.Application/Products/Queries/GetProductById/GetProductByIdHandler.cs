@@ -19,14 +19,6 @@ public class GetProductByIdHandler : IRequestHandler<GetProductByIdQuery, Produc
         if (product is null)
             return null;
 
-        return new ProductResponseDto(
-            product.Id,
-            product.Name,
-            product.Description,
-            product.Price,
-            product.ImageUrl,
-            product.StockQuantity,
-            product.CategoryId
-        );
+        return ProductDtoMapper.ToResponse(product);
     }
 }

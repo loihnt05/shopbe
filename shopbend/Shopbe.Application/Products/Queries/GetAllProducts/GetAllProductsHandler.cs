@@ -26,14 +26,6 @@ public class GetAllProductsHandler : IRequestHandler<GetAllProductsQuery, IEnume
             .Skip((request.Filter.PageNumber - 1) * request.Filter.PageSize)
             .Take(request.Filter.PageSize);
 
-        return filtered.Select(p => new ProductResponseDto(
-            p.Id,
-            p.Name,
-            p.Description,
-            p.Price,
-            p.ImageUrl,
-            p.StockQuantity,
-            p.CategoryId
-        ));
+        return filtered.Select(ProductDtoMapper.ToResponse);
     }
 }

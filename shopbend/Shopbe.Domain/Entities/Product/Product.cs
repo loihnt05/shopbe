@@ -11,6 +11,8 @@ public class Product : BaseEntity
     
     // Navigation Properties
     public Category? Category { get; set; }
+    public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
+    public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
 }
