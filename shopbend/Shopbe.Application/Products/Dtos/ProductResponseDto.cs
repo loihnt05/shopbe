@@ -1,13 +1,7 @@
+using Shopbe.Application.ProductsImages.Dtos;
 using Shopbe.Application.ProductVariants.Dtos;
 
 namespace Shopbe.Application.Products.Dtos;
-
-public record ProductImageResponseDto(
-    Guid Id,
-    string ImageUrl,
-    bool IsPrimary
-);
-
 
 public record ProductResponseDto(
     Guid Id,

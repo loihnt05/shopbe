@@ -1,13 +1,6 @@
+using Shopbe.Application.ProductsImages.Dtos;
 using Shopbe.Application.ProductVariants.Dtos;
-
 namespace Shopbe.Application.Products.Dtos;
-
-public record ProductImageRequestDto(
-    string ImageUrl,
-    bool IsPrimary
-);
-
-
 
 public record ProductRequestDto(
     string Name,
