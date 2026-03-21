@@ -1,3 +1,5 @@
+using Shopbe.Application.ProductVariants.Dtos;
+
 namespace Shopbe.Application.Products.Dtos;
 
 public record ProductImageResponseDto(
@@ -6,13 +8,6 @@ public record ProductImageResponseDto(
     bool IsPrimary
 );
 
-public record ProductVariantResponseDto(
-    Guid Id,
-    string SKU,
-    decimal Price,
-    int StockQuantity,
-    string ImageUrl
-);
 
 public record ProductResponseDto(
     Guid Id,

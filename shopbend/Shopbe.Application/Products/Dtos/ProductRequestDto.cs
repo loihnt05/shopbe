@@ -1,3 +1,5 @@
+using Shopbe.Application.ProductVariants.Dtos;
+
 namespace Shopbe.Application.Products.Dtos;
 
 public record ProductImageRequestDto(
@@ -5,12 +7,7 @@ public record ProductImageRequestDto(
     bool IsPrimary
 );
 
-public record ProductVariantRequestDto(
-    string SKU,
-    decimal Price,
-    int StockQuantity,
-    string ImageUrl
-);
+
 
 public record ProductRequestDto(
     string Name,
