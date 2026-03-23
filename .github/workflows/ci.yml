@@ -1,12 +1,17 @@
-name: My First CI
+name: CI
 
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
-  build:
+  backend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: shopbend
 
     steps:
       - name: Checkout
@@ -18,10 +23,53 @@ jobs:
           dotnet-version: 8.0
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore Shopbe.slnx
 
       - name: Build
-        run: dotnet build --no-restore
+        run: dotnet build Shopbe.slnx --no-restore --configuration Release
+
+      - name: Detect test projects
+        id: test_projects
+        run: |
+          if find . -type f \( -name "*Test*.csproj" -o -name "*Tests*.csproj" \) | grep -q .; then
+            echo "has_tests=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tests=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Test
-        run: dotnet test --no-build
+        if: steps.test_projects.outputs.has_tests == 'true'
+        run: dotnet test Shopbe.slnx --no-build --configuration Release --verbosity normal
+
+      - name: Skip tests
+        if: steps.test_projects.outputs.has_tests != 'true'
+        run: echo "No test projects found; skipping backend tests."
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: shopfend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
