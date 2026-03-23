@@ -1,6 +1,8 @@
 using MediatR;
 using Shopbe.Application.Interfaces;
 using Shopbe.Application.Products.Dtos;
+using Shopbe.Application.ProductsImages.Dtos;
+using Shopbe.Application.ProductVariants.Dtos;
 using Shopbe.Domain.Entities;
 
 namespace Shopbe.Application.Products.Commands.UpdateProduct;

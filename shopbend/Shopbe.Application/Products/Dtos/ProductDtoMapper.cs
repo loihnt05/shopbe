@@ -1,3 +1,5 @@
+using Shopbe.Application.ProductsImages.Dtos;
+using Shopbe.Application.ProductVariants.Dtos;
 using Shopbe.Domain.Entities;
 
 namespace Shopbe.Application.Products.Dtos;
