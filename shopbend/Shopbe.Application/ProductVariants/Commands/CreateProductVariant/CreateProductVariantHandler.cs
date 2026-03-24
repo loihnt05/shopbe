@@ -3,7 +3,7 @@ using Shopbe.Application.Interfaces;
 using Shopbe.Application.ProductVariants.Commands.CreateProductVariant;
 using Shopbe.Application.ProductVariants.Dtos;
 
-namespace Shopbe.Application.ProductsVairants.Commands.CreateProductVariant;
+namespace Shopbe.Application.ProductVariants.Commands.CreateProductVariant;
 
 public class CreateProductVariantHandler : IRequestHandler<CreateProductVariantCommand, ProductVariantResponseDto>
 {
