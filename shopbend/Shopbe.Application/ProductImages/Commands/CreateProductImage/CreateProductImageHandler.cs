@@ -14,24 +14,6 @@ public class CreateProductImageHandler : IRequestHandler<CreateProductImageComma
     }
     public async Task<ProductImageResponseDto> Handle(CreateProductImageCommand command, CancellationToken cancellationToken)
     {
-        // var product = await _unitOfWork.Product.GetProductByIdAsync(command.Id);
-        // if (product is null)
-        // {
-        //     throw new KeyNotFoundException($"Product with id '{command.Id}' was not found.");
-        // }
-
-        // var productImage = new Domain.Entities.ProductImage
-        // {
-        //     Id = Guid.NewGuid(),
-        //     ImageUrl = command.Request.ImageUrl,
-        //     IsPrimary = command.Request.IsPrimary,
-        //     ProductId = command.Id
-        // };
-
-        // await _unitOfWork.ProductImage.AddAsync(productImage);
-        // await _unitOfWork.SaveChangesAsync();
-
-        // return new ProductImageResponseDto(productImage.Id, productImage.ImageUrl, productImage.IsPrimary);
         return new ProductImageResponseDto(Guid.NewGuid(), command.Request.ImageUrl, command.Request.IsPrimary);
     }
 }
