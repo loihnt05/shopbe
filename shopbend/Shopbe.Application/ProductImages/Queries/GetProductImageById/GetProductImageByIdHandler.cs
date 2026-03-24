@@ -1,11 +1,20 @@
-// namespace Shopbe.Application.ProductsImages.Commands.CreateProductImage;
+using MediatR;
+using Shopbe.Application.Interfaces;
+using Shopbe.Application.ProductsImages.Dtos;
 
-// public class CreateProductImageCommand : IRequest<Guid>
-// {
-//     private reaonlone
-//     public CreateProductImageCommand(Guid productId, string imageUrl)
-//     {
-//         ProductId = productId;
-//         ImageUrl = imageUrl;
-//     }
-// }
+namespace Shopbe.Application.ProductsImages.Queries.GetProductImageById;
+
+public class GetProductImageByIdHandler : IRequestHandler<GetProductImageByIdQuery, ProductImageResponseDto>
+{
+    private readonly IUnitOfWork _unitOfWork;
+
+    public GetProductImageByIdHandler(IUnitOfWork unitOfWork)
+    {
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<ProductImageResponseDto> Handle(GetProductImageByIdQuery request, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+}
