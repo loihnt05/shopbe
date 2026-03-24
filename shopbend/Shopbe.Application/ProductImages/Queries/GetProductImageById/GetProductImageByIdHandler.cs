@@ -1,6 +1,11 @@
-using MediatR;
-using Shopbe.Application.ProductsImages.Dtos;
+// namespace Shopbe.Application.ProductsImages.Commands.CreateProductImage;
 
-namespace Shopbe.Application.ProductsImages.Commands.CreateProductImage;
-
-public record CreateProductImageCommand(ProductImageRequestDto request, Guid ProductId) : IRequest<ProductImageResponseDto>;
+// public class CreateProductImageCommand : IRequest<Guid>
+// {
+//     private reaonlone
+//     public CreateProductImageCommand(Guid productId, string imageUrl)
+//     {
+//         ProductId = productId;
+//         ImageUrl = imageUrl;
+//     }
+// }
