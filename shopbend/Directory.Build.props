@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <!-- Keep analyzer set aligned with net8 projects to avoid IDE code-fix provider load mismatch. -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>8.0</AnalysisLevel>
+  </PropertyGroup>
+</Project>
+
