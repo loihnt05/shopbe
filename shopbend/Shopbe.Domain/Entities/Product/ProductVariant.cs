@@ -10,6 +10,8 @@ public class ProductVariant : BaseEntity
     public int StockQuantity { get; set; }
     public Guid ProductId { get; set; }
     
-    // Navigation Property
+    // Navigation Properties
     public Product? Product { get; set; }
+    public ICollection<ProductVariantAttribute> ProductVariantAttributes { get; set; } = new List<ProductVariantAttribute>();
+    public ICollection<InventoryTransaction> InventoryTransactions { get; set; } = new List<InventoryTransaction>();
 }

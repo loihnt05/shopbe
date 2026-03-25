@@ -21,6 +21,39 @@ public class ShopDbContext : DbContext
     public DbSet<ShoppingCart> ShoppingCarts { get; set; }
     public DbSet<CartItem> CartItems { get; set; }
     public DbSet<Payment> Payments { get; set; }
+    public DbSet<UserProfile> UserProfiles { get; set; }
+
+    public DbSet<Brand> Brands { get; set; }
+    public DbSet<ProductAttribute> Attributes { get; set; }
+    public DbSet<AttributeValue> AttributeValues { get; set; }
+    public DbSet<ProductVariantAttribute> ProductVariantAttributes { get; set; }
+    public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
+
+    public DbSet<OrderStatusHistory> OrderStatusHistory { get; set; }
+    public DbSet<Coupon> Coupons { get; set; }
+    public DbSet<CouponUsage> CouponUsages { get; set; }
+
+    public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+    public DbSet<PaymentLog> PaymentLogs { get; set; }
+    public DbSet<Refund> Refunds { get; set; }
+    public DbSet<IdempotencyKey> IdempotencyKeys { get; set; }
+
+    public DbSet<Shipment> Shipments { get; set; }
+    public DbSet<ShippingFee> ShippingFees { get; set; }
+
+    public DbSet<Review> Reviews { get; set; }
+    public DbSet<ReviewImage> ReviewImages { get; set; }
+
+    public DbSet<WishlistItem> WishlistItems { get; set; }
+    public DbSet<UserBehavior> UserBehaviors { get; set; }
+
+    public DbSet<Conversation> Conversations { get; set; }
+    public DbSet<ChatMessage> ChatMessages { get; set; }
+
+    public DbSet<Notification> Notifications { get; set; }
+    public DbSet<NotificationLog> NotificationLogs { get; set; }
+
+    public DbSet<AuditLog> AuditLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

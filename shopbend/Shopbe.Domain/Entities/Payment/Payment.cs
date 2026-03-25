@@ -10,4 +10,7 @@ public class Payment : BaseEntity
     
     // Navigation Properties
     public Order? Order { get; set; }
+    public ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
+    public ICollection<PaymentLog> PaymentLogs { get; set; } = new List<PaymentLog>();
+    public ICollection<Refund> Refunds { get; set; } = new List<Refund>();
 }

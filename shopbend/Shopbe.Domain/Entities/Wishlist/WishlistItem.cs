@@ -1,0 +1,12 @@
+namespace Shopbe.Domain.Entities;
+
+public class WishlistItem : BaseEntity
+{
+    public Guid UserId { get; set; }
+    public Guid ProductId { get; set; }
+
+    // Navigation properties
+    public User? User { get; set; }
+    public Product? Product { get; set; }
+}
+
