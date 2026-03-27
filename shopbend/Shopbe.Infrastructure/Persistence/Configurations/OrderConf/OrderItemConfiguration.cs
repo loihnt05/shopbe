@@ -12,6 +12,12 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 
         builder.HasKey(oi => oi.Id);
 
+        builder.Property(oi => oi.CreatedAt)
+            .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+        builder.Property(oi => oi.UpdatedAt)
+            .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
         builder.Property(oi => oi.OrderId)
             .IsRequired();
 
@@ -24,6 +30,10 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.Property(oi => oi.PriceAtPurchase)
             .HasColumnType("decimal(18,2)")
             .IsRequired();
+
+        builder.HasIndex(oi => oi.OrderId);
+        builder.HasIndex(oi => oi.ProductId);
+        builder.HasIndex(oi => new { oi.OrderId, oi.ProductId });
 
         // Relationships
         builder.HasOne(oi => oi.Order)
