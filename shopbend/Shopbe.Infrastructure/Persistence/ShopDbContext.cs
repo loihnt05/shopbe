@@ -16,12 +16,8 @@ using Shopbe.Domain.Entities.Wishlist;
 
 namespace Shopbe.Infrastructure.Persistence;
 
-public class ShopDbContext : DbContext
+public class ShopDbContext(DbContextOptions<ShopDbContext> options) : DbContext(options)
 {
-    public ShopDbContext(DbContextOptions<ShopDbContext> options) : base(options)
-    {
-    }
-
     // DbSets
     public DbSet<Product> Products { get; set; }
     public DbSet<ProductImage> ProductImages { get; set; }

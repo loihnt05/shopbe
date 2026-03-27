@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Shopbe.Domain.Entities;
 using Shopbe.Domain.Entities.ShoppingCart;
 using Shopbe.Domain.Entities.User;
 
-namespace Shopbe.Infrastructure.Persistence.Configurations;
+namespace Shopbe.Infrastructure.Persistence.Configurations.UserConf;
 
 public class UserConfiguration : IEntityTypeConfiguration<User>
 {

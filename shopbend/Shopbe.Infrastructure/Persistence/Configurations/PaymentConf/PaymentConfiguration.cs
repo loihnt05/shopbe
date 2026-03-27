@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Shopbe.Domain.Entities;
 using Shopbe.Domain.Entities.Payment;
 
-namespace Shopbe.Infrastructure.Persistence.Configurations;
+namespace Shopbe.Infrastructure.Persistence.Configurations.PaymentConf;
 
 public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 {

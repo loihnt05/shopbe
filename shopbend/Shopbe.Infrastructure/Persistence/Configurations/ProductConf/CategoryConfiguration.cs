@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Shopbe.Domain.Entities;
 using Shopbe.Domain.Entities.Category;
 
-namespace Shopbe.Infrastructure.Persistence.Configurations;
+namespace Shopbe.Infrastructure.Persistence.Configurations.ProductConf;
 
 public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 {
