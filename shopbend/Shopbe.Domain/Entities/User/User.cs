@@ -15,9 +15,9 @@ public class User : BaseEntity
     
     // Navigation Properties
     public UserProfile? Profile { get; set; }
+    public ShoppingCart.ShoppingCart? ShoppingCart { get; set; }
     public ICollection<UserAddress> UserAddresses { get; set; } = new List<UserAddress>();
     public ICollection<Order.Order> Orders { get; set; } = new List<Order.Order>();
-    public ShoppingCart.ShoppingCart? ShoppingCart { get; set; }
     public ICollection<CouponUsage> CouponUsages { get; set; } = new List<CouponUsage>();
     public ICollection<Review.Review> Reviews { get; set; } = new List<Review.Review>();
     public ICollection<WishlistItem> WishlistItems { get; set; } = new List<WishlistItem>();
