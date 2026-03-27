@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Shopbe.Domain.Entities;
 using Shopbe.Domain.Entities.Product;
 
-namespace Shopbe.Infrastructure.Persistence.Configurations;
+namespace Shopbe.Infrastructure.Persistence.Configurations.ProductConf;
 
 public class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
@@ -12,6 +11,12 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.ToTable("Products");
 
         builder.HasKey(p => p.Id);
+
+        builder.Property(p => p.CreatedAt)
+            .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+        builder.Property(p => p.UpdatedAt)
+            .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
         builder.Property(p => p.Name)
             .IsRequired()
@@ -31,6 +36,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.ImageUrl)
             .HasMaxLength(500);
 
+        builder.HasIndex(p => p.CategoryId);
+        builder.HasIndex(p => p.BrandId);
+
         builder.HasMany(p => p.Images)
             .WithOne(i => i.Product)
             .HasForeignKey(i => i.ProductId)
@@ -45,5 +53,10 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .WithMany(c => c.Products)
             .HasForeignKey(p => p.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.Brand)
+            .WithMany(b => b.Products)
+            .HasForeignKey(p => p.BrandId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

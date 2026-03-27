@@ -12,6 +12,12 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
 
         builder.HasKey(v => v.Id);
 
+        builder.Property(v => v.CreatedAt)
+            .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+        builder.Property(v => v.UpdatedAt)
+            .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
         builder.Property(v => v.SKU)
             .IsRequired()
             .HasMaxLength(100);
@@ -32,5 +38,15 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
 
         builder.HasIndex(v => v.ProductId);
         builder.HasIndex(v => new { v.ProductId, v.SKU }).IsUnique();
+
+        builder.HasMany(v => v.ProductVariantAttributes)
+            .WithOne(pva => pva.ProductVariant)
+            .HasForeignKey(pva => pva.ProductVariantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(v => v.InventoryTransactions)
+            .WithOne(t => t.ProductVariant)
+            .HasForeignKey(t => t.ProductVariantId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

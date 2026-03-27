@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Shopbe.Domain.Entities;
 using Shopbe.Domain.Entities.Product;
 
-namespace Shopbe.Infrastructure.Persistence.Configurations;
+namespace Shopbe.Infrastructure.Persistence.Configurations.ProductConf;
 
 public class ProductImageConfiguration : IEntityTypeConfiguration<ProductImage>
 {
@@ -12,6 +11,12 @@ public class ProductImageConfiguration : IEntityTypeConfiguration<ProductImage>
         builder.ToTable("ProductImages");
 
         builder.HasKey(i => i.Id);
+
+        builder.Property(i => i.CreatedAt)
+            .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+        builder.Property(i => i.UpdatedAt)
+            .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
         builder.Property(i => i.ImageUrl)
             .IsRequired()
