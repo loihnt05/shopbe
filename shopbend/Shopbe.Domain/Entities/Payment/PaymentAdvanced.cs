@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.Payment;
 
 public class PaymentTransaction : BaseEntity
 {

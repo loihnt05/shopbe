@@ -1,4 +1,9 @@
-namespace Shopbe.Domain.Entities;
+using Shopbe.Domain.Entities.Order;
+using Shopbe.Domain.Entities.Recommendation;
+using Shopbe.Domain.Entities.ShoppingCart;
+using Shopbe.Domain.Entities.Wishlist;
+
+namespace Shopbe.Domain.Entities.Product;
 
 public class Product : BaseEntity
 {
@@ -11,13 +16,13 @@ public class Product : BaseEntity
     public Guid? BrandId { get; set; }
     
     // Navigation Properties
-    public Category? Category { get; set; }
+    public Category.Category? Category { get; set; }
     public Brand? Brand { get; set; }
     public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
     public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
-    public ICollection<Review> Reviews { get; set; } = new List<Review>();
+    public ICollection<Review.Review> Reviews { get; set; } = new List<Review.Review>();
     public ICollection<WishlistItem> WishlistItems { get; set; } = new List<WishlistItem>();
     public ICollection<UserBehavior> UserBehaviors { get; set; } = new List<UserBehavior>();
 }

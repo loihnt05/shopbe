@@ -1,4 +1,4 @@
-using CategoryEntity = Shopbe.Domain.Entities.Category;
+using CategoryEntity = Shopbe.Domain.Entities.Category.Category;
 
 namespace Shopbe.Application.Interfaces;
 public interface ICategoryRepository

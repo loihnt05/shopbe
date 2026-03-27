@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Shopbe.Application.Interfaces;
 using Shopbe.Domain.Entities;
+using Shopbe.Domain.Entities.Category;
 using Shopbe.Infrastructure.Persistence;
 
 namespace Shopbe.Infrastructure.Repositories;

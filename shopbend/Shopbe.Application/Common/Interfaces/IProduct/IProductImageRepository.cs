@@ -1,4 +1,5 @@
 using Shopbe.Domain.Entities;
+using Shopbe.Domain.Entities.Product;
 
 namespace Shopbe.Application.Common.Interfaces;
 

@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.Payment;
 
 public class Payment : BaseEntity
 {
@@ -9,7 +9,7 @@ public class Payment : BaseEntity
     public string TransactionId { get; set; } = string.Empty;
     
     // Navigation Properties
-    public Order? Order { get; set; }
+    public Order.Order? Order { get; set; }
     public ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
     public ICollection<PaymentLog> PaymentLogs { get; set; } = new List<PaymentLog>();
     public ICollection<Refund> Refunds { get; set; } = new List<Refund>();

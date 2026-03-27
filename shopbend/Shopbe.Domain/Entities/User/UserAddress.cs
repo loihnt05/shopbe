@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.User;
 
 public class UserAddress : BaseEntity
 {

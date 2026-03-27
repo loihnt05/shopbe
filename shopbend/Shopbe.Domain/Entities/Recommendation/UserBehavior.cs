@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.Recommendation;
 
 public class UserBehavior : BaseEntity
 {
@@ -8,7 +8,7 @@ public class UserBehavior : BaseEntity
     public string? MetadataJson { get; set; }
 
     // Navigation properties
-    public User? User { get; set; }
-    public Product? Product { get; set; }
+    public User.User? User { get; set; }
+    public Product.Product? Product { get; set; }
 }
 

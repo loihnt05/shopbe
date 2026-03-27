@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.Shipping;
 
 public class Shipment : BaseEntity
 {
@@ -11,7 +11,7 @@ public class Shipment : BaseEntity
     public Guid? ShippingFeeId { get; set; }
 
     // Navigation properties
-    public Order? Order { get; set; }
+    public Order.Order? Order { get; set; }
     public ShippingFee? ShippingFee { get; set; }
 }
 

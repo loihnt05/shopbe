@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.Chatbot;
 
 public class Conversation : BaseEntity
 {
@@ -6,7 +6,7 @@ public class Conversation : BaseEntity
     public string Title { get; set; } = string.Empty;
 
     // Navigation properties
-    public User? User { get; set; }
+    public User.User? User { get; set; }
     public ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
 }
 

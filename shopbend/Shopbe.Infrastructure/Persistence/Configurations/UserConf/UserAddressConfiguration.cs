@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Shopbe.Domain.Entities;
+using Shopbe.Domain.Entities.User;
 
-namespace Shopbe.Infrastructure.Persistence.Configurations;
+namespace Shopbe.Infrastructure.Persistence.Configurations.UserConf;
 
 public class UserAddressConfiguration : IEntityTypeConfiguration<UserAddress>
 {
@@ -38,10 +38,5 @@ public class UserAddressConfiguration : IEntityTypeConfiguration<UserAddress>
         builder.Property(ua => ua.IsDefault)
             .HasDefaultValue(false);
 
-        // Relationships
-        builder.HasOne(ua => ua.User)
-            .WithMany(u => u.UserAddresses)
-            .HasForeignKey(ua => ua.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

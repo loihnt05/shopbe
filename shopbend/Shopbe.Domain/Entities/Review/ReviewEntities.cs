@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.Review;
 
 public class Review : BaseEntity
 {
@@ -8,8 +8,8 @@ public class Review : BaseEntity
     public string Comment { get; set; } = string.Empty;
 
     // Navigation properties
-    public Product? Product { get; set; }
-    public User? User { get; set; }
+    public Product.Product? Product { get; set; }
+    public User.User? User { get; set; }
     public ICollection<ReviewImage> ReviewImages { get; set; } = new List<ReviewImage>();
 }
 

@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.Category;
 
 public class Category : BaseEntity
 {
@@ -8,5 +8,5 @@ public class Category : BaseEntity
     // Navigation Properties
     public Category? ParentCategory { get; set; }
     public ICollection<Category> ChildCategories { get; set; } = new List<Category>();
-    public ICollection<Product> Products { get; set; } = new List<Product>();
+    public ICollection<Product.Product> Products { get; set; } = new List<Product.Product>();
 }

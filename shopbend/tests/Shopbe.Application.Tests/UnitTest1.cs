@@ -8,7 +8,8 @@ using Shopbe.Application.Products.Dtos;
 using Shopbe.Application.ProductsImages.Dtos;
 using Shopbe.Application.ProductVariants.Dtos;
 using Shopbe.Domain.Entities;
-using DomainCategory = Shopbe.Domain.Entities.Category;
+using Shopbe.Domain.Entities.Product;
+using DomainCategory = Shopbe.Domain.Entities.Category.Category;
 
 namespace Shopbe.Application.Tests;
 

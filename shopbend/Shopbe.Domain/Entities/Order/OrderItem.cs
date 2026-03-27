@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.Order;
 
 public class OrderItem : BaseEntity
 {
@@ -9,5 +9,5 @@ public class OrderItem : BaseEntity
     
     // Navigation Properties
     public Order? Order { get; set; }
-    public Product? Product { get; set; }
+    public Product.Product? Product { get; set; }
 }

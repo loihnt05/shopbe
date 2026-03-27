@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.Notification;
 
 public class Notification : BaseEntity
 {
@@ -9,7 +9,7 @@ public class Notification : BaseEntity
     public bool IsRead { get; set; }
 
     // Navigation properties
-    public User? User { get; set; }
+    public User.User? User { get; set; }
     public ICollection<NotificationLog> NotificationLogs { get; set; } = new List<NotificationLog>();
 }
 

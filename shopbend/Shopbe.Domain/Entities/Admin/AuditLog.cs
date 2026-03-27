@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.Admin;
 
 public class AuditLog : BaseEntity
 {
@@ -9,6 +9,6 @@ public class AuditLog : BaseEntity
     public string? MetadataJson { get; set; }
 
     // Navigation properties
-    public User? User { get; set; }
+    public User.User? User { get; set; }
 }
 

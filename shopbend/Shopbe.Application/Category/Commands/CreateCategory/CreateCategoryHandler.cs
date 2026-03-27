@@ -2,7 +2,7 @@ using MediatR;
 using Shopbe.Application.Category.Dtos;
 using Shopbe.Application.Interfaces;
 using Shopbe.Domain.Entities;
-using DomainCategory = Shopbe.Domain.Entities.Category;
+using DomainCategory = Shopbe.Domain.Entities.Category.Category;
 
 namespace Shopbe.Application.Category.Commands.CreateCategory;
 

@@ -3,6 +3,7 @@ using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Interfaces;
 using Shopbe.Application.Interfaces.Repositories;
 using Shopbe.Infrastructure.Repositories;
+using Shopbe.Infrastructure.Repositories.ProductRepositories;
 
 namespace Shopbe.Infrastructure.Persistence;
 

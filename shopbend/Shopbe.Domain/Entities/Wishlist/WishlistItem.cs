@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.Wishlist;
 
 public class WishlistItem : BaseEntity
 {
@@ -6,7 +6,6 @@ public class WishlistItem : BaseEntity
     public Guid ProductId { get; set; }
 
     // Navigation properties
-    public User? User { get; set; }
-    public Product? Product { get; set; }
+    public User.User? User { get; set; }
+    public Product.Product? Product { get; set; }
 }
-

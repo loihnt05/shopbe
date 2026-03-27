@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.ShoppingCart;
 
 public class CartItem : BaseEntity
 {
@@ -8,5 +8,5 @@ public class CartItem : BaseEntity
     
     // Navigation Properties
     public ShoppingCart? ShoppingCart { get; set; }
-    public Product? Product { get; set; }
+    public Product.Product? Product { get; set; }
 }

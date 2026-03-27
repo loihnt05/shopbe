@@ -4,6 +4,7 @@ using Shopbe.Application.Products.Dtos;
 using Shopbe.Application.ProductsImages.Dtos;
 using Shopbe.Application.ProductVariants.Dtos;
 using Shopbe.Domain.Entities;
+using Shopbe.Domain.Entities.Product;
 
 namespace Shopbe.Application.Products.Commands.UpdateProduct;
 

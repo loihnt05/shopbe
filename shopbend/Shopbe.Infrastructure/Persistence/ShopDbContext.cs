@@ -1,5 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using Shopbe.Domain.Entities;
+using Shopbe.Domain.Entities.Admin;
+using Shopbe.Domain.Entities.Category;
+using Shopbe.Domain.Entities.Chatbot;
+using Shopbe.Domain.Entities.Notification;
+using Shopbe.Domain.Entities.Order;
+using Shopbe.Domain.Entities.Payment;
+using Shopbe.Domain.Entities.Product;
+using Shopbe.Domain.Entities.Recommendation;
+using Shopbe.Domain.Entities.Review;
+using Shopbe.Domain.Entities.Shipping;
+using Shopbe.Domain.Entities.ShoppingCart;
+using Shopbe.Domain.Entities.User;
+using Shopbe.Domain.Entities.Wishlist;
 
 namespace Shopbe.Infrastructure.Persistence;
 

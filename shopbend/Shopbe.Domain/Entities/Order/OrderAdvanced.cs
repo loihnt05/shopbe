@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities;
+namespace Shopbe.Domain.Entities.Order;
 
 public class OrderStatusHistory : BaseEntity
 {
@@ -32,7 +32,7 @@ public class CouponUsage : BaseEntity
 
     // Navigation properties
     public Coupon? Coupon { get; set; }
-    public User? User { get; set; }
+    public User.User? User { get; set; }
     public Order? Order { get; set; }
 }
 
