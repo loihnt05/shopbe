@@ -30,7 +30,6 @@ public class ShopDbContext(DbContextOptions<ShopDbContext> options) : DbContext(
     public DbSet<ShoppingCart> ShoppingCarts { get; set; }
     public DbSet<CartItem> CartItems { get; set; }
     public DbSet<Payment> Payments { get; set; }
-    public DbSet<UserProfile> UserProfiles { get; set; }
 
     public DbSet<Brand> Brands { get; set; }
     public DbSet<ProductAttribute> Attributes { get; set; }

@@ -13,11 +13,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasKey(u => u.Id);
 
-        builder.Property(u => u.UserName)
+        builder.Property(u => u.KeycloakId)
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.HasIndex(u => u.UserName)
+        builder.HasIndex(u => u.KeycloakId)
             .IsUnique();
 
         builder.Property(u => u.Email)
@@ -27,12 +27,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.Email)
             .IsUnique();
 
-        builder.Property(u => u.PasswordHash)
-            .IsRequired()
-            .HasMaxLength(500);
-
-        builder.Property(u => u.PhoneNumber)
-            .HasMaxLength(20);
+        builder.Property(u => u.Role)
+            .HasConversion<string>()
+            .HasMaxLength(50);
 
         // Relationships
         builder.HasMany(u => u.UserAddresses)
