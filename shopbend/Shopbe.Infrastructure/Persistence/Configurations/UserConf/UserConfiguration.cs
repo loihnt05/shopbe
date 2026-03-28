@@ -53,6 +53,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasConversion<string>()
             .HasMaxLength(50);
 
+        builder.Property(u => u.Role)
+            .HasDefaultValue(UserRole.Customer);
+
         // Relationships
         builder.HasMany(u => u.UserAddresses)
             .WithOne(ua => ua.User)
@@ -62,7 +65,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasMany(u => u.Orders)
             .WithOne(o => o.User)
             .HasForeignKey(o => o.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(u => u.ShoppingCart)
             .WithOne(sc => sc.User)

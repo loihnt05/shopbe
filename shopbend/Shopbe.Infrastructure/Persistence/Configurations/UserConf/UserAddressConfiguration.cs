@@ -15,28 +15,44 @@ public class UserAddressConfiguration : IEntityTypeConfiguration<UserAddress>
         builder.Property(ua => ua.UserId)
             .IsRequired();
 
-        builder.Property(ua => ua.Street)
+        builder.HasIndex(ua => ua.UserId);
+
+        builder.Property(ua => ua.ReceiverName)
             .IsRequired()
             .HasMaxLength(200);
+
+        builder.Property(ua => ua.Phone)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        builder.Property(ua => ua.AddressLine)
+            .IsRequired()
+            .HasMaxLength(500);
 
         builder.Property(ua => ua.City)
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.Property(ua => ua.State)
+        builder.Property(ua => ua.District)
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.Property(ua => ua.PostalCode)
-            .IsRequired()
-            .HasMaxLength(20);
-
-        builder.Property(ua => ua.Country)
+        builder.Property(ua => ua.Ward)
             .IsRequired()
             .HasMaxLength(100);
+
+        builder.Property(ua => ua.DeletedAt)
+            .IsRequired(false);
+
+        builder.HasIndex(ua => ua.DeletedAt);
 
         builder.Property(ua => ua.IsDefault)
             .HasDefaultValue(false);
+
+        // Enforce a single default address per user (works on PostgreSQL)
+        builder.HasIndex(ua => ua.UserId)
+            .IsUnique()
+            .HasFilter("\"IsDefault\" = true AND \"DeletedAt\" IS NULL");
 
     }
 }
