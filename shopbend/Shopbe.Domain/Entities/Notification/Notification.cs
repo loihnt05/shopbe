@@ -12,15 +12,3 @@ public class Notification : BaseEntity
     public User.User? User { get; set; }
     public ICollection<NotificationLog> NotificationLogs { get; set; } = new List<NotificationLog>();
 }
-
-public class NotificationLog : BaseEntity
-{
-    public Guid NotificationId { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public string? ProviderMessageId { get; set; }
-    public string? ErrorMessage { get; set; }
-
-    // Navigation properties
-    public Notification? Notification { get; set; }
-}
-

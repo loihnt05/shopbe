@@ -1,0 +1,13 @@
+namespace Shopbe.Domain.Entities.Order;
+
+public enum OrderStatus
+{
+    Pending,
+    Confirmed,
+    Processing,
+    Shipped,
+    Delivered,
+    Cancelled,
+    Refunded
+}
+

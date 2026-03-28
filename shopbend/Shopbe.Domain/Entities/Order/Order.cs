@@ -6,10 +6,19 @@ namespace Shopbe.Domain.Entities.Order;
 public class Order : BaseEntity
 {
     public Guid UserId { get; set; }
+    public string ShippingReceiverName { get; set; } = string.Empty;
+    public string ShippingPhone { get; set; } = string.Empty;
+    public string ShippingAddressLine { get; set; } = string.Empty;
+    public string ShippingCity { get; set; } = string.Empty;
+    public string ShippingDistrict { get; set; } = string.Empty;
+    public string ShippingWard { get; set; } = string.Empty;
+    public decimal SubtotalAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal ShippingFee { get; set; }
     public decimal TotalAmount { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public Guid ShippingAddressId { get; set; }
-    public Guid? CouponId { get; set; }
+    public string Currency { get; set; } = "VND";
+    public OrderStatus Status { get; set; }
+    public string? Note { get; set; }
     
     // Navigation Properties
     public User.User? User { get; set; }

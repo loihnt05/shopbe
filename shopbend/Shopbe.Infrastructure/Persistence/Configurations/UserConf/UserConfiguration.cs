@@ -27,6 +27,28 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.Email)
             .IsUnique();
 
+        builder.Property(u => u.FullName)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        builder.Property(u => u.AvatarUrl)
+            .HasMaxLength(2048);
+
+        builder.Property(u => u.PhoneNumber)
+            .HasMaxLength(20);
+
+        builder.Property(u => u.Status)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .HasDefaultValue(UserStatus.PendingVerification);
+
+        builder.HasIndex(u => u.Status);
+
+        builder.Property(u => u.DeletedAt)
+            .IsRequired(false);
+
+        builder.HasIndex(u => u.DeletedAt);
+
         builder.Property(u => u.Role)
             .HasConversion<string>()
             .HasMaxLength(50);

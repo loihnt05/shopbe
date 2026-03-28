@@ -16,6 +16,11 @@ public class User : BaseEntity
     
     // Role quản lý ở app level (hoặc sync từ Keycloak tùy chiến lược)
     public UserRole Role { get; set; } = UserRole.Customer;
+    public string FullName { get; set; }
+    public string? AvatarUrl { get; set; }
+    public string? PhoneNumber { get; set; }
+    public UserStatus Status { get; set; }
+    public DateTime? DeletedAt { get; set; }
 
     // Navigation Properties
     public ShoppingCart.ShoppingCart? ShoppingCart { get; set; }
