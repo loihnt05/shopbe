@@ -62,15 +62,15 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, Produc
         }
 
         product.Variants.Clear();
-        foreach (var variant in variants)
+                SKU = variant.SKU,
         {
             product.Variants.Add(new ProductVariant
             {
                 Id = Guid.NewGuid(),
-                SKU = variant.SKU,
+                ImageUrl = variant.ImageUrl,
                 Price = variant.Price,
                 StockQuantity = variant.StockQuantity,
-                ImageUrl = variant.ImageUrl,
+                IsActive = true,
                 ProductId = product.Id
             });
         }

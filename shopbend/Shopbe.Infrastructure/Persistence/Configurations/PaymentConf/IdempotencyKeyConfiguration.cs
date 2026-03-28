@@ -16,15 +16,17 @@ public class IdempotencyKeyConfiguration : IEntityTypeConfiguration<IdempotencyK
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(i => i.Scope)
+        builder.Property(i => i.EntityType)
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.Property(i => i.RequestHash)
-            .HasMaxLength(200);
+        builder.Property(i => i.EntityId);
 
-        builder.Property(i => i.ResponseBody)
+        builder.Property(i => i.Response)
             .HasColumnType("text");
+
+        builder.Property(i => i.ExpiresAt)
+            .IsRequired();
 
         builder.Property(i => i.CreatedAt)
             .HasDefaultValueSql("CURRENT_TIMESTAMP");
@@ -32,7 +34,7 @@ public class IdempotencyKeyConfiguration : IEntityTypeConfiguration<IdempotencyK
         builder.Property(i => i.UpdatedAt)
             .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-        builder.HasIndex(i => new { i.Key, i.Scope })
+        builder.HasIndex(i => new { i.Key, i.EntityType })
             .IsUnique();
 
         builder.HasIndex(i => i.ExpiresAt);

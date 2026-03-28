@@ -51,13 +51,11 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
 			Id = Guid.NewGuid(),
 			Name = command.Request.Name,
 			Description = command.Request.Description,
+			BasePrice = command.Request.Price,
+			IsActive = true,
 			Price = command.Request.Price,
 			StockQuantity = command.Request.StockQuantity,
 			ImageUrl = ResolvePrimaryImageUrl(command.Request.ImageUrl, images),
-			CategoryId = command.Request.CategoryId
-		};
-
-		product.Images = images.Select(image => new ProductImage
 		{
 			Id = Guid.NewGuid(),
 			ImageUrl = image.ImageUrl,
@@ -68,11 +66,11 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
 		product.Variants = variants.Select(variant => new ProductVariant
 		{
 			Id = Guid.NewGuid(),
+			Sku = variant.SKU,
 			SKU = variant.SKU,
-			Price = variant.Price,
 			StockQuantity = variant.StockQuantity,
+			IsActive = true,
 			ImageUrl = variant.ImageUrl,
-			ProductId = product.Id
 		}).ToList();
 
 		await _unitOfWork.Product.AddProductAsync(product);

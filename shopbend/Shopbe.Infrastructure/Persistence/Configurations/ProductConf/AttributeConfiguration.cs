@@ -4,7 +4,7 @@ using ProductAttributeEntity = Shopbe.Domain.Entities.Product.Attribute;
 
 namespace Shopbe.Infrastructure.Persistence.Configurations.ProductConf;
 
-public class ProductAttributeConfiguration : IEntityTypeConfiguration<ProductAttributeEntity>
+public class AttributeConfiguration : IEntityTypeConfiguration<ProductAttributeEntity>
 {
     public void Configure(EntityTypeBuilder<ProductAttributeEntity> builder)
     {

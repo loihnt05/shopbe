@@ -23,8 +23,6 @@ public class PaymentLogConfiguration : IEntityTypeConfiguration<PaymentLog>
             .IsRequired()
             .HasMaxLength(2000);
 
-        builder.Property(pl => pl.MetadataJson)
-            .HasColumnType("text");
 
         builder.Property(pl => pl.CreatedAt)
             .HasDefaultValueSql("CURRENT_TIMESTAMP");

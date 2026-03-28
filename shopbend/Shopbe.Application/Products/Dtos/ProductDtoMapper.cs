@@ -12,22 +12,24 @@ public static class ProductDtoMapper
         return new ProductResponseDto(
             product.Id,
             product.Name,
+            product.Description ?? string.Empty,
+            product.BasePrice,
+            primaryImageUrl,
+            product.Variants.Sum(v => v.StockQuantity),
+            product.CategoryId,
             product.Description,
             product.Price,
             product.ImageUrl,
             product.StockQuantity,
-            product.CategoryId,
-            product.Images.Select(i => new ProductImageResponseDto(
-                i.Id,
-                i.ImageUrl,
-                i.IsPrimary
             )),
             product.Variants.Select(v => new ProductVariantResponseDto(
                 v.Id,
                 v.SKU,
+                v.Sku,
                 v.Price,
                 v.StockQuantity,
                 v.ImageUrl
+                primaryImageUrl
             ))
         );
     }

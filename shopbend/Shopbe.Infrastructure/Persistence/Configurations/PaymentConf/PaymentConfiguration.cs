@@ -15,20 +15,22 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.OrderId)
             .IsRequired();
 
-        builder.Property(p => p.PaymentMethod)
+        builder.Property(p => p.Method)
+            .IsRequired();
+
+        builder.Property(p => p.Currency)
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(3)
+            .HasDefaultValue("VND");
 
         builder.Property(p => p.Amount)
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
         builder.Property(p => p.Status)
-            .IsRequired()
-            .HasMaxLength(50);
+            .IsRequired();
 
-        builder.Property(p => p.TransactionId)
-            .HasMaxLength(100);
+        builder.Property(p => p.PaidAt);
 
         // Relationships
         builder.HasOne(p => p.Order)

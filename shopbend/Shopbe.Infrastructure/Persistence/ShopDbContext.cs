@@ -32,7 +32,7 @@ public class ShopDbContext(DbContextOptions<ShopDbContext> options) : DbContext(
     public DbSet<Payment> Payments { get; set; }
 
     public DbSet<Brand> Brands { get; set; }
-    public DbSet<ProductAttribute> Attributes { get; set; }
+    public DbSet<Shopbe.Domain.Entities.Product.Attribute> Attributes { get; set; }
     public DbSet<AttributeValue> AttributeValues { get; set; }
     public DbSet<ProductVariantAttribute> ProductVariantAttributes { get; set; }
     public DbSet<InventoryTransaction> InventoryTransactions { get; set; }

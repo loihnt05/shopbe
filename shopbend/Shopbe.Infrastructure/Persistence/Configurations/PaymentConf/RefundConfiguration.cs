@@ -20,8 +20,7 @@ public class RefundConfiguration : IEntityTypeConfiguration<Refund>
             .IsRequired();
 
         builder.Property(r => r.Status)
-            .IsRequired()
-            .HasMaxLength(50);
+            .IsRequired();
 
         builder.Property(r => r.Reason)
             .HasMaxLength(500);
