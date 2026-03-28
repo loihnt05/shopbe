@@ -16,11 +16,26 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .IsRequired()
             .HasMaxLength(100);
 
+        builder.Property(c => c.Slug)
+            .IsRequired()
+            .HasMaxLength(150);
+
+        builder.Property(c => c.SortOrder)
+            .IsRequired();
+
+        builder.Property(c => c.IsActive)
+            .IsRequired();
+
         // Self-referencing relationship for parent categories
         builder.HasOne(c => c.ParentCategory)
-            .WithMany(c => c.ChildCategories)
+            .WithMany(c => c.SubCategories)
             .HasForeignKey(c => c.ParentCategoryId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
+
+        builder.HasIndex(c => c.Slug)
+            .IsUnique();
+
+        builder.HasIndex(c => c.ParentCategoryId);
     }
 }

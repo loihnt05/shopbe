@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Shopbe.Domain.Entities;
 using Shopbe.Domain.Entities.Admin;
 using Shopbe.Domain.Entities.Category;
 using Shopbe.Domain.Entities.Chatbot;
@@ -32,7 +31,7 @@ public class ShopDbContext(DbContextOptions<ShopDbContext> options) : DbContext(
     public DbSet<Payment> Payments { get; set; }
 
     public DbSet<Brand> Brands { get; set; }
-    public DbSet<Shopbe.Domain.Entities.Product.Attribute> Attributes { get; set; }
+    public DbSet<ProductAttribute> ProductAttributes { get; set; }
     public DbSet<AttributeValue> AttributeValues { get; set; }
     public DbSet<ProductVariantAttribute> ProductVariantAttributes { get; set; }
     public DbSet<InventoryTransaction> InventoryTransactions { get; set; }

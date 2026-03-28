@@ -1,6 +1,6 @@
 namespace Shopbe.Domain.Entities.Product;
 
-public class Attribute : BaseEntity
+public class ProductAttribute : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
 

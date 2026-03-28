@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ProductAttributeEntity = Shopbe.Domain.Entities.Product.Attribute;
+using Shopbe.Domain.Entities.Product;
 
 namespace Shopbe.Infrastructure.Persistence.Configurations.ProductConf;
 
-public class AttributeConfiguration : IEntityTypeConfiguration<ProductAttributeEntity>
+public class ProductAttributeConfiguration : IEntityTypeConfiguration<ProductAttribute>
 {
-    public void Configure(EntityTypeBuilder<ProductAttributeEntity> builder)
+    public void Configure(EntityTypeBuilder<ProductAttribute> builder)
     {
         builder.ToTable("Attributes");
 
