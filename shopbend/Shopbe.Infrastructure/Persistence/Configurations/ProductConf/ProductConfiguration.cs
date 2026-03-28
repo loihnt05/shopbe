@@ -25,16 +25,25 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Description)
             .HasMaxLength(500);
 
-        builder.Property(p => p.Price)
-            .HasColumnType("decimal(18,2)")
+        builder.Property(p => p.Slug)
+            .IsRequired()
+            .HasMaxLength(150);
+
+        builder.HasIndex(p => p.Slug)
+            .IsUnique();
+
+        builder.Property(p => p.BasePrice)
+            .HasPrecision(18, 2)
             .IsRequired();
 
-        builder.Property(p => p.StockQuantity)
+        builder.Property(p => p.IsActive)
             .IsRequired()
-            .HasDefaultValue(0);
+            .HasDefaultValue(true);
 
-        builder.Property(p => p.ImageUrl)
-            .HasMaxLength(500);
+        builder.Property(p => p.DeletedAt)
+            .IsRequired(false);
+
+        builder.HasIndex(p => p.DeletedAt);
 
         builder.HasIndex(p => p.CategoryId);
         builder.HasIndex(p => p.BrandId);

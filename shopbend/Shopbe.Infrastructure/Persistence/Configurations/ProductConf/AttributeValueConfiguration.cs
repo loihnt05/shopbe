@@ -18,15 +18,15 @@ public class AttributeValueConfiguration : IEntityTypeConfiguration<AttributeVal
         builder.Property(v => v.UpdatedAt)
             .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-        builder.Property(v => v.ProductAttributeId)
+        builder.Property(v => v.AttributeId)
             .IsRequired();
 
         builder.Property(v => v.Value)
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.HasIndex(v => v.ProductAttributeId);
-        builder.HasIndex(v => new { v.ProductAttributeId, v.Value })
+        builder.HasIndex(v => v.AttributeId);
+        builder.HasIndex(v => new { v.AttributeId, v.Value })
             .IsUnique();
 
         builder.HasMany(v => v.ProductVariantAttributes)

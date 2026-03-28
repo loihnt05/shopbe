@@ -22,8 +22,19 @@ public class BrandConfiguration : IEntityTypeConfiguration<Brand>
             .IsRequired()
             .HasMaxLength(150);
 
-        builder.Property(b => b.Description)
-            .HasMaxLength(1000);
+        builder.Property(b => b.Slug)
+            .IsRequired()
+            .HasMaxLength(150);
+
+        builder.HasIndex(b => b.Slug)
+            .IsUnique();
+
+        builder.Property(b => b.LogoUrl)
+            .HasMaxLength(2048);
+
+        builder.Property(b => b.IsActive)
+            .IsRequired()
+            .HasDefaultValue(true);
 
         builder.HasIndex(b => b.Name)
             .IsUnique();

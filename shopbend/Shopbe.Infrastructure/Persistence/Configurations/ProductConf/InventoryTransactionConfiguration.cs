@@ -21,14 +21,15 @@ public class InventoryTransactionConfiguration : IEntityTypeConfiguration<Invent
         builder.Property(t => t.ProductVariantId)
             .IsRequired();
 
-        builder.Property(t => t.TransactionType)
+        builder.Property(t => t.Type)
+            .HasConversion<string>()
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.Property(t => t.QuantityChanged)
+        builder.Property(t => t.Quantity)
             .IsRequired();
 
-        builder.Property(t => t.Reason)
+        builder.Property(t => t.Note)
             .HasMaxLength(500);
 
         builder.HasIndex(t => t.ProductVariantId);

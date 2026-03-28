@@ -1,21 +1,21 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Shopbe.Domain.Entities.Product;
+using ProductAttributeEntity = Shopbe.Domain.Entities.Product.Attribute;
 
 namespace Shopbe.Infrastructure.Persistence.Configurations.ProductConf;
 
-public class ProductAttributeConfiguration : IEntityTypeConfiguration<ProductAttribute>
+public class ProductAttributeConfiguration : IEntityTypeConfiguration<ProductAttributeEntity>
 {
-    public void Configure(EntityTypeBuilder<ProductAttribute> builder)
+    public void Configure(EntityTypeBuilder<ProductAttributeEntity> builder)
     {
-        builder.ToTable("ProductAttributes");
+        builder.ToTable("Attributes");
 
         builder.HasKey(a => a.Id);
 
-        builder.Property(a => a.CreatedAt)
+        builder.Property<DateTime>(a => a.CreatedAt)
             .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-        builder.Property(a => a.UpdatedAt)
+        builder.Property<DateTime>(a => a.UpdatedAt)
             .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
         builder.Property(a => a.Name)
@@ -25,9 +25,9 @@ public class ProductAttributeConfiguration : IEntityTypeConfiguration<ProductAtt
         builder.HasIndex(a => a.Name)
             .IsUnique();
 
-        builder.HasMany(a => a.Values)
-            .WithOne(v => v.ProductAttribute)
-            .HasForeignKey(v => v.ProductAttributeId)
+        builder.HasMany(a => a.AttributeValues)
+            .WithOne(v => v.Attribute)
+            .HasForeignKey(v => v.AttributeId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

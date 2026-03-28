@@ -10,32 +10,24 @@ public class ProductVariantAttributeConfiguration : IEntityTypeConfiguration<Pro
     {
         builder.ToTable("ProductVariantAttributes");
 
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => new { x.VariantId, x.AttributeValueId });
 
-        builder.Property(x => x.CreatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-        builder.Property(x => x.UpdatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-        builder.Property(x => x.ProductVariantId)
+        builder.Property(x => x.VariantId)
             .IsRequired();
 
         builder.Property(x => x.AttributeValueId)
             .IsRequired();
 
-        builder.HasIndex(x => x.ProductVariantId);
+        builder.HasIndex(x => x.VariantId);
         builder.HasIndex(x => x.AttributeValueId);
-        builder.HasIndex(x => new { x.ProductVariantId, x.AttributeValueId })
-            .IsUnique();
 
-        builder.HasOne(x => x.ProductVariant)
+        builder.HasOne(x => x.Variant)
             .WithMany(v => v.ProductVariantAttributes)
-            .HasForeignKey(x => x.ProductVariantId)
+            .HasForeignKey(x => x.VariantId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(x => x.AttributeValue)
-            .WithMany(v => v.ProductVariantAttributes)
+            .WithMany(av => av.ProductVariantAttributes)
             .HasForeignKey(x => x.AttributeValueId)
             .OnDelete(DeleteBehavior.Cascade);
     }

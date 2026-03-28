@@ -18,7 +18,7 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
         builder.Property(v => v.UpdatedAt)
             .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-        builder.Property(v => v.SKU)
+        builder.Property(v => v.Sku)
             .IsRequired()
             .HasMaxLength(100);
 
@@ -30,18 +30,24 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
             .IsRequired()
             .HasDefaultValue(0);
 
-        builder.Property(v => v.ImageUrl)
-            .HasMaxLength(500);
+        builder.Property(v => v.IsActive)
+            .IsRequired()
+            .HasDefaultValue(true);
+
+        builder.Property(v => v.DeletedAt)
+            .IsRequired(false);
+
+        builder.HasIndex(v => v.DeletedAt);
 
         builder.Property(v => v.ProductId)
             .IsRequired();
 
         builder.HasIndex(v => v.ProductId);
-        builder.HasIndex(v => new { v.ProductId, v.SKU }).IsUnique();
+        builder.HasIndex(v => new { v.ProductId, v.Sku }).IsUnique();
 
         builder.HasMany(v => v.ProductVariantAttributes)
-            .WithOne(pva => pva.ProductVariant)
-            .HasForeignKey(pva => pva.ProductVariantId)
+            .WithOne(pva => pva.Variant)
+            .HasForeignKey(pva => pva.VariantId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(v => v.InventoryTransactions)
