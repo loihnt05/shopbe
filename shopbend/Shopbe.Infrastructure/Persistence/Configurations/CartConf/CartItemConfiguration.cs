@@ -12,30 +12,37 @@ public class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
 
         builder.HasKey(ci => ci.Id);
 
-        builder.Property(ci => ci.ShoppingCartId)
+        builder.Property(ci => ci.CartId)
             .IsRequired();
 
-        builder.Property(ci => ci.ProductId)
+        builder.Property(ci => ci.ProductVariantId)
             .IsRequired();
 
         builder.Property(ci => ci.Quantity)
             .IsRequired()
             .HasDefaultValue(1);
 
-        builder.HasIndex(ci => new { ci.ShoppingCartId, ci.ProductId })
+        builder.Property(ci => ci.UnitPrice)
+            .IsRequired()
+            .HasPrecision(18, 2);
+
+        builder.Property(ci => ci.AddedAt)
+            .IsRequired();
+
+        builder.HasIndex(ci => new { ci.CartId, ci.ProductVariantId })
             .IsUnique();
 
-        builder.ToTable(t => t.HasCheckConstraint("CK_CartItems_Quantity_Positive", "\"Quantity\" > 0"));
+        builder.ToTable(t => t.HasCheckConstraint("CK_CartItems_Quantity_Positive", "Quantity > 0"));
 
         // Relationships
-        builder.HasOne(ci => ci.ShoppingCart)
+        builder.HasOne(ci => ci.Cart)
             .WithMany(sc => sc.CartItems)
-            .HasForeignKey(ci => ci.ShoppingCartId)
+            .HasForeignKey(ci => ci.CartId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(ci => ci.Product)
-            .WithMany(p => p.CartItems)
-            .HasForeignKey(ci => ci.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(ci => ci.ProductVariant)
+            .WithMany()
+            .HasForeignKey(ci => ci.ProductVariantId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
