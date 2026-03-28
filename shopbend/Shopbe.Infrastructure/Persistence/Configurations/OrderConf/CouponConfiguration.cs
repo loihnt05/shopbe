@@ -22,24 +22,37 @@ public class CouponConfiguration : IEntityTypeConfiguration<Coupon>
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.Property(c => c.DiscountValue)
+        builder.Property(c => c.Description)
+            .HasMaxLength(500);
+
+        builder.Property(c => c.DiscountType)
+            .IsRequired();
+
+        builder.Property(c => c.Value)
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
-        builder.Property(c => c.IsPercentage)
+        builder.Property(c => c.MinOrderAmount)
+            .HasColumnType("decimal(18,2)")
             .IsRequired();
 
-        builder.Property(c => c.MaxUsageCount)
-            .IsRequired()
-            .HasDefaultValue(0);
+        builder.Property(c => c.MaxDiscountAmount)
+            .HasColumnType("decimal(18,2)");
+
+        builder.Property(c => c.ExpiredAt)
+            .IsRequired();
+
+        builder.Property(c => c.UsageLimit);
+
+        builder.Property(c => c.UsageCount)
+            .IsRequired();
+
+        builder.Property(c => c.IsActive)
+            .IsRequired();
 
         builder.HasIndex(c => c.Code)
             .IsUnique();
 
-        builder.HasMany(c => c.Orders)
-            .WithOne(o => o.Coupon)
-            .HasForeignKey(o => o.CouponId)
-            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasMany(c => c.CouponUsages)
             .WithOne(cu => cu.Coupon)

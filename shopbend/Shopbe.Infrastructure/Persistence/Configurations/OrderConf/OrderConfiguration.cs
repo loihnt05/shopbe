@@ -15,16 +15,56 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.UserId)
             .IsRequired();
 
+        builder.Property(o => o.ShippingReceiverName)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(o => o.ShippingPhone)
+            .IsRequired()
+            .HasMaxLength(30);
+
+        builder.Property(o => o.ShippingAddressLine)
+            .IsRequired()
+            .HasMaxLength(500);
+
+        builder.Property(o => o.ShippingCity)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(o => o.ShippingDistrict)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(o => o.ShippingWard)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(o => o.SubtotalAmount)
+            .HasColumnType("decimal(18,2)")
+            .IsRequired();
+
+        builder.Property(o => o.DiscountAmount)
+            .HasColumnType("decimal(18,2)")
+            .IsRequired();
+
+        builder.Property(o => o.ShippingFee)
+            .HasColumnType("decimal(18,2)")
+            .IsRequired();
+
         builder.Property(o => o.TotalAmount)
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
-        builder.Property(o => o.Status)
+        builder.Property(o => o.Currency)
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(3)
+            .HasDefaultValue("VND");
 
-        builder.Property(o => o.ShippingAddressId)
+        builder.Property(o => o.Status)
             .IsRequired();
+
+        builder.Property(o => o.Note)
+            .HasMaxLength(2000);
 
         // Relationships
         builder.HasOne(o => o.User)
@@ -32,10 +72,8 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(o => o.ShippingAddress)
-            .WithMany()
-            .HasForeignKey(o => o.ShippingAddressId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // NOTE: Order currently has a ShippingAddress navigation but no ShippingAddressId FK property.
+        // If you want this relation persisted, add a ShippingAddressId to the domain model or configure a shadow FK.
 
         builder.HasMany(o => o.OrderItems)
             .WithOne(oi => oi.Order)
