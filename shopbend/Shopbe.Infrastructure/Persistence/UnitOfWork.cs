@@ -7,30 +7,21 @@ using Shopbe.Infrastructure.Repositories.ProductRepositories;
 
 namespace Shopbe.Infrastructure.Persistence;
 
-public class UnitOfWork : IUnitOfWork
+public class UnitOfWork(ShopDbContext context) : IUnitOfWork
 {
-    private readonly ShopDbContext _context;
     private IDbContextTransaction? _transaction;
-    public IProductRepository Product { get; }
-    public ICategoryRepository Category { get; }
-    public IProductVariantRepository ProductVariant { get; }
-    public IProductImageRepository ProductImage { get; }
+    public IProductRepository Product { get; } = new ProductRepository(context);
+    public ICategoryRepository Category { get; } = new CategoryRepository(context);
+    public IProductVariantRepository ProductVariant { get; } = new ProductVariantRepository(context);
+    public IProductImageRepository ProductImage { get; } = new ProductImageRepository(context);
 
-    public UnitOfWork(ShopDbContext context)
-    {
-        _context = context;
-        Product = new ProductRepository(context);
-        Category = new CategoryRepository(context);
-        ProductImage = new ProductImageRepository(context);
-        ProductVariant = new ProductVariantRepository(context);
-    }
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.SaveChangesAsync(cancellationToken);
+        return await context.SaveChangesAsync(cancellationToken);
     }
     public async Task BeginTransactionAsync()
     {
-        _transaction = await _context.Database.BeginTransactionAsync();
+        _transaction = await context.Database.BeginTransactionAsync();
     }
     public async Task CommitTransactionAsync()
     {
@@ -53,6 +44,6 @@ public class UnitOfWork : IUnitOfWork
     public void Dispose()
     {
         _transaction?.Dispose();
-        _context.Dispose();
+        context.Dispose();
     }
 }

@@ -5,41 +5,36 @@ using Shopbe.Infrastructure.Persistence;
 
 namespace Shopbe.Infrastructure.Repositories.ProductRepositories;
 
-public class ProductVariantRepository : IProductVariantRepository
+public class ProductVariantRepository(ShopDbContext context) : IProductVariantRepository
 {
-    private readonly ShopDbContext _context;
-    public ProductVariantRepository(ShopDbContext context)
-    {
-        _context = context;
-    }
     public async Task<ProductVariant?> GetProductVariantByIdAsync(Guid productVariantId)
     {
-        return await _context.ProductVariants.FindAsync(productVariantId);
+        return await context.ProductVariants.FindAsync(productVariantId);
     }
     public async Task<IEnumerable<ProductVariant>> GetProductVariantsByProductIdAsync(Guid productId)
     {
-        return await _context.ProductVariants
+        return await context.ProductVariants
             .Where(pv => pv.ProductId == productId)
             .ToListAsync();
     }
     public async Task<IEnumerable<ProductVariant>> GetAllProductVariantsAsync()
     {
-        return await _context.ProductVariants.ToListAsync();
+        return await context.ProductVariants.ToListAsync();
     }
     public async Task AddProductVariantAsync(ProductVariant productVariant)
     {
-        await _context.ProductVariants.AddAsync(productVariant);
+        await context.ProductVariants.AddAsync(productVariant);
     }
     public async Task UpdateProductVariantAsync(ProductVariant productVariant)
     {
-        _context.ProductVariants.Update(productVariant);
+        context.ProductVariants.Update(productVariant);
     }
     public async Task DeleteProductVariantAsync(Guid productVariantId)
     {
-        var productVariant = await _context.ProductVariants.FindAsync(productVariantId);
+        var productVariant = await context.ProductVariants.FindAsync(productVariantId);
         if (productVariant != null)
         {
-            _context.ProductVariants.Remove(productVariant);
+            context.ProductVariants.Remove(productVariant);
         }
     }
 }

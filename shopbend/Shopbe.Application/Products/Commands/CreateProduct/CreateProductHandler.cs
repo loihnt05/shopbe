@@ -52,25 +52,28 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
 			Name = command.Request.Name,
 			Description = command.Request.Description,
 			BasePrice = command.Request.Price,
+			CategoryId = command.Request.CategoryId,
 			IsActive = true,
-			Price = command.Request.Price,
-			StockQuantity = command.Request.StockQuantity,
-			ImageUrl = ResolvePrimaryImageUrl(command.Request.ImageUrl, images),
+			// Optional: set navigation property when available
+			Category = category
+		};
+
+		product.Images = images.Select(image => new ProductImage
 		{
 			Id = Guid.NewGuid(),
+			ProductId = product.Id,
 			ImageUrl = image.ImageUrl,
-			IsPrimary = image.IsPrimary,
-			ProductId = product.Id
+			IsPrimary = image.IsPrimary
 		}).ToList();
 
 		product.Variants = variants.Select(variant => new ProductVariant
 		{
 			Id = Guid.NewGuid(),
+			ProductId = product.Id,
 			Sku = variant.SKU,
-			SKU = variant.SKU,
+			Price = variant.Price,
 			StockQuantity = variant.StockQuantity,
 			IsActive = true,
-			ImageUrl = variant.ImageUrl,
 		}).ToList();
 
 		await _unitOfWork.Product.AddProductAsync(product);

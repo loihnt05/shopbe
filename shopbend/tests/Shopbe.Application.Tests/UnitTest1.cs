@@ -97,7 +97,7 @@ public class ProductHandlersTests
         var result = await handler.Handle(command, CancellationToken.None);
 
         Assert.NotNull(capturedProduct);
-        Assert.Equal("image-primary.jpg", capturedProduct!.ImageUrl);
+        Assert.Contains(capturedProduct!.Images, i => i.IsPrimary && i.ImageUrl == "image-primary.jpg");
         Assert.Single(capturedProduct.Variants);
         Assert.Equal(2, capturedProduct.Images.Count);
         Assert.Equal("image-primary.jpg", result.ImageUrl);

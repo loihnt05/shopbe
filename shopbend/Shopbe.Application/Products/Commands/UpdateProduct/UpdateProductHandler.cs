@@ -44,10 +44,9 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, Produc
 
         product.Name = request.Request.Name;
         product.Description = request.Request.Description;
-        product.Price = request.Request.Price;
-        product.ImageUrl = ResolvePrimaryImageUrl(request.Request.ImageUrl, images);
-        product.StockQuantity = request.Request.StockQuantity;
+        product.BasePrice = request.Request.Price;
         product.CategoryId = request.Request.CategoryId;
+        product.Category = category;
 
         product.Images.Clear();
         foreach (var image in images)
@@ -62,12 +61,12 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, Produc
         }
 
         product.Variants.Clear();
-                SKU = variant.SKU,
+        foreach (var variant in variants)
         {
             product.Variants.Add(new ProductVariant
             {
                 Id = Guid.NewGuid(),
-                ImageUrl = variant.ImageUrl,
+                Sku = variant.SKU,
                 Price = variant.Price,
                 StockQuantity = variant.StockQuantity,
                 IsActive = true,

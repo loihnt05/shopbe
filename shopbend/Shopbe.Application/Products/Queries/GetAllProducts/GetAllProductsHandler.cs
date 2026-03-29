@@ -21,8 +21,8 @@ public class GetAllProductsHandler : IRequestHandler<GetAllProductsQuery, IEnume
             .Where(p =>
                 (request.Filter.Name == null || p.Name.Contains(request.Filter.Name, StringComparison.OrdinalIgnoreCase)) &&
                 (request.Filter.CategoryId == null || p.CategoryId == request.Filter.CategoryId) &&
-                (request.Filter.MinPrice == null || p.Price >= request.Filter.MinPrice) &&
-                (request.Filter.MaxPrice == null || p.Price <= request.Filter.MaxPrice))
+                (request.Filter.MinPrice == null || p.BasePrice >= request.Filter.MinPrice) &&
+                (request.Filter.MaxPrice == null || p.BasePrice <= request.Filter.MaxPrice))
             .Skip((request.Filter.PageNumber - 1) * request.Filter.PageSize)
             .Take(request.Filter.PageSize);
 

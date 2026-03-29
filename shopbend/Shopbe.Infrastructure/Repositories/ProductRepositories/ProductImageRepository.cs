@@ -6,42 +6,36 @@ using Shopbe.Infrastructure.Persistence;
 
 namespace Shopbe.Infrastructure.Repositories;
 
-public class ProductImageRepository : IProductImageRepository
+public class ProductImageRepository(ShopDbContext context) : IProductImageRepository
 {
-    private readonly ShopDbContext _context;
-
-    public ProductImageRepository(ShopDbContext context)
-    {
-        _context = context;
-    }
     public async Task<ProductImage?> GetProductImageByIdAsync(Guid productImageId)
     {
-        return await _context.ProductImages.FindAsync(productImageId);
+        return await context.ProductImages.FindAsync(productImageId);
     }
     public async Task<IEnumerable<ProductImage>> GetProductImagesByProductIdAsync(Guid productId)
     {
-        return await _context.ProductImages
+        return await context.ProductImages
             .Where(pi => pi.ProductId == productId)
             .ToListAsync();
     }
     public async Task<IEnumerable<ProductImage>> GetAllProductImagesAsync()
     {
-        return await _context.ProductImages.ToListAsync();
+        return await context.ProductImages.ToListAsync();
     }
     public async Task DeleteProductImageAsync(Guid productImageId)
     {
-        var productImage = await _context.ProductImages.FindAsync(productImageId);
+        var productImage = await context.ProductImages.FindAsync(productImageId);
         if (productImage != null)
         {
-            _context.ProductImages.Remove(productImage);
+            context.ProductImages.Remove(productImage);
         }
     }
     public async Task AddProductImageAsync(ProductImage productImage)
     {
-        await _context.ProductImages.AddAsync(productImage);
+        await context.ProductImages.AddAsync(productImage);
     }
     public async Task UpdateProductImageAsync(ProductImage productImage)
     {
-        _context.ProductImages.Update(productImage);
+        context.ProductImages.Update(productImage);
     }
 }
