@@ -14,4 +14,23 @@
     <ProjectReference Include="..\Shopbe.Domain\Shopbe.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Product\AttributeValues\Commands\" />
+    <Folder Include="Product\AttributeValues\Dtos\" />
+    <Folder Include="Product\AttributeValues\Queries\" />
+    <Folder Include="Product\Brands\Commands\" />
+    <Folder Include="Product\Brands\Dtos\" />
+    <Folder Include="Product\Brands\Queries\" />
+    <Folder Include="Product\InventoryTransactions\Commands\" />
+    <Folder Include="Product\InventoryTransactions\Dtos\" />
+    <Folder Include="Product\InventoryTransactions\Queries\" />
+    <Folder Include="Product\ProductAttributes\Commands\" />
+    <Folder Include="Product\ProductAttributes\Dtos\" />
+    <Folder Include="Product\ProductAttributes\Queries\" />
+    <Folder Include="Product\Products\" />
+    <Folder Include="Product\ProductVariantAttributes\Commands\" />
+    <Folder Include="Product\ProductVariantAttributes\Dtos\" />
+    <Folder Include="Product\ProductVariantAttributes\Queries\" />
+  </ItemGroup>
+
 </Project>
