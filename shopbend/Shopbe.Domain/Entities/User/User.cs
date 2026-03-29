@@ -8,20 +8,14 @@ namespace Shopbe.Domain.Entities.User;
 
 public class User : BaseEntity
 {
-    // Chỉ cần ExternalId để map với Keycloak subject (sub claim)
     public string KeycloakId { get; set; } = string.Empty;  // = sub claim
-    
-    // Email cache lại để query nhanh, không cần join Keycloak
     public string Email { get; set; } = string.Empty;
-    
-    // Role quản lý ở app level (hoặc sync từ Keycloak tùy chiến lược)
     public UserRole Role { get; set; } = UserRole.Customer;
-    public string FullName { get; set; }
+    public required string FullName { get; set; }
     public string? AvatarUrl { get; set; }
     public string? PhoneNumber { get; set; }
     public UserStatus Status { get; set; }
     public DateTime? DeletedAt { get; set; }
-
     // Navigation Properties
     public ShoppingCart.ShoppingCart? ShoppingCart { get; set; }
     public ICollection<UserAddress> UserAddresses { get; set; } = new List<UserAddress>();
