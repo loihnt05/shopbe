@@ -23,8 +23,10 @@
       "frontchannelLogout": false,
 
       "redirectUris": [
-        "http://localhost:*/*",
-        "https://localhost:*/*"
+        "http://localhost:*/swagger/oauth2-redirect.html",
+        "https://localhost:*/swagger/oauth2-redirect.html",
+        "http://127.0.0.1:*/swagger/oauth2-redirect.html",
+        "https://127.0.0.1:*/swagger/oauth2-redirect.html"
       ],
       "webOrigins": [
         "+"
