@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Shopbe.Infrastructure.Persistence;
@@ -12,9 +13,11 @@ using Shopbe.Infrastructure.Persistence;
 namespace Shopbe.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ShopDbContext))]
-    partial class ShopDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260329034621_SyncModel_20260329")]
+    partial class SyncModel_20260329
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -65,7 +68,7 @@ namespace Shopbe.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AuditLogs", (string)null);
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("Shopbe.Domain.Entities.Category.Category", b =>
@@ -139,7 +142,7 @@ namespace Shopbe.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ConversationId");
 
-                    b.ToTable("ChatMessages", (string)null);
+                    b.ToTable("ChatMessages");
                 });
 
             modelBuilder.Entity("Shopbe.Domain.Entities.Chatbot.Conversation", b =>
@@ -171,7 +174,7 @@ namespace Shopbe.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Conversations", (string)null);
+                    b.ToTable("Conversations");
                 });
 
             modelBuilder.Entity("Shopbe.Domain.Entities.Notification.Notification", b =>
@@ -208,7 +211,7 @@ namespace Shopbe.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("Shopbe.Domain.Entities.Notification.NotificationLog", b =>
@@ -244,7 +247,7 @@ namespace Shopbe.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("NotificationId");
 
-                    b.ToTable("NotificationLogs", (string)null);
+                    b.ToTable("NotificationLogs");
                 });
 
             modelBuilder.Entity("Shopbe.Domain.Entities.Order.Coupon", b =>
@@ -1123,7 +1126,7 @@ namespace Shopbe.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserBehaviors", (string)null);
+                    b.ToTable("UserBehaviors");
                 });
 
             modelBuilder.Entity("Shopbe.Domain.Entities.Review.Review", b =>

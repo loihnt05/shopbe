@@ -23,7 +23,7 @@ public class IdempotencyKeyConfiguration : IEntityTypeConfiguration<IdempotencyK
         builder.Property(i => i.EntityId);
 
         builder.Property(i => i.Response)
-            .HasColumnType("text");
+            .HasColumnType("jsonb");
 
         builder.Property(i => i.ExpiresAt)
             .IsRequired();

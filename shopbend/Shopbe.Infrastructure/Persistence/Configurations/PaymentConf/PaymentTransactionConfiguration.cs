@@ -31,7 +31,7 @@ public class PaymentTransactionConfiguration : IEntityTypeConfiguration<PaymentT
             .IsRequired();
 
         builder.Property(pt => pt.GatewayResponse)
-            .HasColumnType("text");
+            .HasColumnType("jsonb");
 
         builder.Property(pt => pt.CreatedAt)
             .HasDefaultValueSql("CURRENT_TIMESTAMP");

@@ -3,6 +3,7 @@ using Shopbe.Domain.Entities.Chatbot;
 using Shopbe.Domain.Entities.Order;
 using Shopbe.Domain.Entities.Recommendation;
 using Shopbe.Domain.Entities.Wishlist;
+using Shopbe.Domain.Enums;
 
 namespace Shopbe.Domain.Entities.User;
 
@@ -10,11 +11,11 @@ public class User : BaseEntity
 {
     public string KeycloakId { get; set; } = string.Empty;  // = sub claim
     public string Email { get; set; } = string.Empty;
-    public UserRole Role { get; set; } = UserRole.Customer;
+    public UserRole? Role { get; set; }
     public required string FullName { get; set; }
     public string? AvatarUrl { get; set; }
     public string? PhoneNumber { get; set; }
-    public UserStatus Status { get; set; }
+    public UserStatus? Status { get; set; }
     public DateTime? DeletedAt { get; set; }
     // Navigation Properties
     public ShoppingCart.ShoppingCart? ShoppingCart { get; set; }

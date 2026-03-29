@@ -28,6 +28,8 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .IsRequired();
 
         builder.Property(p => p.Status)
+            .HasConversion<string>()
+            .HasMaxLength(50)
             .IsRequired();
 
         builder.Property(p => p.PaidAt);

@@ -61,6 +61,8 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasDefaultValue("VND");
 
         builder.Property(o => o.Status)
+            .HasConversion<string>()
+            .HasMaxLength(50)
             .IsRequired();
 
         builder.Property(o => o.Note)

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shopbe.Domain.Entities.ShoppingCart;
 using Shopbe.Domain.Entities.User;
+using Shopbe.Domain.Enums;
 
 namespace Shopbe.Infrastructure.Persistence.Configurations.UserConf;
 
