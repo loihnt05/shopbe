@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import KeycloakProvider from "next-auth/providers/keycloak";
+import GoogleProvider from "next-auth/providers/google";
 
 const issuer = process.env.KEYCLOAK_ISSUER
   ? process.env.KEYCLOAK_ISSUER
@@ -17,14 +18,26 @@ const handler = NextAuth({
         },
       },
     }),
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
   ],
   callbacks: {
     async jwt({ token, account }) {
-      if (account) token.accessToken = account.access_token;
+      if (account) {
+        token.accessToken = account.access_token;
+        token.idToken = account.id_token;
+      }
       return token;
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken;
+      session.idToken = token.idToken;
       return session;
     },
   },
