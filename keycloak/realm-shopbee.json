@@ -54,6 +54,45 @@
       ]
     },
     {
+      "clientId": "shopfend",
+      "name": "Shopfend (Next.js)",
+      "enabled": true,
+
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": false,
+
+      "redirectUris": [
+        "http://localhost:3000/api/auth/callback/keycloak",
+        "http://127.0.0.1:3000/api/auth/callback/keycloak"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+      ],
+
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+
+      "defaultClientScopes": [
+        "web-origins",
+        "roles",
+        "profile",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    },
+    {
       "clientId": "shopbe-api",
       "name": "Shopbe API",
       "enabled": true,
