@@ -8,6 +8,7 @@ using Shopbe.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 var keycloakAuthority = builder.Configuration["Authentication:Keycloak:Authority"];
+var keycloakAuthorityExternal = builder.Configuration["Authentication:Keycloak:AuthorityExternal"];
 
 if (string.IsNullOrWhiteSpace(keycloakAuthority))
 {
@@ -38,10 +39,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .GetSection("Authentication:Keycloak:ValidAudiences")
             .Get<string[]>();
 
+        // Keycloak can issue tokens with an issuer (iss) matching the URL used by the browser
+        // (e.g. http://localhost:8080/...) while the API container validates metadata using an
+        // internal docker hostname (e.g. http://keycloak:8080/...). Accept both.
+        var validIssuers = new[] { keycloakAuthority, keycloakAuthorityExternal }
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = keycloakAuthority,
+            ValidIssuers = validIssuers,
             ValidateAudience = builder.Configuration.GetValue("Authentication:Keycloak:ValidateAudience", false),
             ValidAudiences = validAudiences,
             NameClaimType = "preferred_username",
@@ -89,8 +98,8 @@ builder.Services.AddSwaggerGen(options =>
         {
             AuthorizationCode = new OpenApiOAuthFlow
             {
-                AuthorizationUrl = new Uri($"{keycloakAuthority}/protocol/openid-connect/auth"),
-                TokenUrl = new Uri($"{keycloakAuthority}/protocol/openid-connect/token"),
+                AuthorizationUrl = new Uri($"{(string.IsNullOrWhiteSpace(keycloakAuthorityExternal) ? keycloakAuthority : keycloakAuthorityExternal)}/protocol/openid-connect/auth"),
+                TokenUrl = new Uri($"{(string.IsNullOrWhiteSpace(keycloakAuthorityExternal) ? keycloakAuthority : keycloakAuthorityExternal)}/protocol/openid-connect/token"),
                 Scopes = new Dictionary<string, string>
                 {
                     { "openid", "OpenID Connect" },

@@ -25,9 +25,10 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       # NOTE: this overrides appsettings.json, ensuring the API (inside Docker) can reach Keycloak
       Authentication__Keycloak__Authority: http://keycloak:8080/realms/ShopBee
+      # Swagger UI runs in the host browser, so it must use a host-reachable Keycloak URL
+      Authentication__Keycloak__AuthorityExternal: http://localhost:8080/realms/ShopBee
       Authentication__Keycloak__RequireHttpsMetadata: "false"
-      Authentication__Keycloak__ValidateAudience: "true"
-      Authentication__Keycloak__ValidAudiences__0: shopbe-api
+      Authentication__Keycloak__ValidateAudience: "false"
       Authentication__Keycloak__SwaggerClientId: shopbe-swagger
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=shopbend;Username=shop;Password=shop
   postgres:
