@@ -1,7 +1,6 @@
-using Shopbe.Domain.Entities;
 using Shopbe.Domain.Entities.Product;
 
-namespace Shopbe.Application.Interfaces.Repositories;
+namespace Shopbe.Application.Common.Interfaces.IProduct;
 
 public interface IProductVariantRepository
 {

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Shopbe.Application.Common.Interfaces.ICategory;
 using Shopbe.Application.Interfaces;
 using Shopbe.Domain.Entities;
 using Shopbe.Domain.Entities.Category;

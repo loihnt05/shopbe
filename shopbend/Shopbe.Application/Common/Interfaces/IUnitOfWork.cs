@@ -1,5 +1,6 @@
 using Shopbe.Application.Common.Interfaces;
-using Shopbe.Application.Interfaces.Repositories;
+using Shopbe.Application.Common.Interfaces.ICategory;
+using Shopbe.Application.Common.Interfaces.IProduct;
 
 namespace Shopbe.Application.Interfaces;
 public interface IUnitOfWork

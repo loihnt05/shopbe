@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Shopbe.Application.Interfaces;
+using Shopbe.Application.Common.Interfaces.IProduct;
 using Shopbe.Domain.Entities.Product;
 using Shopbe.Infrastructure.Persistence;
 
@@ -24,10 +24,12 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
     public async Task AddProductAsync(Product product)
     {
         await context.Products.AddAsync(product);
+        await context.SaveChangesAsync();
     }
     public async Task UpdateProductAsync(Product product)
     {
         context.Products.Update(product);
+        await context.SaveChangesAsync();
     }
     public async Task DeleteProductAsync(Guid productId)
     {
@@ -35,6 +37,7 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
         if (product != null)
         {
             context.Products.Remove(product);
+            await context.SaveChangesAsync();
         }
     }
 }

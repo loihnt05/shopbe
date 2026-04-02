@@ -1,6 +1,6 @@
 using CategoryEntity = Shopbe.Domain.Entities.Category.Category;
 
-namespace Shopbe.Application.Interfaces;
+namespace Shopbe.Application.Common.Interfaces.ICategory;
 public interface ICategoryRepository
 {
     Task<IEnumerable<CategoryEntity>> GetAllCategoriesAsync();

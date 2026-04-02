@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Shopbe.Application.Common.Interfaces;
+using Shopbe.Application.Common.Interfaces.IProduct;
 using Shopbe.Domain.Entities;
 using Shopbe.Domain.Entities.Product;
 using Shopbe.Infrastructure.Persistence;
