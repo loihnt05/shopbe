@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore.Storage;
-using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Common.Interfaces.ICategory;
 using Shopbe.Application.Common.Interfaces.IProduct;
 using Shopbe.Application.Common.Interfaces.IUser;
@@ -13,10 +12,13 @@ namespace Shopbe.Infrastructure.Persistence;
 public class UnitOfWork(ShopDbContext context) : IUnitOfWork
 {
     private IDbContextTransaction? _transaction;
+    // Users
     public IUserRepository User { get; } = new UserRepository(context);
-    // public IUserAddressRepository UserAddress { get; } = new UserAddressRepository(context);
-    public IProductRepository Product { get; } = new ProductRepository(context);
+    public IUserAddressRepository UserAddress { get; } = new UserAddressRepository(context);
+    // Categories
     public ICategoryRepository Category { get; } = new CategoryRepository(context);
+    // Products
+    public IProductRepository Product { get; } = new ProductRepository(context);
     public IProductVariantRepository ProductVariant { get; } = new ProductVariantRepository(context);
     public IProductImageRepository ProductImage { get; } = new ProductImageRepository(context);
 

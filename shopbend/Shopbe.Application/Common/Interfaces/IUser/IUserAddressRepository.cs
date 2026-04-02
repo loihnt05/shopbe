@@ -4,8 +4,8 @@ namespace Shopbe.Application.Common.Interfaces.IUser;
 
 public interface IUserAddressRepository
 {
-    Task<UserAddress> GetByIdAsync(Guid id);
-    Task<IEnumerable<UserAddress>> GetAllAsync();
+    Task<UserAddress?> GetUserAddressByIdAsync(Guid id);
+    Task<IEnumerable<UserAddress>> GetAllUserAddressAsync();
     Task CreateUserAddressAsync(UserAddress userAddress);
     Task UpdateUserAddressAsync(UserAddress userAddress);
     Task DeleteUserAddressAsync(Guid id);
