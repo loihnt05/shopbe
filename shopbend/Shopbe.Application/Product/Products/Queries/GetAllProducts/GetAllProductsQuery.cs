@@ -1,6 +1,6 @@
 using MediatR;
-using Shopbe.Application.Products.Dtos;
+using Shopbe.Application.Product.Products.Dtos;
 
-namespace Shopbe.Application.Products.Queries.GetAllProducts;
+namespace Shopbe.Application.Product.Products.Queries.GetAllProducts;
 
 public record GetAllProductsQuery(ProductQueryDto Filter) : IRequest<IEnumerable<ProductResponseDto>>;

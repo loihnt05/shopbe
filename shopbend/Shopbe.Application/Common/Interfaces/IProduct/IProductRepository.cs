@@ -1,12 +1,10 @@
-using Shopbe.Domain.Entities.Product;
-
 namespace Shopbe.Application.Common.Interfaces.IProduct;
 
 public interface IProductRepository
 {
-    Task<IEnumerable<Product>> GetAllProductsAsync();
-    Task<Product?> GetProductByIdAsync(Guid productId);
-    Task AddProductAsync(Product product);
-    Task UpdateProductAsync(Product product);
+    Task<IEnumerable<Shopbe.Domain.Entities.Product.Product>> GetAllProductsAsync();
+    Task<Shopbe.Domain.Entities.Product.Product?> GetProductByIdAsync(Guid productId);
+    Task AddProductAsync(Shopbe.Domain.Entities.Product.Product product);
+    Task UpdateProductAsync(Shopbe.Domain.Entities.Product.Product product);
     Task DeleteProductAsync(Guid productId);
 }

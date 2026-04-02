@@ -1,31 +1,32 @@
 using MediatR;
 using Shopbe.Application.Interfaces;
-using Shopbe.Application.Products.Dtos;
+using Shopbe.Application.Product.Products.Dtos;
 
-namespace Shopbe.Application.Products.Queries.GetAllProducts;
+namespace Shopbe.Application.Product.Products.Queries.GetAllProducts;
 
-public class GetAllProductsHandler : IRequestHandler<GetAllProductsQuery, IEnumerable<ProductResponseDto>>
+public class GetAllProductsHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetAllProductsQuery, IEnumerable<ProductResponseDto>>
 {
-    private readonly IUnitOfWork _unitOfWork;
-
-    public GetAllProductsHandler(IUnitOfWork unitOfWork)
-    {
-        _unitOfWork = unitOfWork;
-    }
-
     public async Task<IEnumerable<ProductResponseDto>> Handle(GetAllProductsQuery request, CancellationToken cancellationToken)
     {
-        var products = await _unitOfWork.Product.GetAllProductsAsync();
+        var products = await unitOfWork.Product.GetAllProductsAsync();
+
+        // Query DTO is currently non-nullable on the request type, but keep this in case binding changes.
+        var filter = request.Filter;
+
+        var pageNumber = filter.PageNumber < 1 ? 1 : filter.PageNumber;
+        var pageSize = filter.PageSize < 1 ? 20 : filter.PageSize;
 
         var filtered = products
             .Where(p =>
-                (request.Filter.Name == null || p.Name.Contains(request.Filter.Name, StringComparison.OrdinalIgnoreCase)) &&
-                (request.Filter.CategoryId == null || p.CategoryId == request.Filter.CategoryId) &&
-                (request.Filter.MinPrice == null || p.BasePrice >= request.Filter.MinPrice) &&
-                (request.Filter.MaxPrice == null || p.BasePrice <= request.Filter.MaxPrice))
-            .Skip((request.Filter.PageNumber - 1) * request.Filter.PageSize)
-            .Take(request.Filter.PageSize);
+                (string.IsNullOrWhiteSpace(filter.Name) || p.Name.Contains(filter.Name, StringComparison.OrdinalIgnoreCase)) &&
+                (filter.CategoryId == null || p.CategoryId == filter.CategoryId) &&
+                (filter.MinPrice == null || p.BasePrice >= filter.MinPrice) &&
+                (filter.MaxPrice == null || p.BasePrice <= filter.MaxPrice))
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(p => ProductDtoMapper.ToResponse(p));
 
-        return filtered.Select(ProductDtoMapper.ToResponse);
+        return filtered;
     }
 }

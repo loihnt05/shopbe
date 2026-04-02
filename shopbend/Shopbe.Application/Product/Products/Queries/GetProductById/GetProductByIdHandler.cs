@@ -1,8 +1,8 @@
 using MediatR;
 using Shopbe.Application.Interfaces;
-using Shopbe.Application.Products.Dtos;
+using Shopbe.Application.Product.Products.Dtos;
 
-namespace Shopbe.Application.Products.Queries.GetProductById;
+namespace Shopbe.Application.Product.Products.Queries.GetProductById;
 
 public class GetProductByIdHandler : IRequestHandler<GetProductByIdQuery, ProductResponseDto?>
 {

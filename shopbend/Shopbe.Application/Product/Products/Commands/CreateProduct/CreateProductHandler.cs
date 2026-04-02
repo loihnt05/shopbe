@@ -1,22 +1,14 @@
 using MediatR;
 using Shopbe.Application.Interfaces;
-using Shopbe.Application.Products.Dtos;
+using Shopbe.Application.Product.Products.Dtos;
 using Shopbe.Application.ProductsImages.Dtos;
 using Shopbe.Application.ProductVariants.Dtos;
-using Shopbe.Domain.Entities;
 using Shopbe.Domain.Entities.Product;
 
-namespace Shopbe.Application.Products.Commands.CreateProduct;
+namespace Shopbe.Application.Product.Products.Commands.CreateProduct;
 
-public class CreateProductHandler : IRequestHandler<CreateProductCommand, ProductResponseDto>
+public class CreateProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<CreateProductCommand, ProductResponseDto>
 {
-	private readonly IUnitOfWork _unitOfWork;
-
-	public CreateProductHandler(IUnitOfWork unitOfWork)
-	{
-		_unitOfWork = unitOfWork;
-	}
-
 	public async Task<ProductResponseDto> Handle(CreateProductCommand command, CancellationToken cancellationToken)
 	{
 		if (string.IsNullOrWhiteSpace(command.Request.Name))
@@ -37,7 +29,7 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
 		ValidateImages(command.Request.Images);
 		ValidateVariants(command.Request.Variants);
 
-		var category = await _unitOfWork.Category.GetCategoryByIdAsync(command.Request.CategoryId);
+		var category = await unitOfWork.Category.GetCategoryByIdAsync(command.Request.CategoryId);
 		if (category is null)
 		{
 			throw new KeyNotFoundException($"Category with id '{command.Request.CategoryId}' was not found.");
@@ -46,7 +38,7 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
 		var images = (command.Request.Images ?? Enumerable.Empty<ProductImageRequestDto>()).ToList();
 		var variants = (command.Request.Variants ?? Enumerable.Empty<ProductVariantRequestDto>()).ToList();
 
-		var product = new Product
+		var product = new Shopbe.Domain.Entities.Product.Product
 		{
 			Id = Guid.NewGuid(),
 			Name = command.Request.Name,
@@ -76,8 +68,8 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
 			IsActive = true,
 		}).ToList();
 
-		await _unitOfWork.Product.AddProductAsync(product);
-		await _unitOfWork.SaveChangesAsync(cancellationToken);
+		await unitOfWork.Product.AddProductAsync(product);
+		await unitOfWork.SaveChangesAsync(cancellationToken);
 
 		return ProductDtoMapper.ToResponse(product);
 	}

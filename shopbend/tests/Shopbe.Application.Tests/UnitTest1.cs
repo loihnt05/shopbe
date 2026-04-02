@@ -1,16 +1,14 @@
 using Moq;
-using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Common.Interfaces.ICategory;
 using Shopbe.Application.Common.Interfaces.IProduct;
 using Shopbe.Application.Interfaces;
-using Shopbe.Application.Products.Commands.CreateProduct;
-using Shopbe.Application.Products.Commands.DeleteProduct;
-using Shopbe.Application.Products.Dtos;
+using Shopbe.Application.Product.Products.Commands.CreateProduct;
+using Shopbe.Application.Product.Products.Commands.DeleteProduct;
+using Shopbe.Application.Product.Products.Dtos;
 using Shopbe.Application.ProductsImages.Dtos;
 using Shopbe.Application.ProductVariants.Dtos;
-using Shopbe.Domain.Entities;
-using Shopbe.Domain.Entities.Product;
 using DomainCategory = Shopbe.Domain.Entities.Category.Category;
+using DomainProduct = Shopbe.Domain.Entities.Product.Product;
 
 namespace Shopbe.Application.Tests;
 
@@ -71,10 +69,10 @@ public class ProductHandlersTests
             .Setup(r => r.GetCategoryByIdAsync(categoryId))
             .ReturnsAsync(new DomainCategory { Id = categoryId, Name = "Clothes" });
 
-        Product? capturedProduct = null;
+        DomainProduct? capturedProduct = null;
         productRepository
-            .Setup(r => r.AddProductAsync(It.IsAny<Product>()))
-            .Callback<Product>(p => capturedProduct = p)
+            .Setup(r => r.AddProductAsync(It.IsAny<DomainProduct>()))
+            .Callback<DomainProduct>(p => capturedProduct = p)
             .Returns(Task.CompletedTask);
 
         var command = new CreateProductCommand(new ProductRequestDto(
@@ -103,7 +101,7 @@ public class ProductHandlersTests
         Assert.Equal(2, capturedProduct.Images.Count);
         Assert.Equal("image-primary.jpg", result.ImageUrl);
 
-        productRepository.Verify(r => r.AddProductAsync(It.IsAny<Product>()), Times.Once);
+        productRepository.Verify(r => r.AddProductAsync(It.IsAny<DomainProduct>()), Times.Once);
         unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -116,7 +114,7 @@ public class ProductHandlersTests
         var productId = Guid.NewGuid();
         productRepository
             .Setup(r => r.GetProductByIdAsync(productId))
-            .ReturnsAsync((Product?)null);
+            .ReturnsAsync((DomainProduct?)null);
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() => handler.Handle(new DeleteProductCommand(productId), CancellationToken.None));
 
@@ -133,7 +131,7 @@ public class ProductHandlersTests
         var productId = Guid.NewGuid();
         productRepository
             .Setup(r => r.GetProductByIdAsync(productId))
-            .ReturnsAsync(new Product { Id = productId, Name = "Phone" });
+            .ReturnsAsync(new DomainProduct { Id = productId, Name = "Phone" });
         productRepository
             .Setup(r => r.DeleteProductAsync(productId))
             .Returns(Task.CompletedTask);

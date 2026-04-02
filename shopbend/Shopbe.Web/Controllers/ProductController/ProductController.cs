@@ -1,12 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Shopbe.Application.Products.Commands.CreateProduct;
-using Shopbe.Application.Products.Commands.DeleteProduct;
-using Shopbe.Application.Products.Commands.UpdateProduct;
-using Shopbe.Application.Products.Dtos;
-using Shopbe.Application.Products.Queries.GetAllProducts;
-using Shopbe.Application.Products.Queries.GetProductById;
+using Shopbe.Application.Product.Products.Commands.CreateProduct;
+using Shopbe.Application.Product.Products.Commands.DeleteProduct;
+using Shopbe.Application.Product.Products.Commands.UpdateProduct;
+using Shopbe.Application.Product.Products.Dtos;
+using Shopbe.Application.Product.Products.Queries.GetAllProducts;
+using Shopbe.Application.Product.Products.Queries.GetProductById;
 
 namespace Shopbe.Web.Controllers;
 

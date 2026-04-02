@@ -1,13 +1,11 @@
 using Shopbe.Application.ProductsImages.Dtos;
 using Shopbe.Application.ProductVariants.Dtos;
-using Shopbe.Domain.Entities;
-using Shopbe.Domain.Entities.Product;
 
-namespace Shopbe.Application.Products.Dtos;
+namespace Shopbe.Application.Product.Products.Dtos;
 
 public static class ProductDtoMapper
 {
-    public static ProductResponseDto ToResponse(Product product)
+    public static ProductResponseDto ToResponse(Domain.Entities.Product.Product product)
     {
         var primaryImageUrl = product.Images
             .OrderByDescending(i => i.IsPrimary)

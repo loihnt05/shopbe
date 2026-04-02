@@ -1,7 +1,7 @@
 using MediatR;
 using Shopbe.Application.Interfaces;
 
-namespace Shopbe.Application.Products.Commands.DeleteProduct;
+namespace Shopbe.Application.Product.Products.Commands.DeleteProduct;
 
 public class DeleteProductHandler : IRequestHandler<DeleteProductCommand, bool>
 {

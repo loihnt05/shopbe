@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities.User;
+namespace Shopbe.Domain.Enums;
 
 public enum UserStatus
 {

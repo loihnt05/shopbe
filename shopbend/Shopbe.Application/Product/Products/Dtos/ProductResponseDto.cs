@@ -1,7 +1,7 @@
 using Shopbe.Application.ProductsImages.Dtos;
 using Shopbe.Application.ProductVariants.Dtos;
 
-namespace Shopbe.Application.Products.Dtos;
+namespace Shopbe.Application.Product.Products.Dtos;
 
 public record ProductResponseDto(
     Guid Id,

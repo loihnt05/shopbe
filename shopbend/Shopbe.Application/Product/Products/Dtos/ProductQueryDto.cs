@@ -1,4 +1,4 @@
-namespace Shopbe.Application.Products.Dtos;
+namespace Shopbe.Application.Product.Products.Dtos;
 
 public record ProductQueryDto(
     string? Name,

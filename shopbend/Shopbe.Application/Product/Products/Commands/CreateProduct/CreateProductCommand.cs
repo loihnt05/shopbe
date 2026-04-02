@@ -1,6 +1,6 @@
 using MediatR;
-using Shopbe.Application.Products.Dtos;
+using Shopbe.Application.Product.Products.Dtos;
 
-namespace Shopbe.Application.Products.Commands.CreateProduct;
+namespace Shopbe.Application.Product.Products.Commands.CreateProduct;
 
 public record CreateProductCommand(ProductRequestDto Request) : IRequest<ProductResponseDto>;
