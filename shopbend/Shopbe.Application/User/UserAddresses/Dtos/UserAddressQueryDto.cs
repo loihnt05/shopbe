@@ -2,7 +2,7 @@ namespace Shopbe.Application.User.UserAddresses.Dtos;
 
 public class UserAddressQueryDto
 {
-    public Guid? UserId { get; set; }
+    public Guid UserId { get; set; }
 
     public string? City { get; set; }
     public string? District { get; set; }
