@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Shopbe.Application.Interfaces;
 
 namespace Shopbe.Application;
 
@@ -9,6 +8,9 @@ public static class DependencyInjection
     {
         // Register MediatR handlers
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
+
+        // Register AutoMapper profiles from this assembly
+        services.AddAutoMapper(typeof(DependencyInjection).Assembly);
 
         return services;
     }

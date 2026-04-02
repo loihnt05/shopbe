@@ -13,8 +13,8 @@ public class UnitOfWork(ShopDbContext context) : IUnitOfWork
 {
     private IDbContextTransaction? _transaction;
     // Users
-    public IUserRepository User { get; } = new UserRepository(context);
-    public IUserAddressRepository UserAddress { get; } = new UserAddressRepository(context);
+    public IUserRepository Users { get; } = new UserRepository(context);
+    public IUserAddressRepository UserAddresses { get; } = new UserAddressRepository(context);
     // Categories
     public ICategoryRepository Category { get; } = new CategoryRepository(context);
     // Products

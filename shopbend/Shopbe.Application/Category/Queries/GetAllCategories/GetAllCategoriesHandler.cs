@@ -4,18 +4,12 @@ using Shopbe.Application.Interfaces;
 
 namespace Shopbe.Application.Category.Queries.GetAllCategories;
 
-public class GetAllCategoriesHandler : IRequestHandler<GetAllCategoriesQuery, IEnumerable<CategoryResponseDto>>
+public class GetAllCategoriesHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetAllCategoriesQuery, IEnumerable<CategoryResponseDto>>
 {
-    private readonly IUnitOfWork _unitOfWork;
-
-    public GetAllCategoriesHandler(IUnitOfWork unitOfWork)
-    {
-        _unitOfWork = unitOfWork;
-    }
-
     public async Task<IEnumerable<CategoryResponseDto>> Handle(GetAllCategoriesQuery request, CancellationToken cancellationToken)
     {
-        var categories = await _unitOfWork.Category.GetAllCategoriesAsync();
+        var categories = await unitOfWork.Category.GetAllCategoriesAsync();
 
         return categories
             .Where(c =>

@@ -25,7 +25,7 @@ public class GetAllProductsHandler(IUnitOfWork unitOfWork)
                 (filter.MaxPrice == null || p.BasePrice <= filter.MaxPrice))
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
-            .Select(p => ProductDtoMapper.ToResponse(p));
+            .Select(ProductDtoMapper.ToResponse);
 
         return filtered;
     }

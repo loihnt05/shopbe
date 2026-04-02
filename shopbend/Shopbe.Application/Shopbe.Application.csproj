@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="MediatR" Version="14.1.0" />
   </ItemGroup>
 
@@ -39,12 +41,8 @@
     <Folder Include="User\UserAddresses\Commands\CreateUser\" />
     <Folder Include="User\UserAddresses\Commands\DeleteUser\" />
     <Folder Include="User\UserAddresses\Commands\UpdateUser\" />
-    <Folder Include="User\UserAddresses\Queries\GetAllUsers\" />
-    <Folder Include="User\UserAddresses\Queries\GetUserByEmail\" />
-    <Folder Include="User\UserAddresses\Queries\GetUserById\" />
-    <Folder Include="User\UserAddresses\Queries\GetUserByKeyCloakId\" />
+    <Folder Include="User\UserAddresses\Queries\" />
     <Folder Include="User\Users\Commands\" />
-    <Folder Include="User\Users\Queries\" />
   </ItemGroup>
 
 </Project>
