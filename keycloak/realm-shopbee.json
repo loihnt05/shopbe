@@ -10,6 +10,93 @@
 
   "sslRequired": "none",
 
+  "identityProviders": [
+    {
+      "alias": "google",
+      "providerId": "google",
+      "enabled": false,
+      "updateProfileFirstLoginMode": "on",
+      "trustEmail": true,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "config": {
+        "clientId": "${GOOGLE_CLIENT_ID}",
+        "clientSecret": "${GOOGLE_CLIENT_SECRET}",
+        "defaultScope": "openid profile email",
+        "prompt": "consent",
+        "syncMode": "IMPORT"
+      }
+    },
+    {
+      "alias": "github",
+      "providerId": "github",
+      "enabled": false,
+      "updateProfileFirstLoginMode": "on",
+      "trustEmail": true,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "config": {
+        "clientId": "${GITHUB_CLIENT_ID}",
+        "clientSecret": "${GITHUB_CLIENT_SECRET}",
+        "defaultScope": "read:user user:email",
+        "syncMode": "IMPORT"
+      }
+    }
+  ],
+
+  "identityProviderMappers": [
+    {
+      "name": "google-email",
+      "identityProviderAlias": "google",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "claim": "email",
+        "user.attribute": "email",
+        "syncMode": "INHERIT"
+      }
+    },
+    {
+      "name": "google-firstName",
+      "identityProviderAlias": "google",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "claim": "given_name",
+        "user.attribute": "firstName",
+        "syncMode": "INHERIT"
+      }
+    },
+    {
+      "name": "google-lastName",
+      "identityProviderAlias": "google",
+      "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+      "config": {
+        "claim": "family_name",
+        "user.attribute": "lastName",
+        "syncMode": "INHERIT"
+      }
+    },
+    {
+      "name": "github-email",
+      "identityProviderAlias": "github",
+      "identityProviderMapper": "github-user-attribute-mapper",
+      "config": {
+        "jsonField": "email",
+        "user.attribute": "email",
+        "syncMode": "INHERIT"
+      }
+    },
+    {
+      "name": "github-login",
+      "identityProviderAlias": "github",
+      "identityProviderMapper": "github-user-attribute-mapper",
+      "config": {
+        "jsonField": "login",
+        "user.attribute": "github_login",
+        "syncMode": "INHERIT"
+      }
+    }
+  ],
+
   "clients": [
     {
       "clientId": "shopbe-swagger",

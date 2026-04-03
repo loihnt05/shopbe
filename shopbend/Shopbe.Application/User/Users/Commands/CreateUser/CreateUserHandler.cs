@@ -1,6 +1,5 @@
 using AutoMapper;
 using MediatR;
-using System.Linq;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Interfaces;
 using Shopbe.Application.User.Users.Dtos;
