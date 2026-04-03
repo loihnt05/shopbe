@@ -17,7 +17,9 @@ public class CreateUserHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser,
         var keycloakId = currentUser.KeycloakId;
         if (string.IsNullOrWhiteSpace(keycloakId))
         {
-            throw new UnauthorizedAccessException("Missing Keycloak subject (sub) claim.");
+            throw new UnauthorizedAccessException(
+                "Missing Keycloak subject claim. Expected 'sub' (or NameIdentifier). " +
+                "Make sure Swagger/Frontend is sending an access_token from Keycloak with the 'openid' scope.");
         }
 
         // Prefer claims as source-of-truth, but allow request as fallback for profile fields.

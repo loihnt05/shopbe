@@ -7,7 +7,28 @@ public sealed class CurrentUser(IHttpContextAccessor httpContextAccessor) : ICur
 {
     private ClaimsPrincipal? Principal => httpContextAccessor.HttpContext?.User;
 
-    public string? KeycloakId => Principal?.FindFirstValue("sub");
+    public string? KeycloakId
+    {
+        get
+        {
+            var principal = Principal;
+            if (principal is null) return null;
+
+            // Standard OIDC subject
+            var sub = principal.FindFirstValue("sub");
+            if (!string.IsNullOrWhiteSpace(sub)) return sub;
+
+            // Some token handlers map subject to NameIdentifier
+            var nameIdentifier = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!string.IsNullOrWhiteSpace(nameIdentifier)) return nameIdentifier;
+
+            // Fallback: some providers use this URI
+            var oid = principal.FindFirstValue("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+            if (!string.IsNullOrWhiteSpace(oid)) return oid;
+
+            return null;
+        }
+    }
     public string? Email => Principal?.FindFirstValue("email");
 
     public string? PreferredUsername => Principal?.FindFirstValue("preferred_username");
