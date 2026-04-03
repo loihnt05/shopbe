@@ -12,20 +12,13 @@ namespace Shopbe.Web.Controllers;
 
 [ApiController]
 [Route("api/categories")]
-public class CategoryController : ControllerBase
+public class CategoryController(IMediator mediator) : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public CategoryController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetAll([FromQuery] CategoryQueryDto filter, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetAllCategoriesQuery(filter), cancellationToken);
+        var result = await mediator.Send(new GetAllCategoriesQuery(filter), cancellationToken);
         return Ok(result);
     }
 
@@ -33,7 +26,7 @@ public class CategoryController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetCategoryByIdQuery(id), cancellationToken);
+        var result = await mediator.Send(new GetCategoryByIdQuery(id), cancellationToken);
         if (result is null)
             return NotFound();
         return Ok(result);
@@ -43,7 +36,7 @@ public class CategoryController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CategoryRequestDto request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new CreateCategoryCommand(request), cancellationToken);
+        var result = await mediator.Send(new CreateCategoryCommand(request), cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
@@ -51,7 +44,7 @@ public class CategoryController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] CategoryRequestDto request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new UpdateCategoryCommand(id, request), cancellationToken);
+        var result = await mediator.Send(new UpdateCategoryCommand(id, request), cancellationToken);
         return Ok(result);
     }
 
@@ -59,7 +52,7 @@ public class CategoryController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new DeleteCategoryCommand(id), cancellationToken);
+        await mediator.Send(new DeleteCategoryCommand(id), cancellationToken);
         return NoContent();
     }
 }

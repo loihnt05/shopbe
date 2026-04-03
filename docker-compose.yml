@@ -10,6 +10,7 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
     volumes:
       - ./keycloak:/opt/keycloak/data/import:ro
+      - keycloak_data:/opt/keycloak/data
 
   shopbe-web:
     build:
@@ -46,3 +47,6 @@ services:
   
 volumes:
   postgres_data:
+    name: shopbend_postgres_data
+  keycloak_data:
+    name: shopbend_keycloak_data

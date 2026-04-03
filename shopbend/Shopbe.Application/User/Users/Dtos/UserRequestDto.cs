@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Shopbe.Application.User.Users.Dtos;
 
-public class UserRequestDto
+public record UserRequestDto
 {
     // Do NOT accept KeycloakId from clients; it should be derived from the authenticated principal (sub claim).
 

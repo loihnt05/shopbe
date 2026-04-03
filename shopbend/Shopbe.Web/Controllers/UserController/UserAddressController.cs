@@ -1,4 +1,4 @@
-namespace Shopbe.Web.Controllers.UserController;
+namespace Shopbe.Web.Controllers;
 
 public class UserAddressController
 {

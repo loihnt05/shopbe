@@ -2,7 +2,7 @@ using Shopbe.Domain.Enums;
 
 namespace Shopbe.Application.User.Users.Dtos;
 
-public class UserResponseDto
+public record UserResponseDto
 {
     public Guid Id { get; set; }
     public string KeycloakId { get; set; } = string.Empty;

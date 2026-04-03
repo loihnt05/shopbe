@@ -1,10 +1,14 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Shopbe.Application;
+using Shopbe.Application.Common.Interfaces;
 using Shopbe.Infrastructure;
+using Shopbe.Infrastructure.Persistence;
+using Shopbe.Web.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 var keycloakAuthority = builder.Configuration["Authentication:Keycloak:Authority"];
@@ -17,6 +21,8 @@ if (string.IsNullOrWhiteSpace(keycloakAuthority))
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCors(options =>
 {
@@ -128,6 +134,13 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+// Apply EF Core migrations automatically (useful for local/dev & Docker compose)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ShopDbContext>();
+    db.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

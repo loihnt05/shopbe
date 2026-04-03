@@ -41,7 +41,6 @@
     <Folder Include="User\UserAddresses\Commands\CreateUser\" />
     <Folder Include="User\UserAddresses\Commands\DeleteUser\" />
     <Folder Include="User\UserAddresses\Commands\UpdateUser\" />
-    <Folder Include="User\Users\Commands\" />
   </ItemGroup>
 
 </Project>

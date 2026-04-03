@@ -1,6 +1,6 @@
 namespace Shopbe.Application.User.Users.Dtos;
 
-public class UserQueryDto
+public record UserQueryDto
 {
     public Guid? UserId { get; set; }
     public string? KeycloakId { get; set; }
