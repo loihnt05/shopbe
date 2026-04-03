@@ -1,0 +1,31 @@
+services:
+  shopbe-web:
+    # Development override: run with hot reload
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    working_dir: /src/shopbend/Shopbe.Web
+    command: >-
+      dotnet watch
+      --project ./Shopbe.Web.csproj
+      run --urls http://0.0.0.0:8080
+    volumes:
+      # Mount source for instant rebuild/hot reload
+      - ./shopbend:/src/shopbend
+      # Cache NuGet packages between runs
+      - nuget_packages:/root/.nuget/packages
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      DOTNET_USE_POLLING_FILE_WATCHER: "1"
+      # match existing env so Keycloak/Postgres still work in docker network
+      Authentication__Keycloak__Authority: http://keycloak:8080/realms/ShopBee
+      Authentication__Keycloak__AuthorityExternal: http://localhost:8080/realms/ShopBee
+      Authentication__Keycloak__RequireHttpsMetadata: "false"
+      Authentication__Keycloak__ValidateAudience: "false"
+      Authentication__Keycloak__SwaggerClientId: shopbe-swagger
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=shopbend;Username=shop;Password=shop
+
+volumes:
+  nuget_packages:
+
+
+
+
