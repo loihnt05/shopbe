@@ -10,11 +10,11 @@
 # ---- runtime ----
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-#
-#ENV ASPNETCORE_URLS=http://+:8080
+# Ensure Kestrel listens on the container port
+ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
-# 
-# COPY shopbend/Shopbe.Web/publish ./
-#
-#ENTRYPOINT ["dotnet", "Shopbe.Web.dll"]
-CMD ["dotnet", "watch", "run", "--urls=http://0.0.0.0:8080"]
+
+# Copy pre-built publish output from the build context
+COPY shopbend/Shopbe.Web/publish ./
+
+ENTRYPOINT ["dotnet", "Shopbe.Web.dll"]

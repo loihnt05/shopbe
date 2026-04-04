@@ -1,0 +1,18 @@
+# syntax=docker/dockerfile:1
+
+# Dev container for hot reload
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+
+WORKDIR /src
+
+# Optional: reduce noise & first-run wait
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_NOLOGO=1 \
+    ASPNETCORE_URLS=http://+:8080
+
+EXPOSE 8080
+
+# In dev we bind-mount the repo into /src, so no COPY here.
+CMD ["dotnet", "watch", "run", "--project", "shopbend/Shopbe.Web/Shopbe.Web.csproj", "--urls", "http://0.0.0.0:8080"]
+
+

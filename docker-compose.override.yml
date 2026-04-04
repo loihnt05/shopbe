@@ -1,5 +1,15 @@
-services: {}
+services:
+  shopbe-web:
+    build:
+      context: .
+      dockerfile: shopbend/Shopbe.Web/Dockerfile.dev
+    volumes:
+      - ./:/src:delegated
+      - shopbe_web_nuget:/root/.nuget/packages
+      - shopbe_web_build:/src/shopbend/Shopbe.Web/bin
+      - shopbe_web_obj:/src/shopbend/Shopbe.Web/obj
 
-
-
-
+volumes:
+  shopbe_web_nuget:
+  shopbe_web_build:
+  shopbe_web_obj:
