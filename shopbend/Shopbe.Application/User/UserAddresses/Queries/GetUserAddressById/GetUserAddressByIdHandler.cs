@@ -12,7 +12,7 @@ public class GetUserAddressByIdHandler(IUnitOfWork unitOfWork, IMapper mapper)
         CancellationToken cancellationToken)
     {
         var userAddress = await unitOfWork.UserAddresses.GetUserAddressByIdAsync(request.Id);
-        if (userAddress == null)
+        if (userAddress == null || userAddress.DeletedAt != null)
         {
             throw new KeyNotFoundException($"User address with ID '{request.Id}' not found.");
         }
