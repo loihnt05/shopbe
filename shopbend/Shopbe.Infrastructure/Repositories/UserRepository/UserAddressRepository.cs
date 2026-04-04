@@ -16,6 +16,35 @@ public class UserAddressRepository(ShopDbContext context) : IUserAddressReposito
     {
         return await context.UserAddresses.ToListAsync();
     }
+
+    public async Task<IEnumerable<UserAddress>> GetUserAddressesByUserIdAsync(Guid userId)
+    {
+        return await context.UserAddresses
+            .Where(x => x.UserId == userId)
+            .ToListAsync();
+    }
+
+    public async Task UnsetDefaultForUserAsync(Guid userId, Guid? exceptAddressId = null)
+    {
+        var query = context.UserAddresses
+            .Where(x => x.UserId == userId && x.IsDefault);
+
+        if (exceptAddressId.HasValue && exceptAddressId.Value != Guid.Empty)
+        {
+            query = query.Where(x => x.Id != exceptAddressId.Value);
+        }
+
+        // EF Core 7+: ExecuteUpdateAsync. Fall back to in-memory update if not available.
+        var addresses = await query.ToListAsync();
+        if (addresses.Count == 0) return;
+
+        foreach (var address in addresses)
+        {
+            address.IsDefault = false;
+        }
+
+        await context.SaveChangesAsync();
+    }
     
     public async Task CreateUserAddressAsync(UserAddress userAddress)
     {

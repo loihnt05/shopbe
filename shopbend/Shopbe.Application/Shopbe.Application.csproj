@@ -38,9 +38,6 @@
     <Folder Include="Product\ProductVariantAttributes\Commands\" />
     <Folder Include="Product\ProductVariantAttributes\Dtos\" />
     <Folder Include="Product\ProductVariantAttributes\Queries\" />
-    <Folder Include="User\UserAddresses\Commands\CreateUser\" />
-    <Folder Include="User\UserAddresses\Commands\DeleteUser\" />
-    <Folder Include="User\UserAddresses\Commands\UpdateUser\" />
   </ItemGroup>
 
 </Project>

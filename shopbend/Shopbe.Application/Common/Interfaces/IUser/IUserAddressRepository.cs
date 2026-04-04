@@ -6,6 +6,8 @@ public interface IUserAddressRepository
 {
     Task<UserAddress?> GetUserAddressByIdAsync(Guid id);
     Task<IEnumerable<UserAddress>> GetAllUserAddressAsync();
+    Task<IEnumerable<UserAddress>> GetUserAddressesByUserIdAsync(Guid userId);
+    Task UnsetDefaultForUserAsync(Guid userId, Guid? exceptAddressId = null);
     Task CreateUserAddressAsync(UserAddress userAddress);
     Task UpdateUserAddressAsync(UserAddress userAddress);
     Task DeleteUserAddressAsync(Guid id);

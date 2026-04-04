@@ -11,10 +11,10 @@ public class GetUserAddressByIdHandler(IUnitOfWork unitOfWork, IMapper mapper)
     public async Task<UserAddressResponseDto> Handle(GetUserAddressByIdQuery request,
         CancellationToken cancellationToken)
     {
-        var userAddress = await unitOfWork.UserAddresses.GetUserAddressByIdAsync(request.Filter.UserId);
+        var userAddress = await unitOfWork.UserAddresses.GetUserAddressByIdAsync(request.Id);
         if (userAddress == null)
         {
-            throw new KeyNotFoundException($"User address with ID '{request.Filter.UserId}' not found.");
+            throw new KeyNotFoundException($"User address with ID '{request.Id}' not found.");
         }
         return mapper.Map<UserAddressResponseDto>(userAddress);
     }
