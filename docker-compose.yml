@@ -11,27 +11,6 @@ services:
     volumes:
       - ./keycloak:/opt/keycloak/data/import:ro
       - keycloak_data:/opt/keycloak/data
-
-  shopbe-web:
-    build:
-      context: .
-      dockerfile: shopbend/Shopbe.Web/Dockerfile
-    container_name: shopbe-web
-    depends_on:
-      - postgres
-      - keycloak
-    ports:
-      - "5072:8080"
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      # NOTE: this overrides appsettings.json, ensuring the API (inside Docker) can reach Keycloak
-      Authentication__Keycloak__Authority: http://keycloak:8080/realms/ShopBee
-      # Swagger UI runs in the host browser, so it must use a host-reachable Keycloak URL
-      Authentication__Keycloak__AuthorityExternal: http://localhost:8080/realms/ShopBee
-      Authentication__Keycloak__RequireHttpsMetadata: "false"
-      Authentication__Keycloak__ValidateAudience: "false"
-      Authentication__Keycloak__SwaggerClientId: shopbe-swagger
-      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=shopbend;Username=shop;Password=shop
   postgres:
     image: postgres:16
     container_name: shopbend-postgres
