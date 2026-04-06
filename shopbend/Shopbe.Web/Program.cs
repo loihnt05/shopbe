@@ -158,6 +158,10 @@ app.UseHttpsRedirection();
 
 app.UseCors("Frontend");
 app.UseAuthentication();
+
+// Automatically sync Keycloak user (sub/email/name claims) into the application database.
+app.UseMiddleware<UserSyncMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();
