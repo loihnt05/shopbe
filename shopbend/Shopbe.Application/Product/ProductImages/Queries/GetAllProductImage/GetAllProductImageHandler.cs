@@ -1,5 +1,5 @@
 using MediatR;
-using Shopbe.Application.Interfaces;
+using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.ProductsImages.Dtos;
 
 namespace Shopbe.Application.ProductsImages.Queries.GetAllProductImage;

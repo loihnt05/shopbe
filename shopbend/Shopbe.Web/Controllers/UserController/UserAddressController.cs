@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shopbe.Application.Common.Interfaces;
-using Shopbe.Application.Interfaces;
 using Shopbe.Application.User.UserAddresses.Commands.CreateUserAddress;
 using Shopbe.Application.User.UserAddresses.Commands.UpdateUserAddress;
 using Shopbe.Application.User.UserAddresses.Dtos;

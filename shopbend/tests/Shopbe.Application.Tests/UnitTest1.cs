@@ -1,8 +1,8 @@
 using Moq;
+using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Common.Interfaces.IBrand;
 using Shopbe.Application.Common.Interfaces.ICategory;
 using Shopbe.Application.Common.Interfaces.IProduct;
-using Shopbe.Application.Interfaces;
 using Shopbe.Application.Product.Products.Commands.CreateProduct;
 using Shopbe.Application.Product.Products.Commands.DeleteProduct;
 using Shopbe.Application.Product.Products.Dtos;

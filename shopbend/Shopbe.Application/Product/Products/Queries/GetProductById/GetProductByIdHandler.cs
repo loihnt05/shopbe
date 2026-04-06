@@ -1,5 +1,5 @@
 using MediatR;
-using Shopbe.Application.Interfaces;
+using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Product.Products.Dtos;
 
 namespace Shopbe.Application.Product.Products.Queries.GetProductById;

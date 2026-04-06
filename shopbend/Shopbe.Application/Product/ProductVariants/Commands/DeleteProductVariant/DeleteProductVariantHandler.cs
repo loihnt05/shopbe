@@ -1,5 +1,5 @@
 using MediatR;
-using Shopbe.Application.Interfaces;
+using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.ProductVariants.Commands.UpdateProductVariant;
 
 namespace Shopbe.Application.ProductsVariants.Commands.DeleteProductVariant;

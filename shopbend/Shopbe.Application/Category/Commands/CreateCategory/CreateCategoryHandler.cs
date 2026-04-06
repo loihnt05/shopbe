@@ -1,6 +1,6 @@
 using MediatR;
 using Shopbe.Application.Category.Dtos;
-using Shopbe.Application.Interfaces;
+using Shopbe.Application.Common.Interfaces;
 using Shopbe.Domain.Entities;
 using DomainCategory = Shopbe.Domain.Entities.Category.Category;
 

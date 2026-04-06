@@ -1,5 +1,5 @@
 using MediatR;
-using Shopbe.Application.Interfaces;
+using Shopbe.Application.Common.Interfaces;
 
 namespace Shopbe.Application.ProductsImages.Commands.DeleteProductImage;
 

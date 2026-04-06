@@ -1,6 +1,6 @@
 using MediatR;
 using Shopbe.Application.Category.Dtos;
-using Shopbe.Application.Interfaces;
+using Shopbe.Application.Common.Interfaces;
 
 namespace Shopbe.Application.Category.Commands.UpdateCategory;
 

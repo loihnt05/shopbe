@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore.Storage;
+using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Common.Interfaces.IBrand;
 using Shopbe.Application.Common.Interfaces.ICategory;
 using Shopbe.Application.Common.Interfaces.IProduct;
 using Shopbe.Application.Common.Interfaces.IUser;
-using Shopbe.Application.Interfaces;
 using Shopbe.Infrastructure.Repositories;
 using Shopbe.Infrastructure.Repositories.BrandRepositories;
 using Shopbe.Infrastructure.Repositories.ProductRepositories;
@@ -25,6 +25,8 @@ public class UnitOfWork(ShopDbContext context) : IUnitOfWork
     public IProductRepository Product { get; } = new ProductRepository(context);
     public IProductVariantRepository ProductVariant { get; } = new ProductVariantRepository(context);
     public IProductImageRepository ProductImage { get; } = new ProductImageRepository(context);
+    public IProductAttributeRepository ProductAttribute { get; } = new ProductAttributeRepository(context);
+    public IAttributeValueRepository AttributeValue { get; } = new AttributeValueRepository(context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

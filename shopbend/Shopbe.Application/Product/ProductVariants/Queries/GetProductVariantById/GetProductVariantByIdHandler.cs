@@ -1,5 +1,5 @@
 using MediatR;
-using Shopbe.Application.Interfaces;
+using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.ProductsVariants.Queries.GetProductVariantById;
 using Shopbe.Application.ProductVariants.Dtos;
 

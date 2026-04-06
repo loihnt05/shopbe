@@ -1,6 +1,6 @@
 using AutoMapper;
 using MediatR;
-using Shopbe.Application.Interfaces;
+using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.User.UserAddresses.Dtos;
 
 namespace Shopbe.Application.User.UserAddresses.Queries.GetAllUserAddressesByUserId;
