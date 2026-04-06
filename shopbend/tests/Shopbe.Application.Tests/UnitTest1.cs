@@ -1,4 +1,5 @@
 using Moq;
+using Shopbe.Application.Common.Interfaces.IBrand;
 using Shopbe.Application.Common.Interfaces.ICategory;
 using Shopbe.Application.Common.Interfaces.IProduct;
 using Shopbe.Application.Interfaces;
@@ -67,7 +68,7 @@ public class ProductHandlersTests
         var categoryId = Guid.NewGuid();
         categoryRepository
             .Setup(r => r.GetCategoryByIdAsync(categoryId))
-            .ReturnsAsync(new DomainCategory { Id = categoryId, Name = "Clothes" });
+            .ReturnsAsync(new DomainCategory { Id = categoryId, Name = "Clothes", Slug = "clothes" });
 
         DomainProduct? capturedProduct = null;
         productRepository
@@ -152,12 +153,14 @@ public class ProductHandlersTests
     {
         var productRepository = new Mock<IProductRepository>(MockBehavior.Strict);
         var categoryRepository = new Mock<ICategoryRepository>(MockBehavior.Strict);
+        var brandRepository = new Mock<IBrandRepository>(MockBehavior.Strict);
         var productImageRepository = new Mock<IProductImageRepository>(MockBehavior.Strict);
         var productVariantRepository = new Mock<IProductVariantRepository>(MockBehavior.Strict);
         var unitOfWork = new Mock<IUnitOfWork>(MockBehavior.Strict);
 
         unitOfWork.SetupGet(u => u.Product).Returns(productRepository.Object);
         unitOfWork.SetupGet(u => u.Category).Returns(categoryRepository.Object);
+        unitOfWork.SetupGet(u => u.Brand).Returns(brandRepository.Object);
         unitOfWork.SetupGet(u => u.ProductImage).Returns(productImageRepository.Object);
         unitOfWork.SetupGet(u => u.ProductVariant).Returns(productVariantRepository.Object);
         unitOfWork.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);

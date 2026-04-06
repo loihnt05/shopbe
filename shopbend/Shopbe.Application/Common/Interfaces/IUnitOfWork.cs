@@ -1,4 +1,5 @@
 using Shopbe.Application.Common.Interfaces;
+using Shopbe.Application.Common.Interfaces.IBrand;
 using Shopbe.Application.Common.Interfaces.ICategory;
 using Shopbe.Application.Common.Interfaces.IProduct;
 using Shopbe.Application.Common.Interfaces.IUser;
@@ -13,6 +14,9 @@ public interface IUnitOfWork
     
     // Categories
     ICategoryRepository Category { get; }
+
+    // Brands
+    IBrandRepository Brand { get; }
     
     // Products
     IProductRepository Product { get; }

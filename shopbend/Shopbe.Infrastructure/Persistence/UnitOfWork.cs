@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore.Storage;
+using Shopbe.Application.Common.Interfaces.IBrand;
 using Shopbe.Application.Common.Interfaces.ICategory;
 using Shopbe.Application.Common.Interfaces.IProduct;
 using Shopbe.Application.Common.Interfaces.IUser;
 using Shopbe.Application.Interfaces;
 using Shopbe.Infrastructure.Repositories;
+using Shopbe.Infrastructure.Repositories.BrandRepositories;
 using Shopbe.Infrastructure.Repositories.ProductRepositories;
 using Shopbe.Infrastructure.Repositories.UserRepository;
 
@@ -17,6 +19,8 @@ public class UnitOfWork(ShopDbContext context) : IUnitOfWork
     public IUserAddressRepository UserAddresses { get; } = new UserAddressRepository(context);
     // Categories
     public ICategoryRepository Category { get; } = new CategoryRepository(context);
+    // Brands
+    public IBrandRepository Brand { get; } = new BrandRepository(context);
     // Products
     public IProductRepository Product { get; } = new ProductRepository(context);
     public IProductVariantRepository ProductVariant { get; } = new ProductVariantRepository(context);

@@ -19,6 +19,7 @@ public class GetCategoryByIdHandler : IRequestHandler<GetCategoryByIdQuery, Cate
         if (category is null)
             return null;
 
-        return new CategoryResponseDto(category.Id, category.Name, category.ParentCategoryId);
+        return new CategoryResponseDto(category.Id, category.Name, category.ParentCategoryId, category.Slug, category.SortOrder,
+            category.IsActive);
     }
 }
