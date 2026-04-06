@@ -370,14 +370,17 @@ cd ecommerce-platform
 docker compose up -d
 ```
 
+This `docker compose` setup starts **infrastructure only** (Keycloak + Postgres). The ASP.NET Core backend is intended to run **locally**.
+
 ---
 
 ## 3️⃣ Run Backend
 
 ```bash
+cd shopbend
 dotnet restore
 dotnet build
-dotnet run
+dotnet run --project Shopbe.Web
 ```
 
 ---
