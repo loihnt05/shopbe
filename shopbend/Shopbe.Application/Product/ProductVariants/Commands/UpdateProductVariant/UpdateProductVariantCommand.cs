@@ -1,6 +1,6 @@
 using MediatR;
-using Shopbe.Application.ProductVariants.Dtos;
+using Shopbe.Application.Product.ProductVariants.Dtos;
 
-namespace Shopbe.Application.ProductVariants.Commands.UpdateProductVariant;
+namespace Shopbe.Application.Product.ProductVariants.Commands.UpdateProductVariant;
 
-public record UpdateProductVariantCommand(ProductVariantRequestDto request, Guid Id) : IRequest<ProductVariantResponseDto>;
+public record UpdateProductVariantCommand(ProductVariantRequestDto Request, Guid Id) : IRequest<ProductVariantResponseDto>;

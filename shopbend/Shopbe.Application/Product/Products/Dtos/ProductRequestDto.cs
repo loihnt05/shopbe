@@ -1,5 +1,5 @@
-using Shopbe.Application.ProductsImages.Dtos;
-using Shopbe.Application.ProductVariants.Dtos;
+using Shopbe.Application.Product.ProductImages.Dtos;
+using Shopbe.Application.Product.ProductVariants.Dtos;
 
 namespace Shopbe.Application.Product.Products.Dtos;
 

@@ -1,4 +1,4 @@
-namespace Shopbe.Application.ProductVariants.Dtos;
+namespace Shopbe.Application.Product.ProductVariants.Dtos;
 
 public record ProductVariantQueryDto(
     string? SKU,

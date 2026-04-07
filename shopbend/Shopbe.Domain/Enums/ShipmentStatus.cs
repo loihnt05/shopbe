@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities.Shipping;
+namespace Shopbe.Domain.Enums;
 
 public enum ShipmentStatus
 {

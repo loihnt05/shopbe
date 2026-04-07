@@ -1,8 +1,8 @@
 using MediatR;
 using Shopbe.Application.Common.Interfaces;
+using Shopbe.Application.Product.ProductImages.Dtos;
 using Shopbe.Application.Product.Products.Dtos;
-using Shopbe.Application.ProductsImages.Dtos;
-using Shopbe.Application.ProductVariants.Dtos;
+using Shopbe.Application.Product.ProductVariants.Dtos;
 using Shopbe.Domain.Entities.Product;
 
 namespace Shopbe.Application.Product.Products.Commands.CreateProduct;

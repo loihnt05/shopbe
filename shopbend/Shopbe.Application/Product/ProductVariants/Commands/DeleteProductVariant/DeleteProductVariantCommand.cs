@@ -1,4 +1,4 @@
 using MediatR;
 
-namespace Shopbe.Application.ProductVariants.Commands.UpdateProductVariant;
+namespace Shopbe.Application.Product.ProductVariants.Commands.DeleteProductVariant;
 public record DeleteProductVariantCommand(Guid Id) : IRequest<bool>;

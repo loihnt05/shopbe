@@ -4,18 +4,12 @@ using Shopbe.Application.Common.Interfaces;
 
 namespace Shopbe.Application.Category.Queries.GetCategoryById;
 
-public class GetCategoryByIdHandler : IRequestHandler<GetCategoryByIdQuery, CategoryResponseDto?>
+public class GetCategoryByIdHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetCategoryByIdQuery, CategoryResponseDto?>
 {
-    private readonly IUnitOfWork _unitOfWork;
-
-    public GetCategoryByIdHandler(IUnitOfWork unitOfWork)
-    {
-        _unitOfWork = unitOfWork;
-    }
-
     public async Task<CategoryResponseDto?> Handle(GetCategoryByIdQuery request, CancellationToken cancellationToken)
     {
-        var category = await _unitOfWork.Category.GetCategoryByIdAsync(request.Id);
+        var category = await unitOfWork.Category.GetCategoryByIdAsync(request.Id);
         if (category is null)
             return null;
 

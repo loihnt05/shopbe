@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Shopbe.Domain.Enums;
 
 namespace Shopbe.Domain.Entities.Payment;
 

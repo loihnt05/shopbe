@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities.Order;
+namespace Shopbe.Domain.Enums;
 
 public enum DiscountType
 {

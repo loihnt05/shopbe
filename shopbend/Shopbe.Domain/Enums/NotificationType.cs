@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities.Notification;
+namespace Shopbe.Domain.Enums;
 
 public enum NotificationType
 {

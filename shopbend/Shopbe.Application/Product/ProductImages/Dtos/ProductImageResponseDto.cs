@@ -1,4 +1,4 @@
-namespace Shopbe.Application.ProductsImages.Dtos;
+namespace Shopbe.Application.Product.ProductImages.Dtos;
 public record ProductImageResponseDto(
     Guid Id,
     string ImageUrl,

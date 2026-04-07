@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities.Payment;
+namespace Shopbe.Domain.Enums;
 
 public enum PaymentStatus
 {

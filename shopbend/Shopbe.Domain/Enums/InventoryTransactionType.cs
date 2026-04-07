@@ -1,4 +1,4 @@
-namespace Shopbe.Domain.Entities.Product;
+namespace Shopbe.Domain.Enums;
 
 public enum InventoryTransactionType
 {

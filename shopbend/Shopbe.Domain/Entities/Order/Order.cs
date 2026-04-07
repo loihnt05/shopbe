@@ -1,5 +1,6 @@
 using Shopbe.Domain.Entities.Shipping;
 using Shopbe.Domain.Entities.User;
+using Shopbe.Domain.Enums;
 
 namespace Shopbe.Domain.Entities.Order;
 

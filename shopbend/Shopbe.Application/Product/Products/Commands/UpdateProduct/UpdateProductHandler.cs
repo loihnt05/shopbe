@@ -1,24 +1,17 @@
 using MediatR;
 using Shopbe.Application.Common.Interfaces;
+using Shopbe.Application.Product.ProductImages.Dtos;
 using Shopbe.Application.Product.Products.Dtos;
-using Shopbe.Application.ProductsImages.Dtos;
-using Shopbe.Application.ProductVariants.Dtos;
+using Shopbe.Application.Product.ProductVariants.Dtos;
 using Shopbe.Domain.Entities.Product;
 
 namespace Shopbe.Application.Product.Products.Commands.UpdateProduct;
 
-public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, ProductResponseDto>
+public class UpdateProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<UpdateProductCommand, ProductResponseDto>
 {
-    private readonly IUnitOfWork _unitOfWork;
-
-    public UpdateProductHandler(IUnitOfWork unitOfWork)
-    {
-        _unitOfWork = unitOfWork;
-    }
-
     public async Task<ProductResponseDto> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
     {
-        var product = await _unitOfWork.Product.GetProductByIdAsync(request.Id);
+        var product = await unitOfWork.Product.GetProductByIdAsync(request.Id);
         if (product is null)
             throw new KeyNotFoundException($"Product with id '{request.Id}' was not found.");
 
@@ -34,7 +27,7 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, Produc
         ValidateImages(request.Request.Images);
         ValidateVariants(request.Request.Variants);
 
-        var category = await _unitOfWork.Category.GetCategoryByIdAsync(request.Request.CategoryId);
+        var category = await unitOfWork.Category.GetCategoryByIdAsync(request.Request.CategoryId);
         if (category is null)
             throw new KeyNotFoundException($"Category with id '{request.Request.CategoryId}' was not found.");
 
@@ -73,8 +66,8 @@ public class UpdateProductHandler : IRequestHandler<UpdateProductCommand, Produc
             });
         }
 
-        await _unitOfWork.Product.UpdateProductAsync(product);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await unitOfWork.Product.UpdateProductAsync(product);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return ProductDtoMapper.ToResponse(product);
     }

@@ -1,18 +1,13 @@
 using MediatR;
 using Shopbe.Application.Common.Interfaces;
-using Shopbe.Application.ProductsVariants.Queries.GetAllProducts;
-using Shopbe.Application.ProductVariants.Dtos;
+using Shopbe.Application.Product.ProductVariants.Dtos;
 
-namespace Shopbe.Application.ProductsVariants.Queires.GetAllProductVariant;
+namespace Shopbe.Application.Product.ProductVariants.Queries.GetAllProductVariant;
 
-public class GetAllProductVariantHandler : IRequestHandler<GetAllProductVariantQuery, IEnumerable<ProductVariantResponseDto>>
+public class GetAllProductVariantHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetAllProductVariantQuery, IEnumerable<ProductVariantResponseDto>>
 {
-    private readonly IUnitOfWork _unitOfWork;
-
-    public GetAllProductVariantHandler(IUnitOfWork unitOfWork)
-    {
-        _unitOfWork = unitOfWork;
-    }
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<IEnumerable<ProductVariantResponseDto>> Handle(GetAllProductVariantQuery request, CancellationToken cancellationToken)
     {

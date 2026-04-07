@@ -3,11 +3,11 @@ using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Common.Interfaces.IBrand;
 using Shopbe.Application.Common.Interfaces.ICategory;
 using Shopbe.Application.Common.Interfaces.IProduct;
+using Shopbe.Application.Product.ProductImages.Dtos;
 using Shopbe.Application.Product.Products.Commands.CreateProduct;
 using Shopbe.Application.Product.Products.Commands.DeleteProduct;
 using Shopbe.Application.Product.Products.Dtos;
-using Shopbe.Application.ProductsImages.Dtos;
-using Shopbe.Application.ProductVariants.Dtos;
+using Shopbe.Application.Product.ProductVariants.Dtos;
 using DomainCategory = Shopbe.Domain.Entities.Category.Category;
 using DomainProduct = Shopbe.Domain.Entities.Product.Product;
 

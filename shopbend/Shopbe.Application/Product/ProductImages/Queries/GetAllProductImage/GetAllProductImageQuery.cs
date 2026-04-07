@@ -1,7 +1,6 @@
 using MediatR;
-using Shopbe.Application.ProductsImages.Dtos;
-using Shopbe.Domain.Entities;
+using Shopbe.Application.Product.ProductImages.Dtos;
 
-namespace Shopbe.Application.ProductsImages.Queries.GetAllProductImage;
+namespace Shopbe.Application.Product.ProductImages.Queries.GetAllProductImage;
 
 public record GetAllProductImageQuery(ProductImageQueryDto Filter) : IRequest<IEnumerable<ProductImageResponseDto>>;

@@ -1,17 +1,13 @@
 using MediatR;
 using Shopbe.Application.Common.Interfaces;
-using Shopbe.Application.ProductsImages.Dtos;
+using Shopbe.Application.Product.ProductImages.Dtos;
 
-namespace Shopbe.Application.ProductsImages.Queries.GetProductImageById;
+namespace Shopbe.Application.Product.ProductImages.Queries.GetProductImageById;
 
-public class GetProductImageByIdHandler : IRequestHandler<GetProductImageByIdQuery, ProductImageResponseDto>
+public class GetProductImageByIdHandler(IUnitOfWork unitOfWork)
+    : IRequestHandler<GetProductImageByIdQuery, ProductImageResponseDto>
 {
-    private readonly IUnitOfWork _unitOfWork;
-
-    public GetProductImageByIdHandler(IUnitOfWork unitOfWork)
-    {
-        _unitOfWork = unitOfWork;
-    }
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
     public async Task<ProductImageResponseDto> Handle(GetProductImageByIdQuery request, CancellationToken cancellationToken)
     {

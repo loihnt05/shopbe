@@ -1,3 +1,5 @@
+using Shopbe.Domain.Enums;
+
 namespace Shopbe.Domain.Entities.Order;
 
 public class Coupon : BaseEntity

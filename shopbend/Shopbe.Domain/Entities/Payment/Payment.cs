@@ -1,3 +1,5 @@
+using Shopbe.Domain.Enums;
+
 namespace Shopbe.Domain.Entities.Payment;
 
 public class Payment : BaseEntity

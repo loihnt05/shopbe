@@ -1,6 +1,6 @@
 using MediatR;
-using Shopbe.Application.ProductVariants.Dtos;
+using Shopbe.Application.Product.ProductVariants.Dtos;
 
-namespace Shopbe.Application.ProductsVariants.Queries.GetProductVariantById;
+namespace Shopbe.Application.Product.ProductVariants.Queries.GetProductVariantById;
 
 public record GetProductVariantByIdQuery(Guid Id) : IRequest<ProductVariantResponseDto>;
