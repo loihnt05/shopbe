@@ -1,11 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Common.Interfaces.IProduct;
-using Shopbe.Domain.Entities;
 using Shopbe.Domain.Entities.Product;
 using Shopbe.Infrastructure.Persistence;
 
-namespace Shopbe.Infrastructure.Repositories;
+namespace Shopbe.Infrastructure.Repositories.ProductRepositories;
 
 public class ProductImageRepository(ShopDbContext context) : IProductImageRepository
 {
