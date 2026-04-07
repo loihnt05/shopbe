@@ -51,10 +51,12 @@ public class ProductVariantRepository(ShopDbContext context) : IProductVariantRe
     public async Task AddProductVariantAsync(ProductVariant productVariant)
     {
         await context.ProductVariants.AddAsync(productVariant);
+        await context.SaveChangesAsync();
     }
     public async Task UpdateProductVariantAsync(ProductVariant productVariant)
     {
         context.ProductVariants.Update(productVariant);
+        await context.SaveChangesAsync();
     }
     public async Task DeleteProductVariantAsync(Guid productVariantId)
     {
@@ -63,6 +65,7 @@ public class ProductVariantRepository(ShopDbContext context) : IProductVariantRe
         {
             productVariant.DeletedAt = DateTime.UtcNow;
             context.ProductVariants.Update(productVariant);
+            await context.SaveChangesAsync();
         }
     }
 }
