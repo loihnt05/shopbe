@@ -21,6 +21,7 @@ public interface IUnitOfWork
     IProductRepository Product { get; }
     IProductImageRepository ProductImage { get; }
     IProductVariantRepository ProductVariant { get; }
+    IProductVariantAttributeRepository ProductVariantAttribute { get; }
     IProductAttributeRepository ProductAttribute { get; }
     IAttributeValueRepository AttributeValue { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

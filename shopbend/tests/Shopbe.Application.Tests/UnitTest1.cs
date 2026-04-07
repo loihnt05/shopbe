@@ -51,8 +51,8 @@ public class ProductHandlersTests
             Images: null,
             Variants: new[]
             {
-                new ProductVariantRequestDto("SKU-001", 20, 2, "a.jpg"),
-                new ProductVariantRequestDto("sku-001", 21, 3, "b.jpg")
+                new ProductVariantRequestDto("SKU-001", 20, 2, true, null),
+                new ProductVariantRequestDto("sku-001", 21, 3, true, null)
             }
         ));
 
@@ -90,7 +90,7 @@ public class ProductHandlersTests
             },
             Variants: new[]
             {
-                new ProductVariantRequestDto("SNK-42", 99.99m, 5, "variant.jpg")
+                new ProductVariantRequestDto("SNK-42", 99.99m, 5, true, null)
             }
         ));
 

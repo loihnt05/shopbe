@@ -9,6 +9,19 @@ public class DeleteProductVariantHandler(IUnitOfWork unitOfWork) : IRequestHandl
 
     public async Task<bool> Handle(DeleteProductVariantCommand request, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        if (request.Id == Guid.Empty)
+        {
+            throw new ArgumentException("Variant id is required.");
+        }
+
+        var existing = await _unitOfWork.ProductVariant.GetProductVariantByIdAsync(request.Id);
+        if (existing is null)
+        {
+            return false;
+        }
+
+        await _unitOfWork.ProductVariant.DeleteProductVariantAsync(request.Id);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

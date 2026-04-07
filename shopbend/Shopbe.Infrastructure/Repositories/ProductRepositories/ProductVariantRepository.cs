@@ -9,18 +9,45 @@ public class ProductVariantRepository(ShopDbContext context) : IProductVariantRe
 {
     public async Task<ProductVariant?> GetProductVariantByIdAsync(Guid productVariantId)
     {
-        return await context.ProductVariants.FindAsync(productVariantId);
+        return await context.ProductVariants
+            .AsNoTracking()
+            .FirstOrDefaultAsync(pv => pv.Id == productVariantId && pv.DeletedAt == null);
     }
+
+    public async Task<ProductVariant?> GetProductVariantByIdWithAttributesAsync(Guid productVariantId)
+    {
+        return await context.ProductVariants
+            .Include(pv => pv.ProductVariantAttributes)
+            .ThenInclude(pva => pva.AttributeValue)
+            .FirstOrDefaultAsync(pv => pv.Id == productVariantId && pv.DeletedAt == null);
+    }
+
     public async Task<IEnumerable<ProductVariant>> GetProductVariantsByProductIdAsync(Guid productId)
     {
         return await context.ProductVariants
-            .Where(pv => pv.ProductId == productId)
+            .AsNoTracking()
+            .Where(pv => pv.ProductId == productId && pv.DeletedAt == null)
             .ToListAsync();
     }
+
     public async Task<IEnumerable<ProductVariant>> GetAllProductVariantsAsync()
     {
-        return await context.ProductVariants.ToListAsync();
+        return await context.ProductVariants
+            .AsNoTracking()
+            .Where(pv => pv.DeletedAt == null)
+            .ToListAsync();
     }
+
+    public async Task<bool> ProductVariantSkuExistsAsync(Guid productId, string sku, Guid? excludingVariantId = null)
+    {
+        var normalized = sku.Trim();
+        return await context.ProductVariants
+            .AsNoTracking()
+            .Where(pv => pv.ProductId == productId && pv.DeletedAt == null)
+            .Where(pv => excludingVariantId == null || pv.Id != excludingVariantId)
+            .AnyAsync(pv => pv.Sku == normalized);
+    }
+
     public async Task AddProductVariantAsync(ProductVariant productVariant)
     {
         await context.ProductVariants.AddAsync(productVariant);
@@ -34,7 +61,8 @@ public class ProductVariantRepository(ShopDbContext context) : IProductVariantRe
         var productVariant = await context.ProductVariants.FindAsync(productVariantId);
         if (productVariant != null)
         {
-            context.ProductVariants.Remove(productVariant);
+            productVariant.DeletedAt = DateTime.UtcNow;
+            context.ProductVariants.Update(productVariant);
         }
     }
 }

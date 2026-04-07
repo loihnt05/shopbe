@@ -24,6 +24,7 @@ public class UnitOfWork(ShopDbContext context) : IUnitOfWork
     // Products
     public IProductRepository Product { get; } = new ProductRepository(context);
     public IProductVariantRepository ProductVariant { get; } = new ProductVariantRepository(context);
+    public IProductVariantAttributeRepository ProductVariantAttribute { get; } = new ProductVariantAttributeRepository(context);
     public IProductImageRepository ProductImage { get; } = new ProductImageRepository(context);
     public IProductAttributeRepository ProductAttribute { get; } = new ProductAttributeRepository(context);
     public IAttributeValueRepository AttributeValue { get; } = new AttributeValueRepository(context);

@@ -26,10 +26,12 @@ public static class ProductDtoMapper
         var variants = product.Variants
             .Select(v => new ProductVariantResponseDto(
                 v.Id,
+                v.ProductId,
                 v.Sku,
                 v.Price,
                 v.StockQuantity,
-                ImageUrl: primaryImageUrl
+                v.IsActive,
+                v.ProductVariantAttributes.Select(a => a.AttributeValueId).Distinct().ToList()
             ))
             .ToList();
 
