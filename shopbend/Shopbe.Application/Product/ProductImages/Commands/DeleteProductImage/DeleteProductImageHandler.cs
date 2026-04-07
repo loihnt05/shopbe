@@ -9,7 +9,19 @@ public class DeleteProductImageHandler(IUnitOfWork unitOfWork) : IRequestHandler
 
     public async Task<bool> Handle(DeleteProductImageCommand request, CancellationToken cancellationToken)
     {
+    if (request.Id == Guid.Empty)
+    {
+      throw new ArgumentException("Image id is required.");
+    }
 
-        return true;
+    var existing = await _unitOfWork.ProductImage.GetProductImageByIdAsync(request.Id);
+    if (existing is null)
+    {
+      return false;
+    }
+
+    await _unitOfWork.ProductImage.DeleteProductImageAsync(request.Id);
+    await _unitOfWork.SaveChangesAsync(cancellationToken);
+    return true;
     }           
 }

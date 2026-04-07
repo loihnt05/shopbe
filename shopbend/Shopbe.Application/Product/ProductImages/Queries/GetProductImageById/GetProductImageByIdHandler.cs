@@ -11,6 +11,12 @@ public class GetProductImageByIdHandler(IUnitOfWork unitOfWork)
 
     public async Task<ProductImageResponseDto> Handle(GetProductImageByIdQuery request, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var image = await _unitOfWork.ProductImage.GetProductImageByIdAsync(request.Id);
+        if (image is null)
+        {
+            throw new KeyNotFoundException($"Product image with id '{request.Id}' was not found.");
+        }
+
+        return new ProductImageResponseDto(image.Id, image.ImageUrl, image.IsPrimary);
     }
 }
