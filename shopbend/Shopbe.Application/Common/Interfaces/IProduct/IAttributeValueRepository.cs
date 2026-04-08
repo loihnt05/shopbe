@@ -4,6 +4,7 @@ namespace Shopbe.Application.Common.Interfaces.IProduct;
 
 public interface IAttributeValueRepository
 {
+    Task<IEnumerable<AttributeValue>> GetAllAsync();
     Task<IEnumerable<AttributeValue>> GetValuesByAttributeIdAsync(Guid attributeId);
     Task<AttributeValue?> GetValueByIdAsync(Guid attributeValueId);
     Task<AttributeValue?> GetValueAsync(Guid attributeId, string value);

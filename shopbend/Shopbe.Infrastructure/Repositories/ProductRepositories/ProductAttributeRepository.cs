@@ -10,6 +10,7 @@ public class ProductAttributeRepository(ShopDbContext context) : IProductAttribu
     public async Task<IEnumerable<ProductAttribute>> GetAllAttributesAsync()
     {
         return await context.ProductAttributes
+            .Include(a => a.AttributeValues)
             .AsNoTracking()
             .OrderBy(a => a.Name)
             .ToListAsync();

@@ -9,12 +9,17 @@ public class GetAllAttributeValuesHandler(IUnitOfWork unitOfWork)
 {
     public async Task<IEnumerable<AttributeValueResponseDto>> Handle(GetAllAttributeValuesQuery request, CancellationToken cancellationToken)
     {
-        if (request.AttributeId == Guid.Empty)
+        IEnumerable<Domain.Entities.Product.AttributeValue> values;
+        
+        if (request.AttributeId.HasValue && request.AttributeId.Value != Guid.Empty)
         {
-            throw new ArgumentException("AttributeId is required to list attribute values. Use /api/attributes/{attributeId}/values.");
+            values = await unitOfWork.AttributeValue.GetValuesByAttributeIdAsync(request.AttributeId.Value);
+        }
+        else
+        {
+            values = await unitOfWork.AttributeValue.GetAllAsync();
         }
 
-        var values = await unitOfWork.AttributeValue.GetValuesByAttributeIdAsync(request.AttributeId);
         return values.Select(v => new AttributeValueResponseDto(v.Id, v.Value, v.AttributeId));
     }
 }

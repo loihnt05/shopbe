@@ -1,4 +1,6 @@
 namespace Shopbe.Application.Product.ProductAttributes.Dtos;
 
-public record ProductAttributeValueRequestDto(string Value);
+public record ProductAttributeQueryDto(
+    Guid? Id
+    );
 

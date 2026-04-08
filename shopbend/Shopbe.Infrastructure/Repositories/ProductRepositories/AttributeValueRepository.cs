@@ -7,6 +7,14 @@ namespace Shopbe.Infrastructure.Repositories.ProductRepositories;
 
 public class AttributeValueRepository(ShopDbContext context) : IAttributeValueRepository
 {
+    public async Task<IEnumerable<AttributeValue>> GetAllAsync()
+    {
+        return await context.AttributeValues
+            .AsNoTracking()
+            .OrderBy(v => v.Value)
+            .ToListAsync();
+    }
+
     public async Task<IEnumerable<AttributeValue>> GetValuesByAttributeIdAsync(Guid attributeId)
     {
         return await context.AttributeValues

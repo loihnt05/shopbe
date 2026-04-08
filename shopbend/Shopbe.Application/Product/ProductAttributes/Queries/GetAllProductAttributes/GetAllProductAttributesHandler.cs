@@ -12,7 +12,13 @@ public class GetAllProductAttributesHandler(IUnitOfWork unitOfWork)
     {
         var attributes = await unitOfWork.ProductAttribute.GetAllAttributesAsync();
         return attributes
-            .Select(a => new ProductAttributeResponseDto(a.Id, a.Name, Array.Empty<AttributeValueResponseDto>()))
+            .Select(a => new ProductAttributeResponseDto(
+                a.Id,
+                a.Name,
+                a.AttributeValues
+                    .OrderBy(v => v.Value)
+                    .Select(v => new AttributeValueResponseDto(v.Id, v.Value, v.AttributeId))
+                    .ToArray()))
             .ToList();
     }
 }

@@ -71,7 +71,7 @@ public class ProductAttributesController(IMediator mediator) : ControllerBase
     // Returns all attribute values; can be filtered by attributeId query parameter.
     [HttpGet("values")]
     public async Task<ActionResult<IEnumerable<AttributeValueResponseDto>>> GetAllValues(
-        [FromQuery] Guid attributeId,
+        [FromQuery] Guid? attributeId,
         CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetAllAttributeValuesQuery(attributeId), cancellationToken);
