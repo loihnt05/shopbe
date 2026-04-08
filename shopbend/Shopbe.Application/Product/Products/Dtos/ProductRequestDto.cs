@@ -6,10 +6,10 @@ namespace Shopbe.Application.Product.Products.Dtos;
 public record ProductRequestDto(
     string Name,
     string Description,
-    decimal Price,
-    string ImageUrl,
-    int StockQuantity,
+    decimal BasePrice,
     Guid CategoryId,
+    Guid? BrandId,
+    bool IsActive,
     IEnumerable<ProductImageRequestDto>? Images,
     IEnumerable<ProductVariantRequestDto>? Variants
 );

@@ -16,14 +16,9 @@ public class CreateProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<Crea
 			throw new ArgumentException("Product name is required.");
 		}
 
-		if (command.Request.Price < 0)
+		if (command.Request.BasePrice < 0)
 		{
 			throw new ArgumentException("Product price cannot be negative.");
-		}
-
-		if (command.Request.StockQuantity < 0)
-		{
-			throw new ArgumentException("Stock quantity cannot be negative.");
 		}
 
 		ValidateImages(command.Request.Images);
@@ -43,9 +38,10 @@ public class CreateProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<Crea
 			Id = Guid.NewGuid(),
 			Name = command.Request.Name,
 			Description = command.Request.Description,
-			BasePrice = command.Request.Price,
+			BasePrice = command.Request.BasePrice,
 			CategoryId = command.Request.CategoryId,
-			IsActive = true,
+			BrandId = command.Request.BrandId,
+			IsActive = command.Request.IsActive,
 			// Optional: set navigation property when available
 			Category = category
 		};
@@ -74,22 +70,6 @@ public class CreateProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<Crea
 		return ProductDtoMapper.ToResponse(product);
 	}
 
-	private static string ResolvePrimaryImageUrl(string fallbackImageUrl, IEnumerable<ProductImageRequestDto> images)
-	{
-		var primaryImage = images.FirstOrDefault(i => i.IsPrimary);
-		if (primaryImage is not null)
-		{
-			return primaryImage.ImageUrl;
-		}
-
-		var firstImage = images.FirstOrDefault();
-		if (firstImage is not null)
-		{
-			return firstImage.ImageUrl;
-		}
-
-		return fallbackImageUrl;
-	}
 
 	private static void ValidateImages(IEnumerable<ProductImageRequestDto>? images)
 	{

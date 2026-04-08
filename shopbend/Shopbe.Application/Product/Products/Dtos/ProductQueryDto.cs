@@ -3,8 +3,8 @@ namespace Shopbe.Application.Product.Products.Dtos;
 public record ProductQueryDto(
     string? Name,
     Guid? CategoryId,
-    decimal? MinPrice,
-    decimal? MaxPrice,
+    decimal? MinBasePrice,
+    decimal? MaxBasePrice,
     int PageNumber = 1,
     int PageSize = 20
 );

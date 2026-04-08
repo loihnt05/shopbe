@@ -18,11 +18,8 @@ public class UpdateProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<Upda
         if (string.IsNullOrWhiteSpace(request.Request.Name))
             throw new ArgumentException("Product name is required.");
 
-        if (request.Request.Price < 0)
+        if (request.Request.BasePrice < 0)
             throw new ArgumentException("Product price cannot be negative.");
-
-        if (request.Request.StockQuantity < 0)
-            throw new ArgumentException("Stock quantity cannot be negative.");
 
         ValidateImages(request.Request.Images);
         ValidateVariants(request.Request.Variants);
@@ -36,8 +33,10 @@ public class UpdateProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<Upda
 
         product.Name = request.Request.Name;
         product.Description = request.Request.Description;
-        product.BasePrice = request.Request.Price;
+        product.BasePrice = request.Request.BasePrice;
         product.CategoryId = request.Request.CategoryId;
+        product.BrandId = request.Request.BrandId;
+        product.IsActive = request.Request.IsActive;
         product.Category = category;
 
         product.Images.Clear();
@@ -72,22 +71,6 @@ public class UpdateProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<Upda
         return ProductDtoMapper.ToResponse(product);
     }
 
-    private static string ResolvePrimaryImageUrl(string fallbackImageUrl, IEnumerable<ProductImageRequestDto> images)
-    {
-        var primaryImage = images.FirstOrDefault(i => i.IsPrimary);
-        if (primaryImage is not null)
-        {
-            return primaryImage.ImageUrl;
-        }
-
-        var firstImage = images.FirstOrDefault();
-        if (firstImage is not null)
-        {
-            return firstImage.ImageUrl;
-        }
-
-        return fallbackImageUrl;
-    }
 
     private static void ValidateImages(IEnumerable<ProductImageRequestDto>? images)
     {

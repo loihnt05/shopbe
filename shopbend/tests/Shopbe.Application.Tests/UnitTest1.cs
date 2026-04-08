@@ -24,10 +24,10 @@ public class ProductHandlersTests
         var command = new CreateProductCommand(new ProductRequestDto(
             Name: "   ",
             Description: "Any",
-            Price: 10,
-            ImageUrl: "fallback.jpg",
-            StockQuantity: 2,
+            BasePrice: 10,
             CategoryId: Guid.NewGuid(),
+            BrandId: null,
+            IsActive: true,
             Images: null,
             Variants: null
         ));
@@ -44,10 +44,10 @@ public class ProductHandlersTests
         var command = new CreateProductCommand(new ProductRequestDto(
             Name: "T-Shirt",
             Description: "Basic tee",
-            Price: 20,
-            ImageUrl: "fallback.jpg",
-            StockQuantity: 5,
+            BasePrice: 20,
             CategoryId: Guid.NewGuid(),
+            BrandId: null,
+            IsActive: true,
             Images: null,
             Variants: new[]
             {
@@ -79,10 +79,10 @@ public class ProductHandlersTests
         var command = new CreateProductCommand(new ProductRequestDto(
             Name: "Sneakers",
             Description: "Running shoes",
-            Price: 99.99m,
-            ImageUrl: "fallback.jpg",
-            StockQuantity: 10,
+            BasePrice: 99.99m,
             CategoryId: categoryId,
+            BrandId: null,
+            IsActive: true,
             Images: new[]
             {
                 new ProductImageRequestDto("image-1.jpg", false),
@@ -100,7 +100,7 @@ public class ProductHandlersTests
         Assert.Contains(capturedProduct!.Images, i => i.IsPrimary && i.ImageUrl == "image-primary.jpg");
         Assert.Single(capturedProduct.Variants);
         Assert.Equal(2, capturedProduct.Images.Count);
-        Assert.Equal("image-primary.jpg", result.ImageUrl);
+        Assert.Equal("image-primary.jpg", result.PrimaryImageUrl);
 
         productRepository.Verify(r => r.AddProductAsync(It.IsAny<DomainProduct>()), Times.Once);
         unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);

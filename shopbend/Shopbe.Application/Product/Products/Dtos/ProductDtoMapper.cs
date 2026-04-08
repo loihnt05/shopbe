@@ -19,9 +19,8 @@ public static class ProductDtoMapper
             .Select(i => new ProductImageResponseDto(i.Id, i.ImageUrl, i.IsPrimary))
             .ToList();
 
-        // If the product uses variants, treat total stock as the sum of variant stock.
-        // Otherwise, fall back to 0 (domain product currently has no StockQuantity).
-        var stockQuantity = product.Variants.Sum(v => v.StockQuantity);
+        // Domain has no product-level stock; expose a computed sum for convenience.
+        var totalStockQuantity = product.Variants.Sum(v => v.StockQuantity);
 
         var variants = product.Variants
             .Select(v => new ProductVariantResponseDto(
@@ -31,18 +30,24 @@ public static class ProductDtoMapper
                 v.Price,
                 v.StockQuantity,
                 v.IsActive,
-                v.ProductVariantAttributes.Select(a => a.AttributeValueId).Distinct().ToList()
+                v.ProductVariantAttributes
+                    .Select(a => a.AttributeValueId)
+                    .Distinct()
+                    .ToList()
             ))
             .ToList();
 
         return new ProductResponseDto(
             product.Id,
             product.Name,
+            product.Slug,
             product.Description ?? string.Empty,
             product.BasePrice,
             primaryImageUrl,
-            stockQuantity,
+            totalStockQuantity,
             product.CategoryId,
+            product.BrandId,
+            product.IsActive,
             images,
             variants
         );

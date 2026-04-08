@@ -21,8 +21,8 @@ public class GetAllProductsHandler(IUnitOfWork unitOfWork)
             .Where(p =>
                 (string.IsNullOrWhiteSpace(filter.Name) || p.Name.Contains(filter.Name, StringComparison.OrdinalIgnoreCase)) &&
                 (filter.CategoryId == null || p.CategoryId == filter.CategoryId) &&
-                (filter.MinPrice == null || p.BasePrice >= filter.MinPrice) &&
-                (filter.MaxPrice == null || p.BasePrice <= filter.MaxPrice))
+                (filter.MinBasePrice == null || p.BasePrice >= filter.MinBasePrice) &&
+                (filter.MaxBasePrice == null || p.BasePrice <= filter.MaxBasePrice))
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(ProductDtoMapper.ToResponse);
