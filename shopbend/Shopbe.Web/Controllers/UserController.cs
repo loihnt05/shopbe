@@ -8,7 +8,7 @@ using Shopbe.Application.User.Users.Queries.GetUserByEmail;
 using Shopbe.Application.User.Users.Queries.GetUserById;
 using Shopbe.Application.User.Users.Queries.GetUserByKeycloakId;
 
-namespace Shopbe.Web.Controllers.UserController;
+namespace Shopbe.Web.Controllers;
 
 [ApiController]
 [Route("api/users")]

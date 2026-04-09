@@ -9,7 +9,7 @@ using Shopbe.Application.User.UserAddresses.Queries.GetAllUserAddresses;
 using Shopbe.Application.User.UserAddresses.Queries.GetAllUserAddressesByUserId;
 using Shopbe.Application.User.UserAddresses.Queries.GetUserAddressById;
 
-namespace Shopbe.Web.Controllers.UserController;
+namespace Shopbe.Web.Controllers;
 
 [ApiController]
 [Route("api/user-addresses")]
