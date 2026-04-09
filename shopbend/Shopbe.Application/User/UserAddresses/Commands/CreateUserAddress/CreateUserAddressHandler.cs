@@ -18,7 +18,7 @@ public class CreateUserAddressHandler(IUnitOfWork unitOfWork, ICurrentUser curre
                 "Make sure the client sends a valid access_token issued by Keycloak.");
         }
 
-        var user = await unitOfWork.Users.GetUserByKeyCloakIdAsync(keycloakId);
+        var user = await unitOfWork.Users.GetUserByKeycloakIdAsync(keycloakId);
         if (user is null)
         {
             throw new KeyNotFoundException(

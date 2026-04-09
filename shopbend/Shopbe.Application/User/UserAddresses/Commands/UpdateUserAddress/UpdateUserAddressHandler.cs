@@ -16,7 +16,7 @@ public class UpdateUserAddressHandler(IUnitOfWork unitOfWork, ICurrentUser curre
             throw new UnauthorizedAccessException("Missing Keycloak subject claim.");
         }
 
-        var user = await unitOfWork.Users.GetUserByKeyCloakIdAsync(keycloakId);
+        var user = await unitOfWork.Users.GetUserByKeycloakIdAsync(keycloakId);
         if (user is null)
         {
             throw new KeyNotFoundException(

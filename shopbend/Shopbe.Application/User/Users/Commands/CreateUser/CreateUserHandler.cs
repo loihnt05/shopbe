@@ -35,7 +35,7 @@ public class CreateUserHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser,
         }
 
         // 1) If user already exists by KeycloakId => update profile fields (sync) and return.
-        var existingByKeycloak = await unitOfWork.Users.GetUserByKeyCloakIdAsync(keycloakId);
+        var existingByKeycloak = await unitOfWork.Users.GetUserByKeycloakIdAsync(keycloakId);
         if (existingByKeycloak is not null)
         {
             existingByKeycloak.Email = email;
@@ -72,7 +72,7 @@ public class CreateUserHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser,
         catch (Exception)
         {
             // Concurrency/idempotency: another request might have created it. Re-read and return.
-            var created = await unitOfWork.Users.GetUserByKeyCloakIdAsync(keycloakId);
+            var created = await unitOfWork.Users.GetUserByKeycloakIdAsync(keycloakId);
             if (created is null) throw;
 
             return mapper.Map<UserResponseDto>(created);

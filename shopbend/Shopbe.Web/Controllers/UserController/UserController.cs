@@ -6,7 +6,7 @@ using Shopbe.Application.User.Users.Dtos;
 using Shopbe.Application.User.Users.Queries.GetAllUsers;
 using Shopbe.Application.User.Users.Queries.GetUserByEmail;
 using Shopbe.Application.User.Users.Queries.GetUserById;
-using Shopbe.Application.User.Users.Queries.GetUserByKeyCloakId;
+using Shopbe.Application.User.Users.Queries.GetUserByKeycloakId;
 
 namespace Shopbe.Web.Controllers.UserController;
 

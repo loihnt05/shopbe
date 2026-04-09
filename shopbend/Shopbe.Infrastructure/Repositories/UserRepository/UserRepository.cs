@@ -13,7 +13,7 @@ public class UserRepository(ShopDbContext context) : IUserRepository
         return await context.Users.FindAsync(userId);
     }
 
-    public async Task<User?> GetUserByKeyCloakIdAsync(string keyCloakId)
+    public async Task<User?> GetUserByKeycloakIdAsync(string keyCloakId)
     {
         // For non-primary-key lookups, use a LINQ query.
         return await context.Users

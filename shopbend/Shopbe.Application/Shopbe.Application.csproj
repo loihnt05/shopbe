@@ -20,11 +20,7 @@
     <Folder Include="Common\Interfaces\IPayment\" />
     <Folder Include="Common\Interfaces\IReview\" />
     <Folder Include="Common\Interfaces\IShipping\" />
-    <Folder Include="Common\Interfaces\IShoppingCart\" />
     <Folder Include="Product\AttributeValues\Commands\" />
-    <Folder Include="Product\Brands\Commands\" />
-    <Folder Include="Product\Brands\Dtos\" />
-    <Folder Include="Product\Brands\Queries\" />
     <Folder Include="Product\InventoryTransactions\Commands\" />
     <Folder Include="Product\InventoryTransactions\Dtos\" />
     <Folder Include="Product\InventoryTransactions\Queries\" />

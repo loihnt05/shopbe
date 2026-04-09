@@ -3,9 +3,9 @@ using MediatR;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.User.Users.Dtos;
 
-namespace Shopbe.Application.User.Users.Queries.GetUserByKeyCloakId;
+namespace Shopbe.Application.User.Users.Queries.GetUserByKeycloakId;
 
-public class GetUserByKeyCloakId(IUnitOfWork unitOfWork, IMapper mapper) 
+public class GetUserByKeycloakId(IUnitOfWork unitOfWork, IMapper mapper) 
     : IRequestHandler<GetUserByKeycloakQuery, UserResponseDto>
 {
     public async Task<UserResponseDto> Handle(GetUserByKeycloakQuery request, CancellationToken cancellationToken)
@@ -15,7 +15,7 @@ public class GetUserByKeyCloakId(IUnitOfWork unitOfWork, IMapper mapper)
             throw new ArgumentException("Keycloak must be provided.");
         }
         
-        var user = await unitOfWork.Users.GetUserByKeyCloakIdAsync(request.Filter.KeycloakId);
+        var user = await unitOfWork.Users.GetUserByKeycloakIdAsync(request.Filter.KeycloakId);
 
         if (user is null)
         {

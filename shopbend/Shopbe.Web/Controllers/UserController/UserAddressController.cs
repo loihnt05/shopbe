@@ -55,7 +55,7 @@ public class UserAddressController(IMediator mediator, ICurrentUser currentUser,
             throw new UnauthorizedAccessException("Missing Keycloak subject claim.");
         }
 
-        var user = await unitOfWork.Users.GetUserByKeyCloakIdAsync(keycloakId);
+        var user = await unitOfWork.Users.GetUserByKeycloakIdAsync(keycloakId);
         if (user is null)
         {
             throw new KeyNotFoundException("User not found in application database. Call POST /api/users/sync first.");
