@@ -48,6 +48,9 @@ public class ShopDbContext(DbContextOptions<ShopDbContext> options) : DbContext(
     public DbSet<Shipment> Shipments { get; set; }
     public DbSet<ShippingFee> ShippingFees { get; set; }
 
+    public DbSet<ShippingZone> ShippingZones { get; set; }
+    public DbSet<ShippingZoneDistrict> ShippingZoneDistricts { get; set; }
+
     public DbSet<Review> Reviews { get; set; }
     public DbSet<ReviewImage> ReviewImages { get; set; }
 

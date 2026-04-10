@@ -4,12 +4,14 @@ using Shopbe.Application.Common.Interfaces.IBrand;
 using Shopbe.Application.Common.Interfaces.ICategory;
 using Shopbe.Application.Common.Interfaces.IOrder;
 using Shopbe.Application.Common.Interfaces.IProduct;
+using Shopbe.Application.Common.Interfaces.IShipping;
 using Shopbe.Application.Common.Interfaces.IShoppingCart;
 using Shopbe.Application.Common.Interfaces.IUser;
 using Shopbe.Infrastructure.Repositories;
 using Shopbe.Infrastructure.Repositories.BrandRepositories;
 using Shopbe.Infrastructure.Repositories.OrderRepositories;
 using Shopbe.Infrastructure.Repositories.ProductRepositories;
+using Shopbe.Infrastructure.Repositories.ShippingRepositories;
 using Shopbe.Infrastructure.Repositories.ShoppingCartRepositories;
 using Shopbe.Infrastructure.Repositories.UserRepository;
 
@@ -38,6 +40,11 @@ public class UnitOfWork(ShopDbContext context) : IUnitOfWork
 
     // Orders
     public IOrderRepository Orders { get; } = new OrderRepository(context);
+
+    // Shipping
+    public IShippingZoneRepository ShippingZones { get; } = new ShippingZoneRepository(context);
+    public IShippingZoneDistrictRepository ShippingZoneDistricts { get; } = new ShippingZoneDistrictRepository(context);
+    public IShipmentRepository Shipments { get; } = new ShipmentRepository(context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

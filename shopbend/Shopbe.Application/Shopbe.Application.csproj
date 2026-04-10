@@ -18,7 +18,6 @@
   <ItemGroup>
     <Folder Include="Common\Interfaces\IPayment\" />
     <Folder Include="Common\Interfaces\IReview\" />
-    <Folder Include="Common\Interfaces\IShipping\" />
     <Folder Include="Product\AttributeValues\Commands\" />
     <Folder Include="Product\InventoryTransactions\Commands\" />
     <Folder Include="Product\InventoryTransactions\Dtos\" />
