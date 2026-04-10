@@ -16,7 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Common\Interfaces\IOrder\" />
     <Folder Include="Common\Interfaces\IPayment\" />
     <Folder Include="Common\Interfaces\IReview\" />
     <Folder Include="Common\Interfaces\IShipping\" />

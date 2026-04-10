@@ -1,5 +1,6 @@
 using Shopbe.Application.Common.Interfaces.IBrand;
 using Shopbe.Application.Common.Interfaces.ICategory;
+using Shopbe.Application.Common.Interfaces.IOrder;
 using Shopbe.Application.Common.Interfaces.IProduct;
 using Shopbe.Application.Common.Interfaces.IShoppingCart;
 using Shopbe.Application.Common.Interfaces.IUser;
@@ -28,6 +29,9 @@ public interface IUnitOfWork
 
     // Shopping cart
     ICartRepository Cart { get; }
+
+    // Orders
+    IOrderRepository Orders { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();
