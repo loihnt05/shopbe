@@ -6,6 +6,7 @@ using Shopbe.Application.Order.Commands.CancelOrder;
 using Shopbe.Application.Order.Commands.CreateOrder;
 using Shopbe.Application.Order.Dtos;
 using Shopbe.Application.Order.Queries.GetMyOrderById;
+using Shopbe.Application.Order.Queries.GetMyOrderHistory;
 using Shopbe.Application.Order.Queries.GetMyOrders;
 
 namespace Shopbe.Web.Controllers;
@@ -43,6 +44,14 @@ public class OrdersController(IMediator mediator, ICurrentUser currentUser, IUni
         var userId = await GetAppUserIdAsync(cancellationToken);
         var result = await mediator.Send(new GetMyOrderByIdQuery(userId, id), cancellationToken);
         return result is null ? NotFound() : Ok(result);
+    }
+
+    [HttpGet("{id:guid}/history")]
+    public async Task<IActionResult> GetHistory(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = await GetAppUserIdAsync(cancellationToken);
+        var result = await mediator.Send(new GetMyOrderHistoryQuery(userId, id), cancellationToken);
+        return Ok(result);
     }
 
     [HttpPost]
