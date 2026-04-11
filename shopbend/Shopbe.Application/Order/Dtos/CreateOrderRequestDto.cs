@@ -21,6 +21,11 @@ public class CreateOrderRequestDto
     public string ShippingDistrict { get; set; } = string.Empty;
     public string ShippingWard { get; set; } = string.Empty;
     public string? Note { get; set; }
+
+    /// <summary>
+    /// Optional coupon code to apply to this order.
+    /// </summary>
+    public string? CouponCode { get; set; }
 }
 
 

@@ -114,6 +114,61 @@ public sealed class CreateOrderHandler(IUnitOfWork unitOfWork) : IRequestHandler
             }
 
             order.SubtotalAmount = subtotal;
+
+            // Apply coupon (if provided)
+            var couponCode = request.Request.CouponCode?.Trim();
+            if (!string.IsNullOrWhiteSpace(couponCode))
+            {
+                var coupon = await unitOfWork.Coupons.GetByCodeAsync(couponCode!, cancellationToken);
+                if (coupon is null)
+                    throw new KeyNotFoundException("Coupon not found");
+                if (!coupon.IsActive)
+                    throw new InvalidOperationException("Coupon is inactive");
+                if (coupon.ExpiredAt <= DateTime.UtcNow)
+                    throw new InvalidOperationException("Coupon is expired");
+                if (subtotal < coupon.MinOrderAmount)
+                    throw new InvalidOperationException("Order does not meet minimum amount for coupon");
+
+                decimal discountAmount;
+                switch (coupon.DiscountType)
+                {
+                    case DiscountType.Percentage:
+                        discountAmount = subtotal * (coupon.Value / 100m);
+                        break;
+                    case DiscountType.FixedAmount:
+                        discountAmount = coupon.Value;
+                        break;
+                    case DiscountType.FreeShipping:
+                        // Shipping fee currently always 0 here; keep semantics as 0 discount.
+                        discountAmount = 0m;
+                        break;
+                    default:
+                        throw new InvalidOperationException("Unsupported discount type");
+                }
+
+                if (coupon.MaxDiscountAmount.HasValue)
+                    discountAmount = Math.Min(discountAmount, coupon.MaxDiscountAmount.Value);
+
+                // Guard against negative totals
+                discountAmount = Math.Clamp(discountAmount, 0m, subtotal);
+
+                order.DiscountAmount = discountAmount;
+
+                // Consume coupon usage atomically (usage_count + coupon_usages)
+                var consumed = await unitOfWork.Coupons.TryConsumeAsync(
+                    coupon.Id,
+                    request.UserId,
+                    order.Id,
+                    DateTime.UtcNow,
+                    cancellationToken);
+
+                if (!consumed)
+                    throw new InvalidOperationException("Coupon usage limit reached");
+
+                // Associate coupon navigation for response reading (not persisted as FK in model yet)
+                order.Coupon = coupon;
+            }
+
             order.TotalAmount = subtotal - order.DiscountAmount + order.ShippingFee;
 
             order.OrderStatusHistory.Add(new OrderStatusHistory

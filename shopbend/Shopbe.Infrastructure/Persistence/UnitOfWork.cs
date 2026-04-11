@@ -40,6 +40,7 @@ public class UnitOfWork(ShopDbContext context) : IUnitOfWork
 
     // Orders
     public IOrderRepository Orders { get; } = new OrderRepository(context);
+    public ICouponRepository Coupons { get; } = new CouponRepository(context);
 
     // Shipping
     public IShippingZoneRepository ShippingZones { get; } = new ShippingZoneRepository(context);

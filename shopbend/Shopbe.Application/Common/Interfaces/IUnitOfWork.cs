@@ -33,6 +33,7 @@ public interface IUnitOfWork
 
     // Orders
     IOrderRepository Orders { get; }
+    ICouponRepository Coupons { get; }
 
     // Shipping
     IShippingZoneRepository ShippingZones { get; }
