@@ -5,6 +5,7 @@ using Shopbe.Application.Common.Interfaces.IProduct;
 using Shopbe.Application.Common.Interfaces.IShipping;
 using Shopbe.Application.Common.Interfaces.IShoppingCart;
 using Shopbe.Application.Common.Interfaces.IUser;
+using Shopbe.Application.Common.Interfaces.IPayment;
 
 namespace Shopbe.Application.Common.Interfaces;
 public interface IUnitOfWork
@@ -39,6 +40,12 @@ public interface IUnitOfWork
     IShippingZoneRepository ShippingZones { get; }
     IShippingZoneDistrictRepository ShippingZoneDistricts { get; }
     IShipmentRepository Shipments { get; }
+
+    // Payments
+    IPaymentRepository Payments { get; }
+    IPaymentTransactionRepository PaymentTransactions { get; }
+    IRefundRepository Refunds { get; }
+    IIdempotencyKeyRepository IdempotencyKeys { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();

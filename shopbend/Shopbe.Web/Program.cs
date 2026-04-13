@@ -140,6 +140,13 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ShopDbContext>();
     db.Database.Migrate();
+
+    // Seed sample data in Development for quick manual testing.
+    if (app.Environment.IsDevelopment())
+    {
+        var logger = scope.ServiceProvider.GetService<ILoggerFactory>()?.CreateLogger("ShopbeDbSeeder");
+        await ShopbeDbSeeder.SeedAsync(db, logger);
+    }
 }
 
 // Configure the HTTP request pipeline.
@@ -219,4 +226,7 @@ static void AddRoleClaims(ClaimsIdentity identity, string? json, string? resourc
         }
     }
 }
+
+// Expose Program for integration/E2E tests (WebApplicationFactory<Program>).
+public partial class Program;
 

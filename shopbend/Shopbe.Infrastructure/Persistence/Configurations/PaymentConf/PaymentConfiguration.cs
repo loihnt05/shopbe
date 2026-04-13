@@ -34,6 +34,12 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder.Property(p => p.PaidAt);
 
+        builder.Property(p => p.StripePaymentIntentId)
+            .HasMaxLength(255);
+
+        builder.Property(p => p.LastStripeEventId)
+            .HasMaxLength(255);
+
         // Relationships
         builder.HasOne(p => p.Order)
             .WithMany(o => o.Payments)

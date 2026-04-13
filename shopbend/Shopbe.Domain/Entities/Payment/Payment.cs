@@ -10,6 +10,10 @@ public class Payment : BaseEntity
     public decimal Amount { get; set; }
     public string Currency { get; set; } = "VND";
     public DateTime? PaidAt { get; set; }
+
+    // Stripe
+    public string? StripePaymentIntentId { get; set; }
+    public string? LastStripeEventId { get; set; }
     
     // Navigation Properties
     public Order.Order? Order { get; set; }

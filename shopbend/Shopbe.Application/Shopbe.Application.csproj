@@ -16,8 +16,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Common\Interfaces\IPayment\" />
     <Folder Include="Common\Interfaces\IReview\" />
+    <Folder Include="Coupon\Commands\" />
+    <Folder Include="Coupon\Queries\" />
+    <Folder Include="Payment\Payments\Commands\" />
+    <Folder Include="Payment\Payments\Queries\" />
+    <Folder Include="Payment\PaymentTransaction\Commands\" />
+    <Folder Include="Payment\PaymentTransaction\Queries\" />
+    <Folder Include="Payment\Refund\Commands\" />
+    <Folder Include="Payment\Refund\Queries\" />
     <Folder Include="Product\AttributeValues\Commands\" />
     <Folder Include="Product\InventoryTransactions\Commands\" />
     <Folder Include="Product\InventoryTransactions\Dtos\" />
@@ -28,6 +35,12 @@
     <Folder Include="Product\ProductVariantAttributes\Commands\" />
     <Folder Include="Product\ProductVariantAttributes\Dtos\" />
     <Folder Include="Product\ProductVariantAttributes\Queries\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Stripe.net">
+      <HintPath>..\..\..\..\.nuget\packages\stripe.net\51.0.0\lib\net8.0\Stripe.net.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

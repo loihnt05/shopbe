@@ -10,6 +10,7 @@ using Shopbe.Application.Common.Interfaces.IUser;
 using Shopbe.Infrastructure.Repositories;
 using Shopbe.Infrastructure.Repositories.BrandRepositories;
 using Shopbe.Infrastructure.Repositories.OrderRepositories;
+using Shopbe.Infrastructure.Repositories.PaymentRepositories;
 using Shopbe.Infrastructure.Repositories.ProductRepositories;
 using Shopbe.Infrastructure.Repositories.ShippingRepositories;
 using Shopbe.Infrastructure.Repositories.ShoppingCartRepositories;
@@ -46,6 +47,14 @@ public class UnitOfWork(ShopDbContext context) : IUnitOfWork
     public IShippingZoneRepository ShippingZones { get; } = new ShippingZoneRepository(context);
     public IShippingZoneDistrictRepository ShippingZoneDistricts { get; } = new ShippingZoneDistrictRepository(context);
     public IShipmentRepository Shipments { get; } = new ShipmentRepository(context);
+
+    // Payments
+    public Shopbe.Application.Common.Interfaces.IPayment.IPaymentRepository Payments { get; } = new PaymentRepository(context);
+    public Shopbe.Application.Common.Interfaces.IPayment.IPaymentTransactionRepository PaymentTransactions { get; } =
+        new PaymentTransactionRepository(context);
+    public Shopbe.Application.Common.Interfaces.IPayment.IRefundRepository Refunds { get; } = new RefundRepository(context);
+    public Shopbe.Application.Common.Interfaces.IPayment.IIdempotencyKeyRepository IdempotencyKeys { get; } =
+        new IdempotencyKeyRepository(context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
