@@ -34,7 +34,10 @@ public class StripeService(IOptions<Shopbe.Infrastructure.StripeOptions> opts) :
             Metadata           = new Dictionary<string, string> { ["order_id"] = orderId.ToString() },
             AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
             {
-                Enabled = true
+                Enabled = true,
+                // Avoid redirect-based payment methods (which require return_url on confirmation).
+                // Keeps the flow compatible with backend/CLI confirmation for card payments.
+                AllowRedirects = "never"
             }
         };
 

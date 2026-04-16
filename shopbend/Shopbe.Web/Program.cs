@@ -161,7 +161,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// Stripe CLI/webhooks may forward over HTTP in local dev; avoid redirecting this endpoint
+// because redirects can drop the Stripe-Signature header.
+app.UseWhen(
+    context => !context.Request.Path.StartsWithSegments("/api/payments/stripe/webhook"),
+    appBuilder => appBuilder.UseHttpsRedirection());
 
 app.UseCors("Frontend");
 app.UseAuthentication();
