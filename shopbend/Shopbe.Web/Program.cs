@@ -14,6 +14,18 @@ var builder = WebApplication.CreateBuilder(args);
 var keycloakAuthority = builder.Configuration["Authentication:Keycloak:Authority"];
 var keycloakAuthorityExternal = builder.Configuration["Authentication:Keycloak:AuthorityExternal"];
 
+if (builder.Environment.IsDevelopment())
+{
+    var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
+    var stripeWebhookSecret = builder.Configuration["Stripe:WebhookSecret"];
+
+    if (string.IsNullOrWhiteSpace(stripeSecretKey) || string.IsNullOrWhiteSpace(stripeWebhookSecret))
+    {
+        throw new InvalidOperationException(
+            "Missing Stripe configuration for Development. Put Stripe:SecretKey / Stripe:WebhookSecret in appsettings.Development.json (preferred) or provide them via user-secrets/environment variables.");
+    }
+}
+
 if (string.IsNullOrWhiteSpace(keycloakAuthority))
 {
     throw new InvalidOperationException("Missing Authentication:Keycloak:Authority configuration.");

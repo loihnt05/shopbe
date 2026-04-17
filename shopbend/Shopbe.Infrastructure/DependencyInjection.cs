@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.Infrastructure.Persistence;
 using Shopbe.Infrastructure.Repositories;
@@ -15,7 +16,7 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         
         services.Configure<StripeOptions>(opts => configuration.GetSection("Stripe").Bind(opts));
-        StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"];
+        services.AddSingleton<IConfigureOptions<StripeOptions>, ConfigureStripeConfiguration>();
         services.AddScoped<IStripeService, StripeService>();
         
         services.AddDbContext<ShopDbContext>(options =>
@@ -25,5 +26,14 @@ public static class DependencyInjection
         
 
         return services;
+    }
+}
+
+internal sealed class ConfigureStripeConfiguration : IConfigureOptions<StripeOptions>
+{
+    public void Configure(StripeOptions options)
+    {
+        // Stripe SDK stores the API key in a static global; set it once once options are bound.
+        StripeConfiguration.ApiKey = options.SecretKey;
     }
 }
