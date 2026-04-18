@@ -9,7 +9,6 @@
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="15.1.1" />
     <PackageReference Include="MediatR" Version="14.1.0" />
-    <PackageReference Include="Stripe.net" Version="51.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,6 +37,10 @@
     <Folder Include="Product\ProductVariantAttributes\Queries\" />
   </ItemGroup>
 
-  <!-- Stripe is pulled via NuGet so builds work in Docker/CI (avoid machine-specific HintPath). -->
+  <ItemGroup>
+    <Reference Include="Stripe.net">
+      <HintPath>..\..\..\..\.nuget\packages\stripe.net\51.0.0\lib\net8.0\Stripe.net.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 
 </Project>
