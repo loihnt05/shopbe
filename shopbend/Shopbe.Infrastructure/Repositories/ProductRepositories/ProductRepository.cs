@@ -21,6 +21,54 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             .Include(p => p.Variants)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<Product>> GetProductsPageAsync(
+        string? name,
+        Guid? categoryId,
+        decimal? minBasePrice,
+        decimal? maxBasePrice,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = context.Products
+            .AsNoTracking()
+            .Include(p => p.Images)
+            .Include(p => p.Variants)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            // Use ILIKE for Postgres when possible (EF.Functions) for efficient case-insensitive search.
+            query = query.Where(p => EF.Functions.ILike(p.Name, $"%{name}%"));
+        }
+
+        if (categoryId is not null)
+        {
+            query = query.Where(p => p.CategoryId == categoryId);
+        }
+
+        if (minBasePrice is not null)
+        {
+            query = query.Where(p => p.BasePrice >= minBasePrice);
+        }
+
+        if (maxBasePrice is not null)
+        {
+            query = query.Where(p => p.BasePrice <= maxBasePrice);
+        }
+
+        // Stable order for paging.
+        query = query.OrderBy(p => p.CreatedAt).ThenBy(p => p.Id);
+
+        pageNumber = pageNumber < 1 ? 1 : pageNumber;
+        pageSize = pageSize < 1 ? 20 : pageSize;
+
+        return await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+    }
     public async Task AddProductAsync(Product product)
     {
         await context.Products.AddAsync(product);

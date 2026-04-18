@@ -23,6 +23,47 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  seeder:
+    image: mcr.microsoft.com/dotnet/sdk:8.0.403
+    container_name: shopbend-seeder
+    working_dir: /src
+    entrypoint: []
+    depends_on:
+      - postgres
+    volumes:
+      - ./shopbend:/src:rw
+    environment:
+      # Optional: Shopbe.Seeder reads SHOPBE_ConnectionString too.
+      SHOPBE_ConnectionString: Host=postgres;Port=5432;Database=shopbend;Username=shop;Password=shop
+    command:
+      - dotnet
+      - run
+      - --project
+      - Shopbe.Seeder/Shopbe.Seeder.csproj
+      - --
+      - --migrate
+      - "true"
+      - --mode
+      - ensure
+      - --categories
+      - "50"
+      - --brands
+      - "200"
+      - --products
+      - "20000"
+      - --variants-min
+      - "1"
+      - --variants-max
+      - "5"
+      - --users
+      - "5000"
+      - --orders
+      - "20000"
+      - --max-items
+      - "5"
+      - --batch
+      - "2000"
   
 volumes:
   postgres_data:

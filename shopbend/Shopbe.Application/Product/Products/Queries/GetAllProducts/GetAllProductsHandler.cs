@@ -9,24 +9,21 @@ public class GetAllProductsHandler(IUnitOfWork unitOfWork)
 {
     public async Task<IEnumerable<ProductResponseDto>> Handle(GetAllProductsQuery request, CancellationToken cancellationToken)
     {
-        var products = await unitOfWork.Product.GetAllProductsAsync();
-
         // Query DTO is currently non-nullable on the request type, but keep this in case binding changes.
         var filter = request.Filter;
 
         var pageNumber = filter.PageNumber < 1 ? 1 : filter.PageNumber;
         var pageSize = filter.PageSize < 1 ? 20 : filter.PageSize;
 
-        var filtered = products
-            .Where(p =>
-                (string.IsNullOrWhiteSpace(filter.Name) || p.Name.Contains(filter.Name, StringComparison.OrdinalIgnoreCase)) &&
-                (filter.CategoryId == null || p.CategoryId == filter.CategoryId) &&
-                (filter.MinBasePrice == null || p.BasePrice >= filter.MinBasePrice) &&
-                (filter.MaxBasePrice == null || p.BasePrice <= filter.MaxBasePrice))
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .Select(ProductDtoMapper.ToResponse);
+        var page = await unitOfWork.Product.GetProductsPageAsync(
+            filter.Name,
+            filter.CategoryId,
+            filter.MinBasePrice,
+            filter.MaxBasePrice,
+            pageNumber,
+            pageSize,
+            cancellationToken);
 
-        return filtered;
+        return page.Select(ProductDtoMapper.ToResponse);
     }
 }
