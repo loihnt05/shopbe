@@ -6,6 +6,7 @@ using Shopbe.Application.Common.Interfaces.IShipping;
 using Shopbe.Application.Common.Interfaces.IShoppingCart;
 using Shopbe.Application.Common.Interfaces.IUser;
 using Shopbe.Application.Common.Interfaces.IPayment;
+using Shopbe.Application.Common.Interfaces.IReview;
 
 namespace Shopbe.Application.Common.Interfaces;
 public interface IUnitOfWork
@@ -43,6 +44,9 @@ public interface IUnitOfWork
 
     // Reviews
     IReviewRepository Reviews { get; }
+
+    // Payments
+    IPaymentRepository Payments { get; }
 
     IPaymentTransactionRepository PaymentTransactions { get; }
     IRefundRepository Refunds { get; }

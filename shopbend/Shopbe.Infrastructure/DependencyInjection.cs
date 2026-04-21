@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.Infrastructure.Persistence;
 using Shopbe.Infrastructure.Repositories;
+using Shopbe.Infrastructure.Storage;
 using Stripe;
 
 namespace Shopbe.Infrastructure;
@@ -23,6 +24,9 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString)
         );
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Local uploads storage (review images, etc.)
+        services.AddScoped<IFileStorage, LocalFileStorage>();
         
 
         return services;
