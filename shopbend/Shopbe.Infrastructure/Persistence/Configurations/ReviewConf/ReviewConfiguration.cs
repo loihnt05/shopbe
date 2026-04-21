@@ -35,6 +35,7 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
         builder.HasIndex(r => r.ProductId);
         builder.HasIndex(r => r.OrderId);
         builder.HasIndex(r => new { r.ProductId, r.UserId });
+        builder.HasIndex(r => new { r.OrderId, r.ProductId, r.UserId }).IsUnique();
 
         // Relationships
         builder.HasOne(r => r.User)

@@ -2,6 +2,7 @@ using Shopbe.Application.Common.Interfaces.IBrand;
 using Shopbe.Application.Common.Interfaces.ICategory;
 using Shopbe.Application.Common.Interfaces.IOrder;
 using Shopbe.Application.Common.Interfaces.IProduct;
+using Shopbe.Application.Common.Interfaces.IReview;
 using Shopbe.Application.Common.Interfaces.IShipping;
 using Shopbe.Application.Common.Interfaces.IShoppingCart;
 using Shopbe.Application.Common.Interfaces.IUser;
@@ -40,6 +41,9 @@ public interface IUnitOfWork
     IShippingZoneRepository ShippingZones { get; }
     IShippingZoneDistrictRepository ShippingZoneDistricts { get; }
     IShipmentRepository Shipments { get; }
+
+    // Reviews
+    IReviewRepository Reviews { get; }
 
     // Payments
     IPaymentRepository Payments { get; }

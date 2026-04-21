@@ -12,6 +12,7 @@ using Shopbe.Infrastructure.Repositories.BrandRepositories;
 using Shopbe.Infrastructure.Repositories.OrderRepositories;
 using Shopbe.Infrastructure.Repositories.PaymentRepositories;
 using Shopbe.Infrastructure.Repositories.ProductRepositories;
+using Shopbe.Infrastructure.Repositories.ReviewRepositories;
 using Shopbe.Infrastructure.Repositories.ShippingRepositories;
 using Shopbe.Infrastructure.Repositories.ShoppingCartRepositories;
 using Shopbe.Infrastructure.Repositories.UserRepository;
@@ -55,6 +56,9 @@ public class UnitOfWork(ShopDbContext context) : IUnitOfWork
     public Shopbe.Application.Common.Interfaces.IPayment.IRefundRepository Refunds { get; } = new RefundRepository(context);
     public Shopbe.Application.Common.Interfaces.IPayment.IIdempotencyKeyRepository IdempotencyKeys { get; } =
         new IdempotencyKeyRepository(context);
+
+    // Reviews
+    public Shopbe.Application.Common.Interfaces.IReview.IReviewRepository Reviews { get; } = new ReviewRepository(context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

@@ -16,7 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Common\Interfaces\IReview\" />
     <Folder Include="Coupon\Commands\" />
     <Folder Include="Coupon\Queries\" />
     <Folder Include="Payment\Payments\Commands\" />
