@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shopbe.Application.Review.Commands.CreateReview;
 using Shopbe.Application.Review.Dtos;
+using Shopbe.Application.Review.Queries.GetMyReviewableProducts;
 using Shopbe.Application.Review.Queries.GetProductReviews;
 
 namespace Shopbe.Web.Controllers;
@@ -26,6 +27,16 @@ public class ReviewsController(IMediator mediator) : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new CreateReviewCommand(request), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("me/reviewable-products")]
+    [Authorize]
+    public async Task<ActionResult<IReadOnlyList<ReviewableProductDto>>> GetMyReviewableProducts(
+        [FromQuery] bool onlyNotReviewed = false,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await mediator.Send(new GetMyReviewableProductsQuery(onlyNotReviewed), cancellationToken);
         return Ok(result);
     }
 }

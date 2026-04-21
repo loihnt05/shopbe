@@ -2,7 +2,6 @@ using Shopbe.Application.Common.Interfaces.IBrand;
 using Shopbe.Application.Common.Interfaces.ICategory;
 using Shopbe.Application.Common.Interfaces.IOrder;
 using Shopbe.Application.Common.Interfaces.IProduct;
-using Shopbe.Application.Common.Interfaces.IReview;
 using Shopbe.Application.Common.Interfaces.IShipping;
 using Shopbe.Application.Common.Interfaces.IShoppingCart;
 using Shopbe.Application.Common.Interfaces.IUser;
@@ -45,8 +44,6 @@ public interface IUnitOfWork
     // Reviews
     IReviewRepository Reviews { get; }
 
-    // Payments
-    IPaymentRepository Payments { get; }
     IPaymentTransactionRepository PaymentTransactions { get; }
     IRefundRepository Refunds { get; }
     IIdempotencyKeyRepository IdempotencyKeys { get; }
