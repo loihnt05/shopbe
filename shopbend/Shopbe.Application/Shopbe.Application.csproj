@@ -35,7 +35,6 @@
     <Folder Include="Product\ProductVariantAttributes\Dtos\" />
     <Folder Include="Product\ProductVariantAttributes\Queries\" />
     <Folder Include="Wishlist\Commands\" />
-    <Folder Include="Wishlist\Dtos\" />
     <Folder Include="Wishlist\Queries\" />
   </ItemGroup>
 

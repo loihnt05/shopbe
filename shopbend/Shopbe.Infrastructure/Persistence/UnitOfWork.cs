@@ -7,7 +7,6 @@ using Shopbe.Application.Common.Interfaces.IProduct;
 using Shopbe.Application.Common.Interfaces.IShipping;
 using Shopbe.Application.Common.Interfaces.IShoppingCart;
 using Shopbe.Application.Common.Interfaces.IUser;
-using Shopbe.Infrastructure.Repositories;
 using Shopbe.Infrastructure.Repositories.BrandRepositories;
 using Shopbe.Infrastructure.Repositories.CategoryRepositories;
 using Shopbe.Infrastructure.Repositories.OrderRepositories;
@@ -17,6 +16,7 @@ using Shopbe.Infrastructure.Repositories.ReviewRepositories;
 using Shopbe.Infrastructure.Repositories.ShippingRepositories;
 using Shopbe.Infrastructure.Repositories.ShoppingCartRepositories;
 using Shopbe.Infrastructure.Repositories.UserRepository;
+using Shopbe.Infrastructure.Repositories.WishlistRepositories;
 
 namespace Shopbe.Infrastructure.Persistence;
 
@@ -60,6 +60,10 @@ public class UnitOfWork(ShopDbContext context) : IUnitOfWork
 
     // Reviews
     public Shopbe.Application.Common.Interfaces.IReview.IReviewRepository Reviews { get; } = new ReviewRepository(context);
+
+    // Wishlist
+    public Shopbe.Application.Common.Interfaces.IWishlist.IWishlistItemRepository WishlistItems { get; } =
+        new WishlistItemRepository(context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

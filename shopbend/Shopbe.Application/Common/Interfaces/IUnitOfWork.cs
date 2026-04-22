@@ -7,6 +7,7 @@ using Shopbe.Application.Common.Interfaces.IShoppingCart;
 using Shopbe.Application.Common.Interfaces.IUser;
 using Shopbe.Application.Common.Interfaces.IPayment;
 using Shopbe.Application.Common.Interfaces.IReview;
+using Shopbe.Application.Common.Interfaces.IWishlist;
 
 namespace Shopbe.Application.Common.Interfaces;
 public interface IUnitOfWork
@@ -51,6 +52,9 @@ public interface IUnitOfWork
     IPaymentTransactionRepository PaymentTransactions { get; }
     IRefundRepository Refunds { get; }
     IIdempotencyKeyRepository IdempotencyKeys { get; }
+
+    // Wishlist
+    IWishlistItemRepository WishlistItems { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();
