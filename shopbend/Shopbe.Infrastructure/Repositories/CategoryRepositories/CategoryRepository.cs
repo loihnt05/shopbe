@@ -3,7 +3,7 @@ using Shopbe.Application.Common.Interfaces.ICategory;
 using Shopbe.Domain.Entities.Category;
 using Shopbe.Infrastructure.Persistence;
 
-namespace Shopbe.Infrastructure.Repositories;
+namespace Shopbe.Infrastructure.Repositories.CategoryRepositories;
 
 public class CategoryRepository(ShopDbContext context) : ICategoryRepository
 {

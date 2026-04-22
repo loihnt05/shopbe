@@ -9,6 +9,7 @@ using Shopbe.Application.Common.Interfaces.IShoppingCart;
 using Shopbe.Application.Common.Interfaces.IUser;
 using Shopbe.Infrastructure.Repositories;
 using Shopbe.Infrastructure.Repositories.BrandRepositories;
+using Shopbe.Infrastructure.Repositories.CategoryRepositories;
 using Shopbe.Infrastructure.Repositories.OrderRepositories;
 using Shopbe.Infrastructure.Repositories.PaymentRepositories;
 using Shopbe.Infrastructure.Repositories.ProductRepositories;
