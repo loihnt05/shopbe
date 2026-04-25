@@ -17,6 +17,45 @@ public sealed class CreateOrderHandler(IUnitOfWork unitOfWork) : IRequestHandler
             if (cart is null || cart.CartItems.Count == 0)
                 throw new InvalidOperationException("Cart is empty");
 
+            // Determine which items to checkout.
+            // - If SelectedItems is null/empty -> checkout entire cart (current behavior)
+            // - Otherwise checkout only provided variants and quantities (must exist in cart)
+            var selectedItems = request.Request.SelectedItems
+                ?.Where(i => i is not null)
+                .ToList();
+
+            var hasSelection = selectedItems is { Count: > 0 };
+
+            // Validate selection and build a dictionary for quick lookup.
+            Dictionary<Guid, int>? selectedQuantityByVariantId = null;
+            if (hasSelection)
+            {
+                selectedQuantityByVariantId = new Dictionary<Guid, int>();
+                foreach (var sel in selectedItems!)
+                {
+                    if (sel.ProductVariantId == Guid.Empty)
+                        throw new InvalidOperationException("Selected item ProductVariantId is required");
+                    if (sel.Quantity <= 0)
+                        throw new InvalidOperationException("Selected item quantity must be > 0");
+
+                    // If duplicated variant appears, sum quantities.
+                    if (selectedQuantityByVariantId.TryGetValue(sel.ProductVariantId, out var existingQty))
+                        selectedQuantityByVariantId[sel.ProductVariantId] = existingQty + sel.Quantity;
+                    else
+                        selectedQuantityByVariantId.Add(sel.ProductVariantId, sel.Quantity);
+                }
+
+                // Ensure all selected variants exist in cart and have enough quantity.
+                foreach (var (variantId, qty) in selectedQuantityByVariantId)
+                {
+                    var cartItem = cart.CartItems.FirstOrDefault(ci => ci.ProductVariantId == variantId);
+                    if (cartItem is null)
+                        throw new InvalidOperationException("Selected item is not in cart");
+                    if (qty > cartItem.Quantity)
+                        throw new InvalidOperationException("Selected item quantity exceeds quantity in cart");
+                }
+            }
+
             // Resolve shipping address:
             // 1) UserAddressId (saved address)
             // 2) Default saved address (if enabled)
@@ -92,12 +131,19 @@ public sealed class CreateOrderHandler(IUnitOfWork unitOfWork) : IRequestHandler
             decimal subtotal = 0;
             foreach (var item in cart.CartItems)
             {
+                var checkoutQty = item.Quantity;
+                if (hasSelection)
+                {
+                    if (!selectedQuantityByVariantId!.TryGetValue(item.ProductVariantId, out checkoutQty))
+                        continue; // Not selected -> keep in cart, skip from order
+                }
+
                 var variant = await unitOfWork.ProductVariant.GetProductVariantByIdAsync(item.ProductVariantId);
                 if (variant is null)
                     throw new KeyNotFoundException("ProductVariant " + item.ProductVariantId + " not found");
 
                 var unitPrice = variant.Price;
-                var totalPrice = unitPrice * item.Quantity;
+                var totalPrice = unitPrice * checkoutQty;
                 subtotal += totalPrice;
 
                 order.OrderItems.Add(new OrderItem
@@ -107,11 +153,14 @@ public sealed class CreateOrderHandler(IUnitOfWork unitOfWork) : IRequestHandler
                     ProductVariantId = item.ProductVariantId,
                     SkuSnapshot = variant.Sku,
                     ProductNameSnapshot = variant.Product?.Name ?? string.Empty,
-                    Quantity = item.Quantity,
+                    Quantity = checkoutQty,
                     UnitPrice = unitPrice,
                     TotalPrice = totalPrice
                 });
             }
+
+            if (order.OrderItems.Count == 0)
+                throw new InvalidOperationException("No items selected for checkout");
 
             order.SubtotalAmount = subtotal;
 
@@ -182,7 +231,33 @@ public sealed class CreateOrderHandler(IUnitOfWork unitOfWork) : IRequestHandler
             });
 
             await unitOfWork.Orders.AddAsync(order, cancellationToken);
-            await unitOfWork.Cart.ClearAsync(request.UserId, cancellationToken);
+
+            // Mutate cart based on selection.
+            if (!hasSelection)
+            {
+                await unitOfWork.Cart.ClearAsync(request.UserId, cancellationToken);
+            }
+            else
+            {
+                // Decrement or remove only selected items.
+                // Note: cart.CartItems is tracked because it is loaded from EF.
+                foreach (var item in cart.CartItems.ToList())
+                {
+                    if (!selectedQuantityByVariantId!.TryGetValue(item.ProductVariantId, out var checkoutQty))
+                        continue;
+
+                    if (checkoutQty == item.Quantity)
+                    {
+                        await unitOfWork.Cart.RemoveItemAsync(request.UserId, item.ProductVariantId, cancellationToken);
+                    }
+                    else
+                    {
+                        // Reduce remaining quantity
+                        item.Quantity -= checkoutQty;
+                    }
+                }
+            }
+
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             await unitOfWork.CommitTransactionAsync();

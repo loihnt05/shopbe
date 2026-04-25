@@ -26,6 +26,13 @@ public class CreateOrderRequestDto
     /// Optional coupon code to apply to this order.
     /// </summary>
     public string? CouponCode { get; set; }
+
+    /// <summary>
+    /// Optional selection of cart items to checkout.
+    /// When null or empty, the whole cart will be checked out (current behavior).
+    /// When provided, only these variants/quantities will be converted into an order.
+    /// </summary>
+    public List<SelectedCartItemDto>? SelectedItems { get; set; }
 }
 
 
