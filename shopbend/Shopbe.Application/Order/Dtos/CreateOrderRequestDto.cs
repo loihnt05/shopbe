@@ -2,6 +2,12 @@ namespace Shopbe.Application.Order.Dtos;
 
 public class CreateOrderRequestDto
 {
+    public class SelectedCheckoutItemDto
+    {
+        public Guid ProductVariantId { get; set; }
+        public int Quantity { get; set; }
+    }
+
     /// <summary>
     /// If provided, the order will use this saved user address (must belong to the user).
     /// If null, the handler will try to use the user's default address, unless an override address is provided.
@@ -29,10 +35,10 @@ public class CreateOrderRequestDto
 
     /// <summary>
     /// Optional selection of cart items to checkout.
-    /// When null or empty, the whole cart will be checked out (current behavior).
-    /// When provided, only these variants/quantities will be converted into an order.
+    /// If null or empty => checkout all items in the cart.
+    /// Quantities must be &gt; 0 and cannot exceed the quantity currently in the cart.
     /// </summary>
-    public List<SelectedCartItemDto>? SelectedItems { get; set; }
+    public List<SelectedCheckoutItemDto>? SelectedItems { get; set; }
 }
 
 
