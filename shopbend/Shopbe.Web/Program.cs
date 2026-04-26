@@ -1,5 +1,8 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Hangfire;
+using Hangfire.Dashboard;
+using Hangfire.PostgreSql;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -143,6 +146,19 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
+// Background jobs (Hangfire)
+var hangfireConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddHangfire(cfg =>
+{
+    cfg.SetDataCompatibilityLevel(CompatibilityLevel.Version_180);
+    cfg.UseSimpleAssemblyNameTypeSerializer();
+    cfg.UseRecommendedSerializerSettings();
+    cfg.UsePostgreSqlStorage(options =>
+        options.UseNpgsqlConnection(hangfireConnectionString));
+});
+builder.Services.AddHangfireServer();
+
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -173,6 +189,15 @@ if (app.Environment.IsDevelopment())
         options.OAuthUsePkce();
     });
 }
+
+// Hangfire dashboard (restrict in production)
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new IDashboardAuthorizationFilter[]
+    {
+        new LocalRequestsOnlyAuthorizationFilter(app.Environment)
+    }
+});
 
 // Stripe CLI/webhooks may forward over HTTP in local dev; avoid redirecting this endpoint
 // because redirects can drop the Stripe-Signature header.
@@ -255,4 +280,21 @@ static void AddRoleClaims(ClaimsIdentity identity, string? json, string? resourc
 
 // Expose Program for integration/E2E tests (WebApplicationFactory<Program>).
 public partial class Program;
+
+internal sealed class LocalRequestsOnlyAuthorizationFilter(IHostEnvironment env) : IDashboardAuthorizationFilter
+{
+    public bool Authorize(DashboardContext context)
+    {
+        // In Development, allow local access. In other envs, require explicit hardening.
+        var httpContext = context.GetHttpContext();
+        if (env.IsDevelopment())
+        {
+            return httpContext.Connection.RemoteIpAddress?.Equals(httpContext.Connection.LocalIpAddress) == true
+                   || httpContext.Connection.RemoteIpAddress?.ToString() == "127.0.0.1"
+                   || httpContext.Connection.RemoteIpAddress?.ToString() == "::1";
+        }
+
+        return false;
+    }
+}
 

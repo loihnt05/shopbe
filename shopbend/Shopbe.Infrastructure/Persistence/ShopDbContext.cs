@@ -62,6 +62,7 @@ public class ShopDbContext(DbContextOptions<ShopDbContext> options) : DbContext(
 
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<NotificationLog> NotificationLogs { get; set; }
+    public DbSet<EmailMessage> EmailMessages { get; set; }
 
     public DbSet<AuditLog> AuditLogs { get; set; }
 

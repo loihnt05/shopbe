@@ -110,7 +110,8 @@ public class ProductHandlersTests
     public async Task DeleteProductHandler_ShouldThrow_WhenProductNotFound()
     {
         var (productRepository, _, _, _, unitOfWork) = CreateUnitOfWorkMocks();
-        var handler = new DeleteProductHandler(unitOfWork.Object);
+        var cache = new Mock<ICacheService>(MockBehavior.Strict);
+        var handler = new DeleteProductHandler(unitOfWork.Object, cache.Object);
 
         var productId = Guid.NewGuid();
         productRepository
@@ -127,7 +128,9 @@ public class ProductHandlersTests
     public async Task DeleteProductHandler_ShouldDeleteAndSave_WhenProductExists()
     {
         var (productRepository, _, _, _, unitOfWork) = CreateUnitOfWorkMocks();
-        var handler = new DeleteProductHandler(unitOfWork.Object);
+        var cache = new Mock<ICacheService>(MockBehavior.Strict);
+        cache.Setup(x => x.RemoveAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+        var handler = new DeleteProductHandler(unitOfWork.Object, cache.Object);
 
         var productId = Guid.NewGuid();
         productRepository
