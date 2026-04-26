@@ -23,9 +23,24 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: shopbend-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
   
 volumes:
   postgres_data:
     name: shopbend_postgres_data
   keycloak_data:
     name: shopbend_keycloak_data
+  redis_data:
+    name: shopbend_redis_data
