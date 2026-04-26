@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.Infrastructure.Persistence;
 using Shopbe.Infrastructure.Repositories;
+using Shopbe.Infrastructure.Services;
 using Shopbe.Infrastructure.Storage;
 using Stripe;
 
@@ -15,6 +17,22 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+        // Redis (IDistributedCache)
+        // Prefer: Redis:ConnectionString, fallback: ConnectionStrings:Redis
+        var redisConnectionString = configuration["Redis:ConnectionString"]
+                                   ?? configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrWhiteSpace(redisConnectionString))
+        {
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnectionString;
+                options.InstanceName = configuration["Redis:InstanceName"] ?? "shopbe:";
+            });
+
+            // Application cache abstraction backed by Redis distributed cache
+            services.AddScoped<ICacheService, RedisCacheService>();
+        }
         
         services.Configure<StripeOptions>(opts => configuration.GetSection("Stripe").Bind(opts));
         services.AddSingleton<IConfigureOptions<StripeOptions>, ConfigureStripeConfiguration>();

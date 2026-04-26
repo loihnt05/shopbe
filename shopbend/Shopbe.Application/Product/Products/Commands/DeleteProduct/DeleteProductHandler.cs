@@ -3,7 +3,7 @@ using Shopbe.Application.Common.Interfaces;
 
 namespace Shopbe.Application.Product.Products.Commands.DeleteProduct;
 
-public class DeleteProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<DeleteProductCommand, bool>
+public class DeleteProductHandler(IUnitOfWork unitOfWork, ICacheService cache) : IRequestHandler<DeleteProductCommand, bool>
 {
     public async Task<bool> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
     {
@@ -13,6 +13,9 @@ public class DeleteProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<Dele
 
         await unitOfWork.Product.DeleteProductAsync(request.Id);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Cache-aside invalidation
+        await cache.RemoveAsync($"products:id:{request.Id}");
 
         return true;
     }

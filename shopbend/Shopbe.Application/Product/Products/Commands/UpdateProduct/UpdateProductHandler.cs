@@ -7,7 +7,8 @@ using Shopbe.Domain.Entities.Product;
 
 namespace Shopbe.Application.Product.Products.Commands.UpdateProduct;
 
-public class UpdateProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<UpdateProductCommand, ProductResponseDto>
+public class UpdateProductHandler(IUnitOfWork unitOfWork, ICacheService cache)
+    : IRequestHandler<UpdateProductCommand, ProductResponseDto>
 {
     public async Task<ProductResponseDto> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
     {
@@ -67,6 +68,9 @@ public class UpdateProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<Upda
 
         await unitOfWork.Product.UpdateProductAsync(product);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Cache-aside invalidation
+        await cache.RemoveAsync($"products:id:{request.Id}");
 
         return ProductDtoMapper.ToResponse(product);
     }
