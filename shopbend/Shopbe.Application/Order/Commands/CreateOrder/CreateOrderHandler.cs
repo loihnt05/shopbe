@@ -1,13 +1,12 @@
 using MediatR;
 using Shopbe.Application.Common.Interfaces;
-using Shopbe.Application.Common.Interfaces.Notifications;
 using Shopbe.Application.Order.Dtos;
 using Shopbe.Domain.Entities.Order;
 using Shopbe.Domain.Enums;
 
 namespace Shopbe.Application.Order.Commands.CreateOrder;
 
-public sealed class CreateOrderHandler(IUnitOfWork unitOfWork, IEmailQueue emailQueue) : IRequestHandler<CreateOrderCommand, OrderDetailsDto>
+public sealed class CreateOrderHandler(IUnitOfWork unitOfWork) : IRequestHandler<CreateOrderCommand, OrderDetailsDto>
 {
     public async Task<OrderDetailsDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
@@ -241,28 +240,6 @@ public sealed class CreateOrderHandler(IUnitOfWork unitOfWork, IEmailQueue email
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             await unitOfWork.CommitTransactionAsync();
-
-            // Fire-and-forget email (persisted outbox + background job)
-            // Note: we enqueue after commit to avoid sending if the transaction fails.
-            var user = await unitOfWork.Users.GetUserByIdAsync(request.UserId);
-            if (user is not null && !string.IsNullOrWhiteSpace(user.Email))
-            {
-                var subject = $"Order {order.Id} created";
-                var body = $"<p>Hi {System.Net.WebUtility.HtmlEncode(user.FullName)},</p>" +
-                           $"<p>Your order <b>{order.Id}</b> has been created successfully.</p>" +
-                           $"<p>Total: <b>{order.TotalAmount:N0} {order.Currency}</b></p>";
-
-                await emailQueue.EnqueueAsync(
-                    to: user.Email,
-                    subject: subject,
-                    bodyHtml: body,
-                    bodyText: $"Your order {order.Id} has been created. Total: {order.TotalAmount:N0} {order.Currency}",
-                    userId: request.UserId,
-                    orderId: order.Id,
-                    idempotencyKey: $"order-created:{order.Id}",
-                    cancellationToken: cancellationToken);
-            }
-
             return order.ToDetailsDto();
         }
         catch

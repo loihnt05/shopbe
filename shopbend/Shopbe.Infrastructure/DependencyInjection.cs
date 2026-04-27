@@ -1,13 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Shopbe.Application.Common.Interfaces;
-using Shopbe.Application.Common.Interfaces.Notifications;
 using Shopbe.Infrastructure.Persistence;
 using Shopbe.Infrastructure.Repositories;
 using Shopbe.Infrastructure.Services;
-using Shopbe.Infrastructure.Services.Email;
 using Shopbe.Infrastructure.Storage;
 using Stripe;
 
@@ -43,12 +42,6 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString)
         );
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-        // Email notifications
-        services.Configure<SmtpEmailOptions>(opts => configuration.GetSection("Email:Smtp").Bind(opts));
-        services.AddScoped<IEmailSender, SmtpEmailSender>();
-        services.AddScoped<EmailProcessorJob>();
-        services.AddScoped<IEmailQueue, HangfireEmailQueue>();
 
         // Local uploads storage (review images, etc.)
         services.AddScoped<IFileStorage, LocalFileStorage>();
