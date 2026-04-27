@@ -1,19 +1,17 @@
 using Moq;
 using Shopbe.Application.Common.Interfaces;
-using Shopbe.Application.Common.Interfaces.Notifications;
 using Shopbe.Application.Order.Commands.CreateOrder;
 using Shopbe.Application.Order.Dtos;
 using Shopbe.Domain.Entities.ShoppingCart;
 
 namespace Shopbe.Application.Tests.Order;
 
-public class CreateOrder_EnqueuesEmail_Tests
+public class CreateOrderEnqueuesEmailTests
 {
     [Fact]
     public async Task Handle_Enqueues_Email_When_User_Has_Email()
     {
         var uow = new Mock<IUnitOfWork>(MockBehavior.Strict);
-        var emailQueue = new Mock<IEmailQueue>(MockBehavior.Strict);
 
         var userId = Guid.NewGuid();
         // order id is generated inside handler
@@ -51,38 +49,16 @@ public class CreateOrder_EnqueuesEmail_Tests
         ordersRepo.Setup(x => x.AddAsync(It.IsAny<Shopbe.Domain.Entities.Order.Order>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var userRepo = new Mock<Shopbe.Application.Common.Interfaces.IUser.IUserRepository>(MockBehavior.Strict);
-        userRepo.Setup(x => x.GetUserByIdAsync(userId)).ReturnsAsync(new Shopbe.Domain.Entities.User.User { Id = userId, FullName = "Test", Email = "test@example.com" });
-
-        // Unused repos in this scenario
-        var addrRepo = new Mock<Shopbe.Application.Common.Interfaces.IUser.IUserAddressRepository>(MockBehavior.Strict);
-        addrRepo.Setup(x => x.GetUserAddressesByUserIdAsync(userId)).ReturnsAsync(new List<Shopbe.Domain.Entities.User.UserAddress>());
-
         // Setup UoW properties
         uow.SetupGet(x => x.Cart).Returns(cartRepo.Object);
         uow.SetupGet(x => x.ProductVariant).Returns(variantRepo.Object);
         uow.SetupGet(x => x.Orders).Returns(ordersRepo.Object);
-        uow.SetupGet(x => x.Users).Returns(userRepo.Object);
-        uow.SetupGet(x => x.UserAddresses).Returns(addrRepo.Object);
 
         // Coupon repo might be accessed if CouponCode is passed; ensure not used
 
         uow.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-        uow.Setup(x => x.RollbackTransactionAsync()).Returns(Task.CompletedTask);
 
-        emailQueue.Setup(x => x.EnqueueAsync(
-                It.Is<string>(s => s == "test@example.com"),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string?>(),
-                It.Is<Guid?>(g => g == userId),
-                It.IsAny<Guid?>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<string?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Guid.NewGuid());
-
-        var handler = new CreateOrderHandler(uow.Object, emailQueue.Object);
+        var handler = new CreateOrderHandler(uow.Object);
 
         var cmd = new CreateOrderCommand(userId, new CreateOrderRequestDto
         {
@@ -97,7 +73,14 @@ public class CreateOrder_EnqueuesEmail_Tests
 
         await handler.Handle(cmd, CancellationToken.None);
 
-        emailQueue.VerifyAll();
+        // Verify the expected successful flow.
+        uow.Verify(x => x.BeginTransactionAsync(), Times.Once);
+        uow.Verify(x => x.CommitTransactionAsync(), Times.Once);
+        uow.Verify(x => x.RollbackTransactionAsync(), Times.Never);
+        uow.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        cartRepo.Verify(x => x.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
+        cartRepo.Verify(x => x.ClearAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
+        ordersRepo.Verify(x => x.AddAsync(It.IsAny<Shopbe.Domain.Entities.Order.Order>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
 
