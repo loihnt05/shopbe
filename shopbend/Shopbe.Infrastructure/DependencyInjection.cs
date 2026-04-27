@@ -7,6 +7,8 @@ using Shopbe.Application.Common.Interfaces;
 using Shopbe.Infrastructure.Persistence;
 using Shopbe.Infrastructure.Repositories;
 using Shopbe.Infrastructure.Services;
+using Shopbe.Application.Common.Interfaces.Notifications;
+using Shopbe.Infrastructure.Services.Email;
 using Shopbe.Infrastructure.Storage;
 using Stripe;
 
@@ -45,6 +47,11 @@ public static class DependencyInjection
 
         // Local uploads storage (review images, etc.)
         services.AddScoped<IFileStorage, LocalFileStorage>();
+
+        // Email notifications
+        services.Configure<SmtpEmailOptions>(opts => configuration.GetSection("Email:Smtp").Bind(opts));
+        services.AddScoped<IEmailSender, SmtpEmailSender>();
+        services.AddScoped<IEmailQueue, HangfireEmailQueue>();
         
 
         return services;
