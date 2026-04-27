@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Shopbe.Application.Common.Interfaces;
+using Shopbe.Application.Common.Interfaces.IReview;
 using Shopbe.Infrastructure.Persistence;
 using Shopbe.Infrastructure.Repositories;
+using Shopbe.Infrastructure.Repositories.ReviewRepositories;
 using Shopbe.Infrastructure.Services;
 using Shopbe.Application.Common.Interfaces.Notifications;
 using Shopbe.Infrastructure.Services.Email;
@@ -44,6 +45,9 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString)
         );
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Repositories (some handlers inject repositories directly, not through IUnitOfWork)
+        services.AddScoped<IReviewRepository, ReviewRepository>();
 
         // Local uploads storage (review images, etc.)
         services.AddScoped<IFileStorage, LocalFileStorage>();

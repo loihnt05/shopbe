@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Hangfire;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -143,6 +144,27 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
+// Hangfire (used by IEmailQueue)
+// Default: in-memory storage so the app can start without extra infrastructure.
+// If you want persistent jobs, swap to a real storage provider (e.g. Hangfire.PostgreSql) and configure it here.
+builder.Services.AddHangfire(config =>
+{
+    config.UseSimpleAssemblyNameTypeSerializer();
+    config.UseRecommendedSerializerSettings();
+    config.UseInMemoryStorage();
+});
+
+// Run a background processing server unless explicitly disabled
+if (!builder.Configuration.GetValue("Hangfire:Server:Enabled", true))
+{
+    // no server
+}
+else
+{
+    builder.Services.AddHangfireServer();
+}
+
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -172,6 +194,12 @@ if (app.Environment.IsDevelopment())
         options.OAuthScopes("openid", "profile");
         options.OAuthUsePkce();
     });
+
+    // Optional dashboard for local debugging
+    if (builder.Configuration.GetValue("Hangfire:Dashboard:Enabled", true))
+    {
+        app.UseHangfireDashboard(pathMatch: "/hangfire");
+    }
 }
 
 // Stripe CLI/webhooks may forward over HTTP in local dev; avoid redirecting this endpoint
