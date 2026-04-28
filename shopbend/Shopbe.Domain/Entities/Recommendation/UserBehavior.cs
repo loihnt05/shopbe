@@ -7,6 +7,11 @@ public class UserBehavior : BaseEntity
     public string? SessionId { get; set; }
 
     /// <summary>
+    /// Optional correlation id for anonymous or cross-request tracking.
+    /// </summary>
+    public string? CorrelationId { get; set; }
+
+    /// <summary>
     /// Strongly-typed behavior for recommendation queries/scoring.
     /// </summary>
     public BehaviorType BehaviorType { get; set; } = BehaviorType.Unknown;
@@ -18,6 +23,9 @@ public class UserBehavior : BaseEntity
 
     public Guid? ProductId { get; set; }
 
+    public Guid? CategoryId { get; set; }
+    public Guid? OrderId { get; set; }
+
     /// <summary>
     /// The UTC instant when the event happened. Defaults to <see cref="BaseEntity.CreatedAt"/>.
     /// </summary>
@@ -26,9 +34,24 @@ public class UserBehavior : BaseEntity
     public int? Quantity { get; set; }
     public decimal? Value { get; set; }
 
+    public string? Currency { get; set; }
+
+    /// <summary>
+    /// Where the event originated (web, mobile, admin, api...).
+    /// </summary>
+    public string? Source { get; set; }
+
+    /// <summary>
+    /// Device type or platform details (desktop, ios, android...).
+    /// </summary>
+    public string? Device { get; set; }
+
     public string? Referrer { get; set; }
     public string? UserAgent { get; set; }
     public string? IpAddress { get; set; }
+
+    public string? Country { get; set; }
+    public string? City { get; set; }
 
     /// <summary>
     /// JSON string for additional properties (search query, page, campaign, etc.).
