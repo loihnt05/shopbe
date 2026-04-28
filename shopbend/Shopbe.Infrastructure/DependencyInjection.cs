@@ -40,6 +40,9 @@ public static class DependencyInjection
         services.Configure<StripeOptions>(opts => configuration.GetSection("Stripe").Bind(opts));
         services.AddSingleton<IConfigureOptions<StripeOptions>, ConfigureStripeConfiguration>();
         services.AddScoped<IStripeService, StripeService>();
+
+        services.AddScoped<IRecommendationService, RecommendationService>();
+        services.AddScoped<IBehaviorTrackingService, BehaviorTrackingService>();
         
         services.AddDbContext<ShopDbContext>(options =>
             options.UseNpgsql(connectionString)

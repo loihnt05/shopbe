@@ -7,6 +7,8 @@ using Shopbe.Application.Product.Products.Commands.UpdateProduct;
 using Shopbe.Application.Product.Products.Dtos;
 using Shopbe.Application.Product.Products.Queries.GetAllProducts;
 using Shopbe.Application.Product.Products.Queries.GetProductById;
+using Shopbe.Application.Common.Interfaces;
+using Shopbe.Domain.Enums;
 
 namespace Shopbe.Web.Controllers;
 
@@ -15,10 +17,31 @@ namespace Shopbe.Web.Controllers;
 public class ProductController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IBehaviorTrackingService _behaviorTracking;
+    private readonly ICurrentUser _currentUser;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public ProductController(IMediator mediator)
+    public ProductController(
+        IMediator mediator,
+        IBehaviorTrackingService behaviorTracking,
+        ICurrentUser currentUser,
+        IUnitOfWork unitOfWork)
     {
         _mediator = mediator;
+        _behaviorTracking = behaviorTracking;
+        _currentUser = currentUser;
+        _unitOfWork = unitOfWork;
+    }
+
+    private async Task<Guid?> TryGetAppUserIdAsync()
+    {
+        // Anonymous browsing is allowed; we only attach userId when authenticated.
+        var keycloakId = _currentUser.KeycloakId;
+        if (string.IsNullOrWhiteSpace(keycloakId))
+            return null;
+
+        var user = await _unitOfWork.Users.GetUserByKeycloakIdAsync(keycloakId);
+        return user?.Id;
     }
 
     [HttpGet]
@@ -36,6 +59,34 @@ public class ProductController : ControllerBase
         var result = await _mediator.Send(new GetProductByIdQuery(id), cancellationToken);
         if (result is null)
             return NotFound();
+
+        // Track product view for recommendations.
+        // Best effort: never fail the request if tracking fails.
+        try
+        {
+            var appUserId = await TryGetAppUserIdAsync();
+
+            await _behaviorTracking.TrackAsync(
+                userId: appUserId,
+                sessionId: null,
+                correlationId: HttpContext.TraceIdentifier,
+                behaviorType: BehaviorType.ProductView,
+                actionType: "ProductView",
+                productId: id,
+                categoryId: result.CategoryId,
+                source: "web",
+                device: Request.Headers.UserAgent.ToString(),
+                referrer: Request.Headers.Referer.ToString(),
+                userAgent: Request.Headers.UserAgent.ToString(),
+                ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),
+                occurredAt: DateTime.UtcNow,
+                ct: cancellationToken);
+        }
+        catch
+        {
+            // ignored
+        }
+
         return Ok(result);
     }
 
