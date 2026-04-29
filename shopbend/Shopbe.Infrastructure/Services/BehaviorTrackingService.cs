@@ -1,4 +1,5 @@
 using Shopbe.Application.Common.Interfaces;
+using Shopbe.Application.Common;
 using Shopbe.Domain.Entities.Recommendation;
 using Shopbe.Domain.Enums;
 using Shopbe.Infrastructure.Persistence;
@@ -33,6 +34,9 @@ public sealed class BehaviorTrackingService(ShopDbContext db) : IBehaviorTrackin
         if (string.IsNullOrWhiteSpace(actionType))
             actionType = behaviorType.ToString();
 
+        var occurredAtUtc = occurredAt ?? DateTime.UtcNow;
+        var expiresAtUtc = BehaviorRetentionPolicy.ComputeExpiresAtUtc(behaviorType, occurredAtUtc);
+
         var entity = new UserBehavior
         {
             UserId = userId,
@@ -54,7 +58,8 @@ public sealed class BehaviorTrackingService(ShopDbContext db) : IBehaviorTrackin
             Country = country,
             City = city,
             Metadata = metadata,
-            OccurredAt = occurredAt ?? DateTime.UtcNow
+            OccurredAt = occurredAtUtc,
+            ExpiresAt = expiresAtUtc
         };
 
         db.UserBehaviors.Add(entity);

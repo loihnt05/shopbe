@@ -168,6 +168,9 @@ else
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// User behavior lifecycle cleanup (recurring job)
+builder.Services.AddScoped<Shopbe.Infrastructure.Services.UserBehaviorCleanupJob>();
+
 var app = builder.Build();
 
 // Apply EF Core migrations automatically (useful for local/dev & Docker compose)
@@ -200,6 +203,19 @@ if (app.Environment.IsDevelopment())
     {
         app.UseHangfireDashboard(pathMatch: "/hangfire");
     }
+}
+
+// Schedule recurring cleanup for expired user behavior events.
+// Default: daily at 03:00 (server local time). Can be disabled via configuration.
+if (builder.Configuration.GetValue("UserBehavior:Cleanup:Enabled", true))
+{
+    var cron = builder.Configuration["UserBehavior:Cleanup:Cron"] ?? "0 3 * * *";
+    var batchSize = builder.Configuration.GetValue("UserBehavior:Cleanup:BatchSize", 20_000);
+
+    RecurringJob.AddOrUpdate<Shopbe.Infrastructure.Services.UserBehaviorCleanupJob>(
+        recurringJobId: "user-behavior-cleanup",
+        methodCall: job => job.RunAsync(batchSize, CancellationToken.None),
+        cronExpression: cron);
 }
 
 // Stripe CLI/webhooks may forward over HTTP in local dev; avoid redirecting this endpoint

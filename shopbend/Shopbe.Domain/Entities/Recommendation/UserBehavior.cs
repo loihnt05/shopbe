@@ -31,6 +31,12 @@ public class UserBehavior : BaseEntity
     /// </summary>
     public DateTime OccurredAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// UTC instant when this event can be safely deleted according to retention rules.
+    /// This enables fast cleanup via index on <see cref="ExpiresAt"/>.
+    /// </summary>
+    public DateTime ExpiresAt { get; set; } = DateTime.UtcNow;
+
     public int? Quantity { get; set; }
     public decimal? Value { get; set; }
 

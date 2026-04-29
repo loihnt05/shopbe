@@ -30,6 +30,9 @@ public class UserBehaviorConfiguration : IEntityTypeConfiguration<UserBehavior>
         builder.Property(x => x.OccurredAt)
             .IsRequired();
 
+        builder.Property(x => x.ExpiresAt)
+            .IsRequired();
+
         builder.Property(x => x.Referrer)
             .HasMaxLength(2048);
 
@@ -65,6 +68,7 @@ public class UserBehaviorConfiguration : IEntityTypeConfiguration<UserBehavior>
         builder.HasIndex(x => x.CategoryId);
         builder.HasIndex(x => x.OrderId);
         builder.HasIndex(x => x.OccurredAt);
+        builder.HasIndex(x => x.ExpiresAt);
         builder.HasIndex(x => new { x.UserId, x.OccurredAt });
         builder.HasIndex(x => new { x.ProductId, x.OccurredAt });
         builder.HasIndex(x => new { x.UserId, x.ProductId, x.BehaviorType });
