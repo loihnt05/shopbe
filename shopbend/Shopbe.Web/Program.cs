@@ -11,6 +11,7 @@ using Shopbe.Application.Common.Interfaces;
 using Shopbe.Infrastructure;
 using Shopbe.Infrastructure.Persistence;
 using Shopbe.Web.Common;
+using Shopbe.Web.Common.ExceptionHandling;
 
 var builder = WebApplication.CreateBuilder(args);
 var keycloakAuthority = builder.Configuration["Authentication:Keycloak:Authority"];
@@ -204,6 +205,9 @@ if (app.Environment.IsDevelopment())
         app.UseHangfireDashboard(pathMatch: "/hangfire");
     }
 }
+
+// Global exception handling (RFC7807 ProblemDetails)
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 // Schedule recurring cleanup for expired user behavior events.
 // Default: daily at 03:00 (server local time). Can be disabled via configuration.
