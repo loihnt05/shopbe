@@ -56,7 +56,7 @@ public sealed class GlobalExceptionMiddleware(
         {
             ArgumentException => (StatusCodes.Status400BadRequest, "Bad request", "https://httpstatuses.com/400", "bad_request", LogLevel.Warning),
             FormatException => (StatusCodes.Status400BadRequest, "Bad request", "https://httpstatuses.com/400", "bad_request", LogLevel.Warning),
-            InvalidOperationException => (StatusCodes.Status409Conflict, "Conflict", "https://httpstatuses.com/40   9", "conflict", LogLevel.Warning),
+            InvalidOperationException => (StatusCodes.Status409Conflict, "Conflict", "https://httpstatuses.com/409", "conflict", LogLevel.Warning),
             KeyNotFoundException => (StatusCodes.Status404NotFound, "Not found", "https://httpstatuses.com/404", "not_found", LogLevel.Warning),
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized", "https://httpstatuses.com/401", "unauthorized", LogLevel.Warning),
             _ => (StatusCodes.Status500InternalServerError, "Internal server error", "https://httpstatuses.com/500", "internal_error", LogLevel.Error)

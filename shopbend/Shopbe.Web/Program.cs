@@ -12,6 +12,7 @@ using Shopbe.Infrastructure;
 using Shopbe.Infrastructure.Persistence;
 using Shopbe.Web.Common;
 using Shopbe.Web.Common.ExceptionHandling;
+using Shopbe.Web.Common.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 var keycloakAuthority = builder.Configuration["Authentication:Keycloak:Authority"];
@@ -35,7 +36,11 @@ if (string.IsNullOrWhiteSpace(keycloakAuthority))
 }
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.Configure<ApiResponseOptions>(builder.Configuration.GetSection(ApiResponseOptions.SectionName));
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ApiResponseEnvelopeFilter>();
+});
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddEndpointsApiExplorer();
