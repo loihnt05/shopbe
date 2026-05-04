@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shopbe.Application.Chat.Commands.CreateConversation;
 using Shopbe.Application.Chat.Commands.SendMessage;
+using Shopbe.Application.Chat.Commands.SendMessageWithAssistant;
 using Shopbe.Application.Chat.Dtos;
 using Shopbe.Application.Chat.Queries.GetConversationMessages;
 using Shopbe.Application.Chat.Queries.GetMyConversations;
@@ -64,14 +65,15 @@ public sealed class ChatController(
     }
 
     [HttpPost("conversations/{conversationId:guid}/messages")]
-    public async Task<ActionResult<ChatMessageDto>> SendMessage(
+    public async Task<ActionResult<IReadOnlyList<ChatMessageDto>>> SendMessage(
         Guid conversationId,
         [FromBody] SendMessageRequestDto request,
         CancellationToken cancellationToken)
     {
         var userId = await GetAppUserIdAsync(cancellationToken);
-        var result = await mediator.Send(new SendMessageCommand(userId, conversationId, request), cancellationToken);
+        var result = await mediator.Send(new SendMessageWithAssistantCommand(userId, conversationId, request), cancellationToken);
         return Ok(result);
     }
 }
+
 
