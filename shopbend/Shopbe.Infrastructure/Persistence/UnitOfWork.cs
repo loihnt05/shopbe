@@ -6,6 +6,7 @@ using Shopbe.Application.Common.Interfaces.IOrder;
 using Shopbe.Application.Common.Interfaces.IProduct;
 using Shopbe.Application.Common.Interfaces.IShipping;
 using Shopbe.Application.Common.Interfaces.IShoppingCart;
+using Shopbe.Application.Common.Interfaces.IChat;
 using Shopbe.Application.Common.Interfaces.IUser;
 using Shopbe.Infrastructure.Repositories.BrandRepositories;
 using Shopbe.Infrastructure.Repositories.CategoryRepositories;
@@ -17,6 +18,7 @@ using Shopbe.Infrastructure.Repositories.ShippingRepositories;
 using Shopbe.Infrastructure.Repositories.ShoppingCartRepositories;
 using Shopbe.Infrastructure.Repositories.UserRepository;
 using Shopbe.Infrastructure.Repositories.WishlistRepositories;
+using Shopbe.Infrastructure.Repositories.ChatRepositories;
 
 namespace Shopbe.Infrastructure.Persistence;
 
@@ -64,6 +66,10 @@ public class UnitOfWork(ShopDbContext context) : IUnitOfWork
     // Wishlist
     public Shopbe.Application.Common.Interfaces.IWishlist.IWishlistItemRepository WishlistItems { get; } =
         new WishlistItemRepository(context);
+
+    // Chat
+    public IConversationRepository Conversations { get; } = new ConversationRepository(context);
+    public IChatMessageRepository ChatMessages { get; } = new ChatMessageRepository(context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
