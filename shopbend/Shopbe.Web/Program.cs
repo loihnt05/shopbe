@@ -46,10 +46,25 @@ builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCors(options =>
 {
+    var frontendOrigins = builder.Configuration
+        .GetSection("Cors:FrontendOrigins")
+        .Get<string[]>()
+        ??
+        [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "https://localhost:3000",
+            "https://localhost:3001",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001",
+            "https://127.0.0.1:3000",
+            "https://127.0.0.1:3001"
+        ];
+
     options.AddPolicy("Frontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:3000", "http://localhost:3001")
+            .WithOrigins(frontendOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -229,9 +244,16 @@ if (builder.Configuration.GetValue("UserBehavior:Cleanup:Enabled", true))
 
 // Stripe CLI/webhooks may forward over HTTP in local dev; avoid redirecting this endpoint
 // because redirects can drop the Stripe-Signature header.
-app.UseWhen(
-    context => !context.Request.Path.StartsWithSegments("/api/payments/stripe/webhook"),
-    appBuilder => appBuilder.UseHttpsRedirection());
+var enableHttpsRedirection = builder.Configuration.GetValue(
+    "HttpsRedirection:Enabled",
+    !builder.Environment.IsDevelopment());
+
+if (enableHttpsRedirection)
+{
+    app.UseWhen(
+        context => !context.Request.Path.StartsWithSegments("/api/payments/stripe/webhook"),
+        appBuilder => appBuilder.UseHttpsRedirection());
+}
 
 app.UseCors("Frontend");
 app.UseAuthentication();

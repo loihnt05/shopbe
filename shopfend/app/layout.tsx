@@ -1,17 +1,18 @@
 import SessionProvider from "./components/SessionProvider";
+import NavBar from "./components/NavBar";
 
 export default function RootLayout({
   children,
-  session,
 }: {
   children: React.ReactNode;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  session?: any;
 }) {
   return (
     <html lang="en">
-      <body>
-        <SessionProvider session={session}>{children}</SessionProvider>
+      <body className="min-h-screen">
+        <SessionProvider>
+          <NavBar />
+          <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+        </SessionProvider>
       </body>
     </html>
   );

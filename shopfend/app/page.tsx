@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession, signIn, signOut } from "next-auth/react";
+import Link from "next/link";
 
 export default function Home() {
   const { data: session } = useSession();
@@ -28,12 +29,35 @@ export default function Home() {
   };
 
   return (
-    <div className="p-6 text-center">
+    <div className="p-6 text-center space-y-6">
       {session ? (
         <>
-          <h1 className="text-xl mb-4">Hello, {session.user?.name}</h1>
-          <p>{session.user?.name}</p>
-          <p>{session.user?.email}</p>
+          <h1 className="text-xl">Hello, {session.user?.name}</h1>
+          <div className="text-sm opacity-80">
+            <p>{session.user?.email}</p>
+          </div>
+
+          <div className="flex items-center justify-center gap-3">
+            <Link
+              href="/products"
+              className="bg-emerald-600 text-white px-4 py-2 rounded"
+            >
+              Browse Products
+            </Link>
+            <Link
+              href="/cart"
+              className="bg-slate-800 text-white px-4 py-2 rounded"
+            >
+              Cart
+            </Link>
+            <Link
+              href="/checkout"
+              className="bg-indigo-600 text-white px-4 py-2 rounded"
+            >
+              Checkout
+            </Link>
+          </div>
+
           <button
             onClick={handleLogout}
             className="bg-red-500 text-white px-4 py-2 rounded"
@@ -42,12 +66,28 @@ export default function Home() {
           </button>
         </>
       ) : (
-        <button
-          onClick={() => signIn("keycloak")}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Sign In with Keycloak
-        </button>
+        <>
+          <div className="space-y-2">
+            <p className="opacity-80">
+              Sign in to add items to cart and test checkout.
+            </p>
+            <button
+              onClick={() => signIn("keycloak")}
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              Sign In with Keycloak
+            </button>
+          </div>
+
+          <div className="flex items-center justify-center gap-3">
+            <Link
+              href="/products"
+              className="bg-emerald-600 text-white px-4 py-2 rounded"
+            >
+              Browse Products (anonymous)
+            </Link>
+          </div>
+        </>
       )}
     </div>
   );
