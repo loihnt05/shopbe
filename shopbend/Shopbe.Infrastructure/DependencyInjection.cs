@@ -11,9 +11,9 @@ using Shopbe.Infrastructure.Services;
 using Shopbe.Application.Common.Interfaces.Notifications;
 using Shopbe.Infrastructure.Services.Email;
 using Shopbe.Infrastructure.Storage;
-using Stripe;
 using Shopbe.Application.Common.Interfaces.IChat;
 using Shopbe.Infrastructure.Chatbot;
+using Stripe;
 
 namespace Shopbe.Infrastructure;
 
@@ -43,10 +43,6 @@ public static class DependencyInjection
         services.AddSingleton<IConfigureOptions<StripeOptions>, ConfigureStripeConfiguration>();
         services.AddScoped<IStripeService, StripeService>();
 
-        // Chatbot (OpenAI)
-        services.Configure<ChatbotOptions>(opts => configuration.GetSection(ChatbotOptions.SectionName).Bind(opts));
-        services.AddScoped<IChatbotService, ChatbotService>();
-
         services.AddScoped<IRecommendationService, RecommendationService>();
         services.AddScoped<IBehaviorTrackingService, BehaviorTrackingService>();
         
@@ -65,6 +61,10 @@ public static class DependencyInjection
         services.Configure<SmtpEmailOptions>(opts => configuration.GetSection("Email:Smtp").Bind(opts));
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IEmailQueue, HangfireEmailQueue>();
+
+        // Chatbot (OpenAI)
+        services.Configure<ChatbotOptions>(opts => configuration.GetSection(ChatbotOptions.SectionName).Bind(opts));
+        services.AddScoped<IChatbotService, ChatbotService>();
         
 
         return services;

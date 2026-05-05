@@ -57,7 +57,7 @@ public interface IUnitOfWork
     // Wishlist
     IWishlistItemRepository WishlistItems { get; }
 
-    // Chat
+    // Chatbot
     IConversationRepository Conversations { get; }
     IChatMessageRepository ChatMessages { get; }
 
