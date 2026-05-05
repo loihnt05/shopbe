@@ -9,7 +9,9 @@ import {
   type CartDto,
   type CreateOrderResponse,
   type CreateStripePaymentIntentResponse,
-} from "../../lib/shopbeApi";
+} from "@/lib/shopbeApi";
+import { formatMoney } from "@/lib/format";
+import { errorMessage } from "@/lib/errors";
 
 export default function CheckoutPage() {
   const { data: session, status } = useSession();
@@ -31,9 +33,9 @@ export default function CheckoutPage() {
       setError(null);
       const data = await shopbeApi.cart.getMyCart(session.accessToken, abort.signal);
       setCart(data);
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (isAbortError(e)) return;
-      setError(e?.message ?? "Failed to load cart");
+      setError(errorMessage(e, "Failed to load cart"));
     } finally {
       setLoadingCart(false);
     }
@@ -73,8 +75,8 @@ export default function CheckoutPage() {
       );
 
       setPaymentIntent(pi);
-    } catch (e: any) {
-      setError(e?.message ?? "Checkout failed");
+    } catch (e: unknown) {
+      setError(errorMessage(e, "Checkout failed"));
     } finally {
       setCreating(false);
     }
@@ -99,10 +101,15 @@ export default function CheckoutPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Checkout (test flow)</h1>
-        <Link href="/cart" className="underline text-sm">
-          Back to cart
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Checkout</h1>
+          <div className="text-sm text-slate-600">
+            Test flow: create order → create Stripe PaymentIntent
+          </div>
+        </div>
+        <Link href="/cart" className="sb-btn-outline">
+          ← Back to cart
         </Link>
       </div>
 
@@ -112,84 +119,106 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      <div className="border rounded p-4 space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium">Cart snapshot</div>
-            <div className="text-sm opacity-70">
-              {loadingCart ? "Loading…" : `${cart?.items.length ?? 0} items`}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-7 space-y-4">
+          <div className="sb-card p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-semibold">Cart</div>
+                <div className="text-sm text-slate-600">
+                  {loadingCart ? "Loading…" : `${cart?.items.length ?? 0} items`}
+                </div>
+              </div>
+              <button className="sb-btn-outline" onClick={loadCart}>
+                Refresh
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {cart?.items?.length ? (
+                cart.items.map((it) => (
+                  <div
+                    key={it.productVariantId}
+                    className="flex items-center justify-between gap-3 rounded-sm border border-black/10 bg-white p-3"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">
+                        {it.productName ?? "Item"}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        Qty: <span className="font-medium">{it.quantity}</span>
+                      </div>
+                    </div>
+                    <div className="text-sm font-semibold text-[var(--brand)]">
+                      {it.price != null
+                        ? formatMoney(it.price * it.quantity, it.currency)
+                        : "—"}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-slate-600">Cart is empty.</div>
+              )}
             </div>
           </div>
-          <button className="underline text-sm" onClick={loadCart}>
-            Refresh
-          </button>
+
+          <div className="sb-card p-5">
+            <div className="font-semibold">Payment</div>
+            <div className="text-sm text-slate-600 mt-1">
+              Click below to create an order and a Stripe PaymentIntent.
+            </div>
+
+            <button
+              disabled={creating}
+              onClick={doCheckout}
+              className="sb-btn-primary w-full mt-4 disabled:opacity-60"
+            >
+              {creating ? "Creating…" : "Create order + Stripe PaymentIntent"}
+            </button>
+          </div>
         </div>
 
-        {cart?.items?.length ? (
-          <ul className="text-sm list-disc pl-5">
-            {cart.items.map((it) => (
-              <li key={it.productVariantId}>
-                {it.productName ?? "Item"} × {it.quantity}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm opacity-70">Cart is empty.</p>
-        )}
-      </div>
-
-      <button
-        disabled={creating}
-        onClick={doCheckout}
-        className="bg-indigo-600 disabled:opacity-50 text-white px-4 py-2 rounded"
-      >
-        {creating ? "Creating order…" : "Create order + Stripe PaymentIntent"}
-      </button>
-
-      {order && (
-        <div className="border rounded p-4 space-y-2">
-          <div className="font-medium">Order created</div>
-          <div className="text-sm">
-            <div>
-              <span className="opacity-70">OrderId:</span>{" "}
-              <span className="font-mono break-all">{order.id}</span>
+        <aside className="lg:col-span-5">
+          <div className="sb-card p-5 lg:sticky lg:top-28 space-y-3">
+            <div className="font-semibold">Summary</div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-600">Total</span>
+              <span className="text-lg font-bold text-slate-900">
+                {formatMoney(cart?.totalAmount ?? null, cart?.currency)}
+              </span>
             </div>
-            {order.totalAmount != null ? (
-              <div>
-                <span className="opacity-70">Total:</span>{" "}
-                {order.totalAmount} {order.currency ?? ""}
+
+            {order ? (
+              <div className="rounded-sm border border-black/10 p-3 bg-slate-50">
+                <div className="text-sm font-medium">Order created</div>
+                <div className="text-xs text-slate-600 mt-1">
+                  <span className="opacity-70">OrderId:</span>{" "}
+                  <span className="font-mono break-all">{order.id}</span>
+                </div>
               </div>
             ) : null}
-          </div>
-        </div>
-      )}
 
-      {paymentIntent && (
-        <div className="border rounded p-4 space-y-2">
-          <div className="font-medium">Stripe PaymentIntent created</div>
-          <div className="text-sm space-y-1">
-            <div>
-              <span className="opacity-70">paymentIntentId:</span>{" "}
-              <span className="font-mono break-all">
-                {paymentIntent.paymentIntentId}
-              </span>
-            </div>
-            <div>
-              <span className="opacity-70">clientSecret:</span>{" "}
-              <span className="font-mono break-all">
-                {paymentIntent.clientSecret}
-              </span>
+            {paymentIntent ? (
+              <div className="rounded-sm border border-black/10 p-3 bg-slate-50">
+                <div className="text-sm font-medium">Stripe PaymentIntent</div>
+                <div className="text-xs text-slate-600 mt-1">
+                  <div className="opacity-70">paymentIntentId</div>
+                  <div className="font-mono break-all">
+                    {paymentIntent.paymentIntentId}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="text-xs text-slate-500">
+              Tip: integrate Stripe.js Elements to confirm payment using the
+              clientSecret.
             </div>
           </div>
+        </aside>
+      </div>
 
-          <div className="text-sm opacity-80">
-            Next step (optional): integrate Stripe.js Elements to confirm card
-            payment using the clientSecret.
-          </div>
-        </div>
-      )}
-
-      <div className="text-sm opacity-70">
+      <div className="text-sm text-slate-600">
         If you get an error about shipping address, create a saved address in the
         backend (user profile endpoints) or extend this page to submit shipping
         fields.

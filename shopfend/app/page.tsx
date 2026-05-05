@@ -1,7 +1,7 @@
 "use client";
 
-import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 export default function Home() {
   const { data: session } = useSession();
@@ -29,66 +29,79 @@ export default function Home() {
   };
 
   return (
-    <div className="p-6 text-center space-y-6">
-      {session ? (
-        <>
-          <h1 className="text-xl">Hello, {session.user?.name}</h1>
-          <div className="text-sm opacity-80">
-            <p>{session.user?.email}</p>
-          </div>
-
-          <div className="flex items-center justify-center gap-3">
-            <Link
-              href="/products"
-              className="bg-emerald-600 text-white px-4 py-2 rounded"
-            >
-              Browse Products
-            </Link>
-            <Link
-              href="/cart"
-              className="bg-slate-800 text-white px-4 py-2 rounded"
-            >
-              Cart
-            </Link>
-            <Link
-              href="/checkout"
-              className="bg-indigo-600 text-white px-4 py-2 rounded"
-            >
-              Checkout
-            </Link>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 text-white px-4 py-2 rounded"
-          >
-            Sign Out
-          </button>
-        </>
-      ) : (
-        <>
-          <div className="space-y-2">
-            <p className="opacity-80">
-              Sign in to add items to cart and test checkout.
+    <div className="space-y-6">
+      <section className="sb-card overflow-hidden">
+        <div className="p-6 sm:p-10 bg-gradient-to-r from-[var(--brand)] to-[var(--brand-2)] text-white">
+          <div className="max-w-2xl space-y-3">
+            <div className="sb-badge bg-white/15">Demo storefront</div>
+            <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
+              A clean, fast marketplace UI for your Shopbee backend
+            </h1>
+            <p className="text-white/90">
+              Browse products, add to cart, and run a test checkout flow. Styled in a
+              modern “online marketplace” look.
             </p>
-            <button
-              onClick={() => signIn("keycloak")}
-              className="bg-blue-500 text-white px-4 py-2 rounded"
-            >
-              Sign In with Keycloak
-            </button>
-          </div>
 
-          <div className="flex items-center justify-center gap-3">
-            <Link
-              href="/products"
-              className="bg-emerald-600 text-white px-4 py-2 rounded"
-            >
-              Browse Products (anonymous)
-            </Link>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Link href="/products" className="sb-btn bg-white text-slate-900 hover:bg-white/90">
+                Browse products
+              </Link>
+              <Link href="/cart" className="sb-btn bg-white/10 text-white hover:bg-white/15">
+                View cart
+              </Link>
+              {session ? (
+                <button onClick={handleLogout} className="sb-btn bg-black/20 hover:bg-black/30">
+                  Sign out
+                </button>
+              ) : (
+                <button onClick={() => signIn("keycloak")} className="sb-btn bg-black/20 hover:bg-black/30">
+                  Sign in
+                </button>
+              )}
+            </div>
+
+            {session ? (
+              <div className="pt-3 text-sm text-white/90">
+                Signed in as <span className="font-medium">{session.user?.email ?? session.user?.name}</span>
+              </div>
+            ) : (
+              <div className="pt-3 text-sm text-white/80">
+                Sign in to access cart + checkout.
+              </div>
+            )}
           </div>
-        </>
-      )}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="sb-card p-5">
+          <div className="font-semibold">Flash deals</div>
+          <p className="text-sm text-slate-600 mt-1">
+            Highlight discounted items with clear pricing and quick navigation.
+          </p>
+          <Link href="/products" className="inline-block mt-3 text-sm font-medium text-[var(--brand)] hover:underline">
+            Explore deals →
+          </Link>
+        </div>
+        <div className="sb-card p-5">
+          <div className="font-semibold">Secure sign-in</div>
+          <p className="text-sm text-slate-600 mt-1">
+            Keycloak + NextAuth session handling built-in.
+          </p>
+          <Link href="/checkout" className="inline-block mt-3 text-sm font-medium text-[var(--brand)] hover:underline">
+            Go to checkout →
+          </Link>
+        </div>
+        <div className="sb-card p-5">
+          <div className="font-semibold">Fast UI</div>
+          <p className="text-sm text-slate-600 mt-1">
+            Card-based layout, responsive grid, and a sticky header with search.
+          </p>
+          <Link href="/products" className="inline-block mt-3 text-sm font-medium text-[var(--brand)] hover:underline">
+            Start shopping →
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

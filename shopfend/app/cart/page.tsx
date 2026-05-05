@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import Link from "next/link";
-import { isAbortError, shopbeApi, type CartDto } from "../../lib/shopbeApi";
+import { isAbortError, shopbeApi, type CartDto } from "@/lib/shopbeApi";
+import { formatMoney } from "@/lib/format";
+import { errorMessage } from "@/lib/errors";
 
 export default function CartPage() {
   const { data: session, status } = useSession();
@@ -21,9 +23,9 @@ export default function CartPage() {
       setError(null);
       const data = await shopbeApi.cart.getMyCart(session.accessToken, abort.signal);
       setCart(data);
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (isAbortError(e)) return;
-      setError(e?.message ?? "Failed to load cart");
+      setError(errorMessage(e, "Failed to load cart"));
     } finally {
       setLoading(false);
     }
@@ -45,8 +47,8 @@ export default function CartPage() {
         { quantity }
       );
       setCart(data);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to update quantity");
+    } catch (e: unknown) {
+      setError(errorMessage(e, "Failed to update quantity"));
     } finally {
       setBusyItem(null);
     }
@@ -58,8 +60,8 @@ export default function CartPage() {
       setBusyItem(productVariantId);
       const data = await shopbeApi.cart.removeItem(session.accessToken, productVariantId);
       setCart(data);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to remove item");
+    } catch (e: unknown) {
+      setError(errorMessage(e, "Failed to remove item"));
     } finally {
       setBusyItem(null);
     }
@@ -84,13 +86,22 @@ export default function CartPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Cart</h1>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Shopping cart</h1>
+          <div className="text-sm text-slate-600">
+            Review items before checkout.
+          </div>
+        </div>
         <div className="flex items-center gap-3 text-sm">
-          <button className="underline" onClick={refresh} disabled={loading}>
+          <button
+            className="sb-btn-outline"
+            onClick={refresh}
+            disabled={loading}
+          >
             {loading ? "Refreshing…" : "Refresh"}
           </button>
-          <Link href="/products" className="underline">
+          <Link href="/products" className="sb-btn-outline">
             Continue shopping
           </Link>
         </div>
@@ -103,68 +114,97 @@ export default function CartPage() {
       )}
 
       {!cart ? (
-        <p>{loading ? "Loading cart…" : "No cart loaded yet."}</p>
+        <div className="sb-card p-6">
+          {loading ? "Loading cart…" : "No cart loaded yet."}
+        </div>
       ) : cart.items.length === 0 ? (
-        <div className="space-y-2">
-          <p className="opacity-80">Your cart is empty.</p>
-          <Link href="/products" className="underline">
+        <div className="sb-card p-6 space-y-2">
+          <div className="font-semibold">Your cart is empty</div>
+          <div className="text-sm text-slate-600">
+            Add some products to see them here.
+          </div>
+          <Link href="/products" className="sb-btn-primary">
             Browse products
           </Link>
         </div>
       ) : (
-        <div className="space-y-3">
-          <div className="space-y-2">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div className="lg:col-span-8 space-y-3">
             {cart.items.map((it) => (
-              <div
-                key={it.productVariantId}
-                className="border rounded p-3 flex items-center justify-between gap-4"
-              >
-                <div className="min-w-0">
-                  <div className="font-medium truncate">
-                    {it.productName ?? "Item"}
+              <div key={it.productVariantId} className="sb-card p-4">
+                <div className="flex gap-4">
+                  <div className="h-20 w-20 rounded-sm bg-gradient-to-br from-slate-50 to-slate-100 grid place-items-center text-slate-400 text-xs">
+                    Img
                   </div>
-                  <div className="text-xs opacity-70 font-mono break-all">
-                    variant: {it.productVariantId}
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={1}
-                    value={it.quantity}
-                    disabled={busyItem === it.productVariantId}
-                    onChange={(e) =>
-                      setQty(it.productVariantId, Math.max(1, Number(e.target.value)))
-                    }
-                    className="border rounded px-2 py-1 w-20"
-                  />
-                  <button
-                    disabled={busyItem === it.productVariantId}
-                    onClick={() => remove(it.productVariantId)}
-                    className="border px-3 py-1 rounded"
-                  >
-                    Remove
-                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-slate-900 truncate">
+                      {it.productName ?? "Item"}
+                    </div>
+                    <div className="text-xs text-slate-500 font-mono break-all mt-1">
+                      variant: {it.productVariantId}
+                    </div>
+                    <div className="text-sm text-slate-700 mt-2">
+                      {it.price != null ? (
+                        <>
+                          <span className="opacity-70">Price:</span>{" "}
+                          <span className="font-semibold text-[var(--brand)]">
+                            {formatMoney(it.price, it.currency)}
+                          </span>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      value={it.quantity}
+                      disabled={busyItem === it.productVariantId}
+                      onChange={(e) =>
+                        setQty(
+                          it.productVariantId,
+                          Math.max(1, Number(e.target.value))
+                        )
+                      }
+                      className="w-24 rounded-sm border border-black/15 px-3 py-2 text-sm"
+                    />
+                    <button
+                      disabled={busyItem === it.productVariantId}
+                      onClick={() => remove(it.productVariantId)}
+                      className="sb-btn-outline"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="border-t pt-3 flex items-center justify-between">
-            <div>
-              <div className="text-sm opacity-70">Total</div>
-              <div className="font-semibold">
-                {cart.totalAmount ?? "—"} {cart.currency ?? ""}
+          <aside className="lg:col-span-4">
+            <div className="sb-card p-5 lg:sticky lg:top-28">
+              <div className="font-semibold">Order summary</div>
+              <div className="mt-3 flex items-center justify-between text-sm">
+                <span className="text-slate-600">Items</span>
+                <span className="font-medium">{cart.items.length}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-sm text-slate-600">Total</span>
+                <span className="text-lg font-bold text-slate-900">
+                  {formatMoney(cart.totalAmount ?? null, cart.currency)}
+                </span>
+              </div>
+
+              <Link href="/checkout" className="sb-btn-primary w-full mt-4">
+                Checkout
+              </Link>
+              <div className="text-xs text-slate-500 mt-2">
+                Taxes/shipping are demo-only in this UI.
               </div>
             </div>
-            <Link
-              href="/checkout"
-              className="bg-indigo-600 text-white px-4 py-2 rounded"
-            >
-              Checkout
-            </Link>
-          </div>
+          </aside>
         </div>
       )}
     </div>

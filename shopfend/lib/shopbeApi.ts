@@ -2,6 +2,8 @@ export type ApiEnvelope<T> = {
   data: T;
 };
 
+import { asRecord, errorMessage } from "./errors";
+
 export type ProductListItem = {
   id: string;
   name: string;
@@ -69,13 +71,14 @@ export type ShopbeApiClientOptions = {
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-  "http://localhost:5000";
+  // Shopbe.Web dev profile (see Shopbe.Web/Properties/launchSettings.json)
+  "http://localhost:5072";
 
 const DEFAULT_TIMEOUT_MS = 15000;
 
 export function isAbortError(err: unknown): boolean {
-  if (!err || typeof err !== "object") return false;
-  const anyErr = err as any;
+  const anyErr = asRecord(err);
+  if (!anyErr) return false;
   // Browser fetch + Node/undici typically use name === 'AbortError'
   if (anyErr.name === "AbortError") return true;
   // Some environments surface abort as DOMException-ish
@@ -86,8 +89,8 @@ export function isAbortError(err: unknown): boolean {
 }
 
 function isLikelyNetworkError(err: unknown): boolean {
-  if (!err || typeof err !== "object") return false;
-  const anyErr = err as any;
+  const anyErr = asRecord(err);
+  if (!anyErr) return false;
   const msg = typeof anyErr.message === "string" ? anyErr.message : "";
   // Browser: 'Failed to fetch'. Node (undici): 'fetch failed'.
   return (
@@ -169,7 +172,10 @@ async function requestJson<T>(
 
     if (isLikelyNetworkError(e)) {
       throw new Error(
-        `Cannot reach API at ${API_BASE_URL}. Is the backend running and accessible from the browser? (${(e as any)?.message ?? "network error"})`
+        `Cannot reach API at ${API_BASE_URL}. Is the backend running and accessible from the browser? (${errorMessage(
+          e,
+          "network error"
+        )})`
       );
     }
 
@@ -190,17 +196,23 @@ async function requestJson<T>(
   }
 
   if (!res.ok) {
+    const obj = asRecord(json);
+    const pick = (key: string) => {
+      const v = obj?.[key];
+      return typeof v === "string" ? v : undefined;
+    };
     const message =
-      (json as any)?.message ||
-      (json as any)?.title ||
-      (json as any)?.error ||
+      pick("message") ||
+      pick("title") ||
+      pick("error") ||
       (text && text.slice(0, 500)) ||
       res.statusText;
     throw new Error(`API ${res.status} ${res.statusText} (${path}): ${message}`);
   }
 
-  if (json && typeof json === "object" && "data" in (json as any)) {
-    return (json as ApiEnvelope<T>).data;
+  const jsonObj = asRecord(json);
+  if (jsonObj && "data" in jsonObj) {
+    return (jsonObj as unknown as ApiEnvelope<T>).data;
   }
 
   return json as T;

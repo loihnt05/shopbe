@@ -1,17 +1,20 @@
+import "./globals.css";
 import SessionProvider from "./components/SessionProvider";
-import NavBar from "./components/NavBar";
+import AppShell from "./components/AppShell";
 
 export default function RootLayout({
   children,
+  session,
 }: {
   children: React.ReactNode;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  session?: any;
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen">
-        <SessionProvider>
-          <NavBar />
-          <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+      <body>
+        <SessionProvider session={session}>
+          <AppShell>{children}</AppShell>
         </SessionProvider>
       </body>
     </html>
