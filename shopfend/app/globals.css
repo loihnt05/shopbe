@@ -1,73 +1,133 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  /* Marketplace theme (generic — not tied to any proprietary brand assets) */
-  --background: #f5f5f5;
-  --foreground: #0f172a; /* slate-900 */
-  --brand: #ee4d2d; /* warm orange */
-  --brand-2: #ff7337;
-  --card: #ffffff;
-  --border: rgba(15, 23, 42, 0.10);
+  /* Brand tokens (distinct orange e-commerce theme) */
+  --brand: #ff5a1f;
+  --brand-2: #e84b15;
+  --brand-soft: color-mix(in srgb, var(--brand) 12%, white);
+
+  /* Surfaces */
+  --background: #f6f7fb;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --muted: #64748b;
+  --border: color-mix(in srgb, black 12%, transparent);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-brand: var(--brand);
-  --color-brand-2: var(--brand-2);
-  --color-card: var(--card);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(
+    --font-sb-sans,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    "Noto Sans",
+    "Liberation Sans",
+    sans-serif
+  );
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0b1220;
+    --foreground: #e2e8f0;
+    --surface: #0f172a;
+    --muted: #94a3b8;
+    --border: color-mix(in srgb, white 14%, transparent);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
-    Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-  text-rendering: geometricPrecision;
+@layer base {
+  html {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background: radial-gradient(
+        1000px 500px at 50% -200px,
+        var(--brand-soft),
+        transparent 60%
+      ),
+      var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--brand) 35%, white);
+  }
 }
 
 @layer components {
   .sb-container {
-    @apply mx-auto w-full max-w-6xl px-4;
+    @apply mx-auto w-full max-w-7xl px-4;
   }
 
   .sb-card {
-    @apply rounded-sm bg-white border;
-    border-color: var(--border);
-  }
-
-  .sb-btn {
-    @apply inline-flex items-center justify-center rounded-sm px-4 py-2 text-sm font-medium transition;
-  }
-
-  .sb-btn-primary {
-    @apply inline-flex items-center justify-center rounded-sm px-4 py-2 text-sm font-medium transition text-white;
-    background: var(--brand);
-  }
-
-  .sb-btn-primary:hover {
-    background: var(--brand-2);
-  }
-
-  .sb-btn-outline {
-    @apply inline-flex items-center justify-center rounded-sm px-4 py-2 text-sm font-medium transition bg-white;
+    background: var(--surface);
     border: 1px solid var(--border);
-  }
-
-  .sb-btn-outline:hover {
-    @apply bg-slate-50;
+    box-shadow: var(--shadow);
+    @apply rounded-lg;
   }
 
   .sb-badge {
-    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold;
+  }
+
+  .sb-badge-brand {
+    background: color-mix(in srgb, var(--brand) 14%, transparent);
+    color: var(--brand);
+  }
+
+  .sb-badge-muted {
+    background: color-mix(in srgb, var(--foreground) 6%, transparent);
+    color: var(--muted);
+  }
+
+  .sb-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-white shadow-sm;
+    background: var(--brand);
+  }
+  .sb-btn-primary:hover {
+    background: var(--brand-2);
+  }
+  .sb-btn-primary:disabled {
+    @apply opacity-60 pointer-events-none;
+  }
+
+  .sb-btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--foreground);
+  }
+  .sb-btn-outline:hover {
+    background: color-mix(in srgb, var(--surface) 82%, var(--brand) 18%);
+  }
+  .sb-btn-outline:disabled {
+    @apply opacity-60 pointer-events-none;
+  }
+
+  .sb-input {
+    @apply w-full rounded-md px-3 py-2 text-sm outline-none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .sb-input:focus {
+    border-color: color-mix(in srgb, var(--brand) 70%, black 0%);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 22%, transparent);
   }
 }

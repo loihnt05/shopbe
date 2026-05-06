@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useSession, signIn, signOut } from "next-auth/react";
+import Link from "next/link";
 
 export default function Home() {
   const { data: session } = useSession();
@@ -30,78 +30,72 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
-      <section className="sb-card overflow-hidden">
-        <div className="p-6 sm:p-10 bg-gradient-to-r from-[var(--brand)] to-[var(--brand-2)] text-white">
-          <div className="max-w-2xl space-y-3">
-            <div className="sb-badge bg-white/15">Demo storefront</div>
-            <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
-              A clean, fast marketplace UI for your Shopbee backend
-            </h1>
-            <p className="text-white/90">
-              Browse products, add to cart, and run a test checkout flow. Styled in a
-              modern “online marketplace” look.
-            </p>
+      <div className="sb-card p-6 sm:p-8 overflow-hidden relative">
+        <div className="absolute inset-0 opacity-50 pointer-events-none" />
 
-            <div className="flex flex-wrap gap-3 pt-2">
-              <Link href="/products" className="sb-btn bg-white text-slate-900 hover:bg-white/90">
-                Browse products
-              </Link>
-              <Link href="/cart" className="sb-btn bg-white/10 text-white hover:bg-white/15">
-                View cart
-              </Link>
-              {session ? (
-                <button onClick={handleLogout} className="sb-btn bg-black/20 hover:bg-black/30">
-                  Sign out
-                </button>
-              ) : (
-                <button onClick={() => signIn("keycloak")} className="sb-btn bg-black/20 hover:bg-black/30">
-                  Sign in
-                </button>
-              )}
-            </div>
+        <div className="relative">
+          <div className="text-sm text-[var(--muted)]">Shopbee demo</div>
+          <h1 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight text-[var(--foreground)]">
+            Discover deals across a modern marketplace UI
+          </h1>
+          <p className="mt-3 text-sm sm:text-base text-[var(--muted)] max-w-2xl">
+            Orange accents, clean cards, and a simple cart/checkout flow.
+            Sign in to try the full experience.
+          </p>
+
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <Link href="/products" className="sb-btn-primary">
+              Browse products
+            </Link>
+            <Link href="/cart" className="sb-btn-outline">
+              View cart
+            </Link>
 
             {session ? (
-              <div className="pt-3 text-sm text-white/90">
-                Signed in as <span className="font-medium">{session.user?.email ?? session.user?.name}</span>
-              </div>
+              <button onClick={handleLogout} className="sb-btn-outline">
+                Sign out
+              </button>
             ) : (
-              <div className="pt-3 text-sm text-white/80">
-                Sign in to access cart + checkout.
-              </div>
+              <button onClick={() => signIn("keycloak")} className="sb-btn-primary">
+                Sign in
+              </button>
             )}
           </div>
-        </div>
-      </section>
 
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {session ? (
+            <div className="mt-6 text-sm text-[var(--foreground)]">
+              <div className="font-medium">Signed in as</div>
+              <div className="mt-1">
+                <span className="opacity-70">Name:</span> {session.user?.name ?? "—"}
+              </div>
+              <div>
+                <span className="opacity-70">Email:</span> {session.user?.email ?? "—"}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="sb-card p-5">
-          <div className="font-semibold">Flash deals</div>
-          <p className="text-sm text-slate-600 mt-1">
-            Highlight discounted items with clear pricing and quick navigation.
-          </p>
-          <Link href="/products" className="inline-block mt-3 text-sm font-medium text-[var(--brand)] hover:underline">
-            Explore deals →
-          </Link>
+          <div className="font-semibold">Fast search</div>
+          <div className="text-sm text-[var(--muted)] mt-1">
+            Use the header search bar to filter products instantly.
+          </div>
         </div>
         <div className="sb-card p-5">
-          <div className="font-semibold">Secure sign-in</div>
-          <p className="text-sm text-slate-600 mt-1">
-            Keycloak + NextAuth session handling built-in.
-          </p>
-          <Link href="/checkout" className="inline-block mt-3 text-sm font-medium text-[var(--brand)] hover:underline">
-            Go to checkout →
-          </Link>
+          <div className="font-semibold">Cart flow</div>
+          <div className="text-sm text-[var(--muted)] mt-1">
+            Update quantities, remove items, and review a summary.
+          </div>
         </div>
         <div className="sb-card p-5">
-          <div className="font-semibold">Fast UI</div>
-          <p className="text-sm text-slate-600 mt-1">
-            Card-based layout, responsive grid, and a sticky header with search.
-          </p>
-          <Link href="/products" className="inline-block mt-3 text-sm font-medium text-[var(--brand)] hover:underline">
-            Start shopping →
-          </Link>
+          <div className="font-semibold">Checkout (test)</div>
+          <div className="text-sm text-[var(--muted)] mt-1">
+            Create an order and a Stripe PaymentIntent via the API.
+          </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

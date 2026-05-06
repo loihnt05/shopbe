@@ -12,14 +12,14 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
       href={`/products/${product.id}`}
       className="group sb-card overflow-hidden hover:shadow-md transition-shadow"
     >
-      <div className="aspect-[1/1] bg-gradient-to-br from-slate-50 to-slate-100 grid place-items-center">
+      <div className="relative aspect-[1/1] bg-gradient-to-br from-slate-50 to-slate-100 grid place-items-center">
         {product.thumbnailUrl ? (
           <Image
             src={product.thumbnailUrl}
             alt={product.name}
-            width={400}
-            height={400}
-            className="h-full w-full object-cover"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            className="object-cover"
             unoptimized
           />
         ) : (
@@ -51,16 +51,14 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
           </div>
 
           {hasDiscount ? (
-            <span className="sb-badge bg-[color:rgba(238,77,45,0.10)] text-[var(--brand)]">
+            <span className="sb-badge sb-badge-brand">
               Sale
             </span>
           ) : (
-            <span className="sb-badge bg-slate-100 text-slate-600">New</span>
+            <span className="sb-badge sb-badge-muted">New</span>
           )}
         </div>
       </div>
     </Link>
   );
 }
-
-

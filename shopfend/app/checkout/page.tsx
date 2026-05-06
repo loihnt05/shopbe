@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession, signIn } from "next-auth/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   isAbortError,
@@ -24,14 +24,23 @@ export default function CheckoutPage() {
     useState<CreateStripePaymentIntentResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const abort = useMemo(() => new AbortController(), []);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const getSignal = () => {
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    return abortRef.current.signal;
+  };
 
   const loadCart = async () => {
     if (!session?.accessToken) return;
     try {
       setLoadingCart(true);
       setError(null);
-      const data = await shopbeApi.cart.getMyCart(session.accessToken, abort.signal);
+      const data = await shopbeApi.cart.getMyCart(
+        session.accessToken,
+        getSignal()
+      );
       setCart(data);
     } catch (e: unknown) {
       if (isAbortError(e)) return;
@@ -43,7 +52,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (status === "authenticated") loadCart();
-    return () => abort.abort();
+    return () => abortRef.current?.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
@@ -91,7 +100,7 @@ export default function CheckoutPage() {
         <p className="opacity-80">Sign in to checkout.</p>
         <button
           onClick={() => signIn("keycloak")}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="sb-btn-primary"
         >
           Sign in
         </button>

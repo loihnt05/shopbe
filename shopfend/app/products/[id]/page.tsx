@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession, signIn } from "next-auth/react";
-import { use, useMemo, useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { isAbortError, shopbeApi, type ProductDetail } from "@/lib/shopbeApi";
 import Link from "next/link";
 import { formatMoney } from "@/lib/format";
@@ -21,9 +21,8 @@ export default function ProductDetailPage({
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const abort = useMemo(() => new AbortController(), []);
-
   useEffect(() => {
+    const abort = new AbortController();
     (async () => {
       try {
         setError(null);
@@ -36,7 +35,7 @@ export default function ProductDetailPage({
     })();
 
     return () => abort.abort();
-  }, [id, abort]);
+  }, [id]);
 
   const primaryVariantId = product?.variants?.[0]?.id;
   const displayPrice = product?.price ?? product?.variants?.[0]?.price;
@@ -147,7 +146,7 @@ export default function ProductDetailPage({
                     onChange={(e) =>
                       setQuantity(Math.max(1, Number(e.target.value)))
                     }
-                    className="w-24 rounded-sm border border-black/15 px-3 py-2 text-sm"
+                    className="sb-input w-24"
                   />
                 </div>
 

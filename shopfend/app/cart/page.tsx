@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import Link from "next/link";
 import { isAbortError, shopbeApi, type CartDto } from "@/lib/shopbeApi";
@@ -14,14 +14,24 @@ export default function CartPage() {
   const [error, setError] = useState<string | null>(null);
   const [busyItem, setBusyItem] = useState<string | null>(null);
 
-  const abort = useMemo(() => new AbortController(), []);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const getSignal = () => {
+    // abort any in-flight request before starting a new one
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    return abortRef.current.signal;
+  };
 
   const refresh = async () => {
     if (!session?.accessToken) return;
     try {
       setLoading(true);
       setError(null);
-      const data = await shopbeApi.cart.getMyCart(session.accessToken, abort.signal);
+      const data = await shopbeApi.cart.getMyCart(
+        session.accessToken,
+        getSignal()
+      );
       setCart(data);
     } catch (e: unknown) {
       if (isAbortError(e)) return;
@@ -33,7 +43,7 @@ export default function CartPage() {
 
   useEffect(() => {
     if (status === "authenticated") refresh();
-    return () => abort.abort();
+    return () => abortRef.current?.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
@@ -76,7 +86,7 @@ export default function CartPage() {
         <p className="opacity-80">Sign in to view your cart.</p>
         <button
           onClick={() => signIn("keycloak")}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="sb-btn-primary"
         >
           Sign in
         </button>
@@ -168,7 +178,7 @@ export default function CartPage() {
                           Math.max(1, Number(e.target.value))
                         )
                       }
-                      className="w-24 rounded-sm border border-black/15 px-3 py-2 text-sm"
+                      className="sb-input w-24"
                     />
                     <button
                       disabled={busyItem === it.productVariantId}

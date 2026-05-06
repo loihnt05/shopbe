@@ -55,4 +55,3 @@ export function UserIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-

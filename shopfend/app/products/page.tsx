@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { shopbeApi, type ProductListItem } from "@/lib/shopbeApi";
 import ProductCard from "../components/ProductCard";
 import { errorMessage } from "@/lib/errors";
 
 export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="sb-card p-6">Loading…</div>}>
+      <ProductsPageInner />
+    </Suspense>
+  );
+}
+
+function ProductsPageInner() {
   const [items, setItems] = useState<ProductListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

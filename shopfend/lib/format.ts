@@ -34,4 +34,3 @@ export function formatCompactMoney(amount: number | null | undefined, currency?:
   }
   return `${amount}${currency ? ` ${currency}` : ""}`;
 }
-

@@ -1,19 +1,24 @@
 import "./globals.css";
-import SessionProvider from "./components/SessionProvider";
+
+import { Inter } from "next/font/google";
 import AppShell from "./components/AppShell";
+import SessionProvider from "./components/SessionProvider";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-sb-sans",
+});
 
 export default function RootLayout({
   children,
-  session,
 }: {
   children: React.ReactNode;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  session?: any;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <body>
-        <SessionProvider session={session}>
+        <SessionProvider>
           <AppShell>{children}</AppShell>
         </SessionProvider>
       </body>

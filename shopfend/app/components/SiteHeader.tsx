@@ -64,28 +64,28 @@ export default function SiteHeader() {
       </div>
 
       {/* main bar */}
-      <div className="bg-white border-b border-black/10">
+      <div className="bg-[var(--surface)] border-b border-black/10">
         <div className="sb-container py-4 flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2">
             <div className="h-9 w-9 rounded-sm bg-[var(--brand)] text-white grid place-items-center font-bold">
               S
             </div>
             <div className="leading-tight">
-              <div className="font-semibold text-slate-900">Shopbee</div>
-              <div className="text-[11px] text-slate-500 -mt-0.5">Marketplace</div>
+              <div className="font-semibold text-[var(--foreground)]">Shopbee</div>
+              <div className="text-[11px] text-[var(--muted)] -mt-0.5">Marketplace</div>
             </div>
           </Link>
 
           <form onSubmit={onSearch} className="flex-1">
             <div className="flex items-stretch rounded-sm overflow-hidden border border-black/15 focus-within:border-[var(--brand)]">
-              <div className="px-3 grid place-items-center text-slate-400">
+              <div className="px-3 grid place-items-center text-[var(--muted)]">
                 <SearchIcon className="h-4 w-4" />
               </div>
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search products, brands, categories…"
-                className="w-full bg-white px-2 py-2 text-sm outline-none"
+                className="w-full bg-[var(--surface)] px-2 py-2 text-sm outline-none"
               />
               <button
                 type="submit"
@@ -96,27 +96,37 @@ export default function SiteHeader() {
             </div>
           </form>
 
-          <nav className="hidden md:flex items-center gap-4 text-sm text-slate-600">
-            <Link className={cx("hover:text-slate-900", pathname === "/products" && "text-slate-900 font-medium")}
-                  href="/products">
+          <nav className="hidden md:flex items-center gap-4 text-sm text-[var(--muted)]">
+            <Link
+              className={cx(
+                "hover:text-[var(--foreground)]",
+                pathname === "/products" && "text-[var(--foreground)] font-medium"
+              )}
+              href="/products"
+            >
               Products
             </Link>
-            <Link className={cx("hover:text-slate-900", pathname === "/checkout" && "text-slate-900 font-medium")}
-                  href="/checkout">
+            <Link
+              className={cx(
+                "hover:text-[var(--foreground)]",
+                pathname === "/checkout" && "text-[var(--foreground)] font-medium"
+              )}
+              href="/checkout"
+            >
               Checkout
             </Link>
           </nav>
 
           <Link
             href="/cart"
-            className="ml-1 inline-flex items-center gap-2 rounded-sm px-3 py-2 hover:bg-slate-50"
+            className="ml-1 inline-flex items-center gap-2 rounded-sm px-3 py-2 hover:bg-[color:color-mix(in_srgb,var(--foreground)_6%,transparent)]"
             aria-label="Cart"
           >
-            <CartIcon className="h-5 w-5 text-slate-700" />
+            <CartIcon className="h-5 w-5 text-[var(--foreground)]" />
             <span className="hidden sm:inline text-sm font-medium">Cart</span>
           </Link>
 
-          <div className="hidden sm:flex items-center gap-2 text-sm text-slate-600">
+          <div className="hidden sm:flex items-center gap-2 text-sm text-[var(--muted)]">
             <UserIcon className="h-5 w-5" />
             <span className="max-w-40 truncate">
               {session?.user?.name ?? (session ? "Account" : "Guest")}
