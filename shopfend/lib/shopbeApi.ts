@@ -220,10 +220,16 @@ async function requestJson<T>(
 
 export const shopbeApi = {
   products: {
-    list: (signal?: AbortSignal) =>
-      requestJson<ProductListItem[]>("/api/products", { signal }),
-    getById: (id: string, signal?: AbortSignal) =>
-      requestJson<ProductDetail>(`/api/products/${id}`, { signal }),
+    list: (accessToken?: string, signal?: AbortSignal) =>
+      requestJson<ProductListItem[]>("/api/products", {
+        accessToken,
+        signal,
+      }),
+    getById: (id: string, accessToken?: string, signal?: AbortSignal) =>
+      requestJson<ProductDetail>(`/api/products/${id}`, {
+        accessToken,
+        signal,
+      }),
   },
   cart: {
     getMyCart: (accessToken: string, signal?: AbortSignal) =>

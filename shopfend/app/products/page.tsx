@@ -1,8 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { shopbeApi, type ProductListItem } from "@/lib/shopbeApi";
+import {
+  isAbortError,
+  shopbeApi,
+  type ProductListItem,
+} from "@/lib/shopbeApi";
 import ProductCard from "../components/ProductCard";
 import { errorMessage } from "@/lib/errors";
 
@@ -15,28 +20,44 @@ export default function ProductsPage() {
 }
 
 function ProductsPageInner() {
+  const { data: session, status } = useSession();
   const [items, setItems] = useState<ProductListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const abort = useMemo(() => new AbortController(), []);
+  const abortRef = useRef<AbortController | null>(null);
   const searchParams = useSearchParams();
   const q = (searchParams.get("q") ?? "").trim().toLowerCase();
 
   useEffect(() => {
+    if (status === "loading") return;
+
+    abortRef.current?.abort();
+    const abort = new AbortController();
+    abortRef.current = abort;
+
     (async () => {
       try {
         setLoading(true);
-        const data = await shopbeApi.products.list(abort.signal);
-        setItems(data ?? []);
+        setError(null);
+        const data = await shopbeApi.products.list(
+          session?.accessToken,
+          abort.signal
+        );
+        if (!abort.signal.aborted) {
+          setItems(data ?? []);
+        }
       } catch (e: unknown) {
+        if (isAbortError(e)) return;
         setError(errorMessage(e, "Failed to load products"));
       } finally {
-        setLoading(false);
+        if (!abort.signal.aborted) {
+          setLoading(false);
+        }
       }
     })();
 
     return () => abort.abort();
-  }, [abort]);
+  }, [session?.accessToken, status]);
 
   return (
     <div className="space-y-4">

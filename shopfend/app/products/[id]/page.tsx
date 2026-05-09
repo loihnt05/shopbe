@@ -26,7 +26,11 @@ export default function ProductDetailPage({
     (async () => {
       try {
         setError(null);
-        const data = await shopbeApi.products.getById(id, abort.signal);
+        const data = await shopbeApi.products.getById(
+          id,
+          session?.accessToken,
+          abort.signal
+        );
         setProduct(data);
       } catch (e: unknown) {
         if (isAbortError(e)) return;
@@ -35,7 +39,7 @@ export default function ProductDetailPage({
     })();
 
     return () => abort.abort();
-  }, [id]);
+  }, [id, session?.accessToken]);
 
   const primaryVariantId = product?.variants?.[0]?.id;
   const displayPrice = product?.price ?? product?.variants?.[0]?.price;
