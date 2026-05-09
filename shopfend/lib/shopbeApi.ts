@@ -11,6 +11,7 @@ export type ProductListItem = {
   price?: number | null;
   discountPrice?: number | null;
   currency?: string | null;
+  primaryImageUrl?: string | null;
   thumbnailUrl?: string | null;
 };
 
@@ -27,6 +28,7 @@ export type ProductDetail = {
   name: string;
   description?: string | null;
   categoryId?: string | null;
+  primaryImageUrl?: string | null;
   images?: Array<{ id: string; imageUrl: string }>;
   variants?: ProductVariantDto[];
   // backend may also expose aggregate price fields; keep optional
@@ -73,6 +75,19 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
   // Shopbe.Web dev profile (see Shopbe.Web/Properties/launchSettings.json)
   "http://localhost:5072";
+
+export { API_BASE_URL };
+
+export function resolveApiUrl(value?: string | null): string | undefined {
+  if (!value) return undefined;
+  if (/^https?:\/\//i.test(value)) return value;
+
+  try {
+    return new URL(value, API_BASE_URL).toString();
+  } catch {
+    return value;
+  }
+}
 
 const DEFAULT_TIMEOUT_MS = 15000;
 

@@ -2,11 +2,30 @@
 
 import { useSession, signIn } from "next-auth/react";
 import { use, useEffect, useState } from "react";
-import { isAbortError, shopbeApi, type ProductDetail } from "@/lib/shopbeApi";
+import {
+  isAbortError,
+  shopbeApi,
+  type ProductDetail,
+} from "@/lib/shopbeApi";
 import Link from "next/link";
 import { formatMoney } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
 import Image from "next/image";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
+  "http://localhost:5072";
+
+function resolveImageSrc(value?: string | null): string | undefined {
+  if (!value) return undefined;
+  if (/^https?:\/\//i.test(value)) return value;
+
+  try {
+    return new URL(value, API_BASE_URL).toString();
+  } catch {
+    return value;
+  }
+}
 
 export default function ProductDetailPage({
   params,
@@ -44,6 +63,9 @@ export default function ProductDetailPage({
   const primaryVariantId = product?.variants?.[0]?.id;
   const displayPrice = product?.price ?? product?.variants?.[0]?.price;
   const displayCurrency = product?.currency ?? product?.variants?.[0]?.currency;
+  const primaryImageSrc = resolveImageSrc(
+    product?.primaryImageUrl ?? product?.images?.[0]?.imageUrl
+  );
 
   const addToCart = async () => {
     setMessage(null);
@@ -103,10 +125,10 @@ export default function ProductDetailPage({
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <div className="lg:col-span-5 sb-card overflow-hidden">
-            <div className="aspect-square bg-gradient-to-br from-slate-50 to-slate-100 grid place-items-center">
-              {product.images?.[0]?.imageUrl ? (
+            <div className="aspect-square bg-linear-to-br from-slate-50 to-slate-100 grid place-items-center">
+              {primaryImageSrc ? (
                 <Image
-                  src={product.images[0].imageUrl}
+                  src={primaryImageSrc}
                   alt={product.name}
                   width={700}
                   height={700}
@@ -134,7 +156,7 @@ export default function ProductDetailPage({
                 </div>
                 <div className="text-right">
                   <div className="text-xs text-slate-500">Price</div>
-                  <div className="text-2xl font-bold text-[var(--brand)]">
+                  <div className="text-2xl font-bold text-(--brand)">
                     {formatMoney(displayPrice ?? null, displayCurrency)}
                   </div>
                 </div>
