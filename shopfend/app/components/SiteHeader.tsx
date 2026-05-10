@@ -109,6 +109,24 @@ export default function SiteHeader() {
             <Link
               className={cx(
                 "hover:text-[var(--foreground)]",
+                pathname === "/recommendations" && "text-[var(--foreground)] font-medium"
+              )}
+              href="/recommendations"
+            >
+              Recommendations
+            </Link>
+            <Link
+              className={cx(
+                "hover:text-[var(--foreground)]",
+                pathname === "/chat" && "text-[var(--foreground)] font-medium"
+              )}
+              href="/chat"
+            >
+              Chat
+            </Link>
+            <Link
+              className={cx(
+                "hover:text-[var(--foreground)]",
                 pathname === "/checkout" && "text-[var(--foreground)] font-medium"
               )}
               href="/checkout"

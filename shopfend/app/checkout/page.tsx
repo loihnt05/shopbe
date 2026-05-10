@@ -74,6 +74,12 @@ export default function CheckoutPage() {
       // For a basic test flow, start with default behavior.
       const created = await shopbeApi.orders.create(session.accessToken, {
         useDefaultAddressIfAvailable: true,
+        shippingReceiverName: session.user?.name || "Demo User",
+        shippingPhone: "0123456789",
+        shippingAddressLine: "123 Demo Street",
+        shippingCity: "Demo City",
+        shippingDistrict: "Demo District",
+        shippingWard: "Demo Ward"
       });
       setOrder(created);
 
@@ -123,7 +129,7 @@ export default function CheckoutPage() {
       </div>
 
       {error && (
-        <div className="border border-red-300 bg-red-50 p-3 rounded text-sm">
+        <div className="border border-red-300 bg-red-50 p-3 rounded text-sm text-red-800">
           {error}
         </div>
       )}

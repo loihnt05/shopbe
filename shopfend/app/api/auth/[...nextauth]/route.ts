@@ -7,18 +7,21 @@ const issuer = process.env.KEYCLOAK_ISSUER
   ? process.env.KEYCLOAK_ISSUER
   : `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}`;
 
+const keycloakClientSecret = process.env.KEYCLOAK_CLIENT_SECRET;
+
 const handler = NextAuth({
   providers: [
     KeycloakProvider({
       clientId: process.env.KEYCLOAK_CLIENT_ID!,
-      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET!,
       issuer,
       authorization: {
         params: {
           scope: "openid profile email",
         },
       },
-    }),
+      ...(keycloakClientSecret ? { clientSecret: keycloakClientSecret } : {}),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any),
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? [
           GoogleProvider({
@@ -45,8 +48,8 @@ const handler = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      session.accessToken = token.accessToken;
-      session.idToken = token.idToken;
+      session.accessToken = token.accessToken as string | undefined;
+      session.idToken = token.idToken as string | undefined;
       return session;
     },
   },

@@ -6,8 +6,16 @@ using Stripe;
 
 namespace Shopbe.Infrastructure.Repositories;
 
-public class StripeService(IOptions<Shopbe.Infrastructure.StripeOptions> opts) : IStripeService
+public class StripeService : IStripeService
 {
+    private readonly Shopbe.Infrastructure.StripeOptions _opts;
+
+    public StripeService(IOptions<Shopbe.Infrastructure.StripeOptions> opts)
+    {
+        _opts = opts.Value;
+        StripeConfiguration.ApiKey = _opts.SecretKey;
+    }
+
     private static long ToStripeAmount(decimal amount, string currency)
     {
         // Stripe expects the amount in the smallest currency unit.
@@ -61,5 +69,5 @@ public class StripeService(IOptions<Shopbe.Infrastructure.StripeOptions> opts) :
     }
 
     public Event ConstructWebhookEvent(string payload, string signature)
-        => EventUtility.ConstructEvent(payload, signature, opts.Value.WebhookSecret);
+        => EventUtility.ConstructEvent(payload, signature, _opts.WebhookSecret);
 }

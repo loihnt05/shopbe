@@ -86,7 +86,7 @@ export default function ProductDetailPage({
       setBusy(true);
       await shopbeApi.cart.addItem(
         session.accessToken,
-        { productVariantId: primaryVariantId, quantity },
+        { productId: id, productVariantId: primaryVariantId, quantity },
         undefined
       );
       setMessage("Added to cart.");
@@ -110,12 +110,12 @@ export default function ProductDetailPage({
       </div>
 
       {error && (
-        <div className="border border-red-300 bg-red-50 p-3 rounded text-sm">
+        <div className="border  border-red-300 bg-white text-red-800 p-3 rounded text-sm">
           {error}
         </div>
       )}
       {message && (
-        <div className="border border-emerald-300 bg-emerald-50 p-3 rounded text-sm">
+        <div className="border text-green-600 border-emerald-300 bg-emerald-50 p-3 rounded text-sm">
           {message}
         </div>
       )}

@@ -251,7 +251,7 @@ export const shopbeApi = {
       requestJson<CartDto>("/api/cart", { accessToken, signal }),
     addItem: (
       accessToken: string,
-      body: { productVariantId: string; quantity: number },
+      body: { productId: string; productVariantId: string; quantity: number },
       signal?: AbortSignal
     ) =>
       requestJson<CartDto>("/api/cart/items", {
