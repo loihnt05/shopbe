@@ -233,7 +233,28 @@ async function requestJson<T>(
   return json as T;
 }
 
+export function productResponseToListItem(item: any): ProductListItem {
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    price: item.price,
+    discountPrice: item.discountPrice,
+    currency: item.currency,
+    primaryImageUrl: item.primaryImageUrl || item.imageUrl,
+    thumbnailUrl: item.thumbnailUrl,
+  };
+}
+
 export const shopbeApi = {
+  recommendations: {
+    topSelling: (limit: number, signal?: AbortSignal) =>
+      requestJson<any[]>(`/api/recommendations/top-selling?limit=${limit}`, { signal }),
+    me: (accessToken: string, limit: number, signal?: AbortSignal) =>
+      requestJson<any[]>(`/api/recommendations/me?limit=${limit}`, { accessToken, signal }),
+    similar: (productId: string, limit: number, signal?: AbortSignal) =>
+      requestJson<any[]>(`/api/recommendations/products/${productId}/similar?limit=${limit}`, { signal }),
+  },
   products: {
     list: (accessToken?: string, signal?: AbortSignal) =>
       requestJson<ProductListItem[]>("/api/products", {

@@ -1,102 +1,259 @@
 "use client";
 
-import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import ProductCard from "../components/ProductCard";
+import { errorMessage } from "@/lib/errors";
+import {
+  isAbortError,
+  productResponseToListItem,
+  shopbeApi,
+  type ProductListItem,
+} from "@/lib/shopbeApi";
 
-// Mock recommendations data
-const RECOMMENDED_PRODUCTS = [
-  {
-    id: "rec-1",
-    name: "Wireless Noise-Cancelling Headphones",
-    price: 2990000,
-    currency: "VND",
-    primaryImageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80",
-    description: "Premium sound with active noise cancellation."
-  },
-  {
-    id: "rec-2",
-    name: "Smart Fitness Watch",
-    price: 1590000,
-    currency: "VND",
-    primaryImageUrl: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80",
-    description: "Track your health and stay connected on the go."
-  },
-  {
-    id: "rec-3",
-    name: "Ergonomic Office Chair",
-    price: 4500000,
-    currency: "VND",
-    primaryImageUrl: "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=500&q=80",
-    description: "Comfortable support for long working hours."
-  },
-  {
-    id: "rec-4",
-    name: "Mechanical Gaming Keyboard",
-    price: 1250000,
-    currency: "VND",
-    primaryImageUrl: "https://images.unsplash.com/photo-1595225476474-87563907a212?w=500&q=80",
-    description: "Tactile feedback with RGB backlighting."
-  }
-];
+type LoadState<T> = {
+  data: T;
+  loading: boolean;
+  error: string | null;
+};
 
-const TRENDING_PRODUCTS = [
-  {
-    id: "trend-1",
-    name: "Minimalist Coffee Maker",
-    price: 850000,
-    currency: "VND",
-    primaryImageUrl: "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=500&q=80",
-    description: "Start your morning right with a perfect brew."
-  },
-  {
-    id: "trend-2",
-    name: "Portable Bluetooth Speaker",
-    price: 650000,
-    currency: "VND",
-    primaryImageUrl: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500&q=80",
-    description: "Take your music anywhere with rich bass."
-  }
-];
+function initLoadState<T>(data: T): LoadState<T> {
+  return { data, loading: true, error: null };
+}
 
 export default function RecommendationsPage() {
+  const { data: session, status } = useSession();
+
+  const [topSelling, setTopSelling] = useState<LoadState<ProductListItem[]>>(
+    () => initLoadState([])
+  );
+  const [personalized, setPersonalized] = useState<LoadState<ProductListItem[]>>(
+    () => ({ data: [], loading: false, error: null })
+  );
+  const [similar, setSimilar] = useState<LoadState<ProductListItem[]>>(() => ({
+    data: [],
+    loading: false,
+    error: null,
+  }));
+
+  const [selectedSeedId, setSelectedSeedId] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Load top-selling (anonymous endpoint)
+  useEffect(() => {
+    abortRef.current?.abort();
+    const abort = new AbortController();
+    abortRef.current = abort;
+
+    (async () => {
+      try {
+        setTopSelling((s) => ({ ...s, loading: true, error: null }));
+        const data = await shopbeApi.recommendations.topSelling(10, abort.signal);
+        const mapped = (data ?? []).map(productResponseToListItem);
+        if (!abort.signal.aborted) {
+          setTopSelling({ data: mapped, loading: false, error: null });
+          setSelectedSeedId((prev) => prev ?? mapped[0]?.id ?? null);
+        }
+      } catch (e: unknown) {
+        if (isAbortError(e)) return;
+        if (!abort.signal.aborted) {
+          setTopSelling({
+            data: [],
+            loading: false,
+            error: errorMessage(e, "Failed to load top-selling recommendations"),
+          });
+        }
+      }
+    })();
+
+    return () => abort.abort();
+  }, []);
+
+  // Load personalized (requires auth)
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (!session?.accessToken) {
+      setPersonalized({ data: [], loading: false, error: null });
+      return;
+    }
+
+    const abort = new AbortController();
+
+    (async () => {
+      try {
+        setPersonalized((s) => ({ ...s, loading: true, error: null }));
+        const data = await shopbeApi.recommendations.me(
+          session.accessToken!,
+          10,
+          abort.signal
+        );
+        const mapped = (data ?? []).map(productResponseToListItem);
+        if (!abort.signal.aborted) {
+          setPersonalized({ data: mapped, loading: false, error: null });
+        }
+      } catch (e: unknown) {
+        if (isAbortError(e)) return;
+        if (!abort.signal.aborted) {
+          setPersonalized({
+            data: [],
+            loading: false,
+            error: errorMessage(e, "Failed to load personalized recommendations"),
+          });
+        }
+      }
+    })();
+
+    return () => abort.abort();
+  }, [session?.accessToken, status]);
+
+  // Load similar (anonymous endpoint)
+  useEffect(() => {
+    if (!selectedSeedId) {
+      setSimilar({ data: [], loading: false, error: null });
+      return;
+    }
+
+    const abort = new AbortController();
+
+    (async () => {
+      try {
+        setSimilar((s) => ({ ...s, loading: true, error: null }));
+        const data = await shopbeApi.recommendations.similar(
+          selectedSeedId,
+          8,
+          abort.signal
+        );
+        const mapped = (data ?? []).map(productResponseToListItem);
+        if (!abort.signal.aborted) {
+          setSimilar({ data: mapped, loading: false, error: null });
+        }
+      } catch (e: unknown) {
+        if (isAbortError(e)) return;
+        if (!abort.signal.aborted) {
+          setSimilar({
+            data: [],
+            loading: false,
+            error: errorMessage(e, "Failed to load similar products"),
+          });
+        }
+      }
+    })();
+
+    return () => abort.abort();
+  }, [selectedSeedId]);
+
+  const seedOptions = useMemo(() => {
+    return topSelling.data.map((p) => ({ id: p.id, name: p.name }));
+  }, [topSelling.data]);
+
   return (
-    <div className="space-y-10">
-      <div className="sb-card p-6 sm:p-8 bg-gradient-to-br from-[var(--brand)] to-[var(--brand-2)] text-white">
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
-          Curated Just For You
-        </h1>
-        <p className="text-white/80 max-w-2xl">
-          Based on your browsing history and purchases, we have selected these items that we think you&apos;ll love. Discover your next favorite product today.
-        </p>
+    <div className="space-y-6">
+      <div className="sb-card p-6">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <div className="text-sm text-[var(--muted)]">Presentation demo</div>
+            <h1 className="text-2xl font-semibold">Recommendations</h1>
+            <p className="mt-1 text-sm text-[var(--muted)] max-w-3xl">
+              This page calls the backend endpoints in <code>Shopbe.Web</code>:
+              <code className="ml-2">/api/recommendations/top-selling</code>,
+              <code className="ml-2">/api/recommendations/me</code>, and
+              <code className="ml-2">/api/recommendations/products/{"{id}"}/similar</code>.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <section>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-[var(--foreground)]">Top Picks for You</h2>
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Top selling</h2>
+          <div className="text-sm text-[var(--muted)]">
+            {topSelling.loading ? "Loading…" : `${topSelling.data.length} items`}
+          </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-          {RECOMMENDED_PRODUCTS.map((product) => (
-            <ProductCard key={product.id} product={product} />
+
+        {topSelling.error ? (
+          <div className="sb-card p-4 border border-red-300 bg-red-50 text-sm">
+            {topSelling.error}
+          </div>
+        ) : null}
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {topSelling.data.map((p) => (
+            <ProductCard key={p.id} product={p} />
           ))}
         </div>
       </section>
 
-      <section>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-[var(--foreground)]">Trending Now</h2>
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">For you (personalized)</h2>
+          <div className="text-sm text-[var(--muted)]">
+            {!session
+              ? "Sign in to enable"
+              : personalized.loading
+                ? "Loading…"
+                : `${personalized.data.length} items`}
+          </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-          {TRENDING_PRODUCTS.map((product) => (
-            <ProductCard key={product.id} product={product} />
+
+        {!session ? (
+          <div className="sb-card p-4 text-sm text-[var(--muted)]">
+            Personalized recommendations require authentication because the backend
+            uses your browsing / cart / purchase events.
+          </div>
+        ) : personalized.error ? (
+          <div className="sb-card p-4 border border-red-300 bg-red-50 text-sm">
+            {personalized.error}
+          </div>
+        ) : null}
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {personalized.data.map((p) => (
+            <ProductCard key={p.id} product={p} />
           ))}
         </div>
       </section>
 
-      <div className="flex justify-center pt-4">
-        <Link href="/products" className="sb-btn-outline">
-          Explore all products
-        </Link>
-      </div>
+      <section className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h2 className="text-lg font-semibold">Similar products</h2>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-[var(--muted)]" htmlFor="seed">
+              Seed product
+            </label>
+            <select
+              id="seed"
+              className="sb-input max-w-xs"
+              value={selectedSeedId ?? ""}
+              onChange={(e) => setSelectedSeedId(e.target.value || null)}
+              disabled={seedOptions.length === 0}
+            >
+              {seedOptions.length === 0 ? (
+                <option value="">(load top-selling first)</option>
+              ) : null}
+              {seedOptions.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {similar.error ? (
+          <div className="sb-card p-4 border border-red-300 bg-red-50 text-sm">
+            {similar.error}
+          </div>
+        ) : null}
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {similar.data.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
