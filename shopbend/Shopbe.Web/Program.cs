@@ -236,10 +236,19 @@ if (builder.Configuration.GetValue("UserBehavior:Cleanup:Enabled", true))
     var cron = builder.Configuration["UserBehavior:Cleanup:Cron"] ?? "0 3 * * *";
     var batchSize = builder.Configuration.GetValue("UserBehavior:Cleanup:BatchSize", 20_000);
 
-    RecurringJob.AddOrUpdate<Shopbe.Infrastructure.Services.UserBehaviorCleanupJob>(
-        recurringJobId: "user-behavior-cleanup",
-        methodCall: job => job.RunAsync(batchSize, CancellationToken.None),
-        cronExpression: cron);
+    // IMPORTANT:
+    // Avoid Hangfire static APIs (RecurringJob.*) because they depend on JobStorage.Current.
+    // In DI-driven ASP.NET Core apps (and especially WebApplicationFactory/E2E tests),
+    // JobStorage.Current may not be initialized, causing startup failures.
+    using (var scope = app.Services.CreateScope())
+    {
+        var recurringJobs = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+        recurringJobs.AddOrUpdate<Shopbe.Infrastructure.Services.UserBehaviorCleanupJob>(
+            recurringJobId: "user-behavior-cleanup",
+            methodCall: job => job.RunAsync(batchSize, CancellationToken.None),
+            cronExpression: cron,
+            options: new RecurringJobOptions());
+    }
 }
 
 // Stripe CLI/webhooks may forward over HTTP in local dev; avoid redirecting this endpoint

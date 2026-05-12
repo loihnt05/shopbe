@@ -133,6 +133,15 @@ export default function SiteHeader() {
             >
               Checkout
             </Link>
+            <Link
+              className={cx(
+                "hover:text-[var(--foreground)]",
+                pathname === "/purchases" && "text-[var(--foreground)] font-medium"
+              )}
+              href="/purchases"
+            >
+              Purchases
+            </Link>
           </nav>
 
           <Link

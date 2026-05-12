@@ -8,6 +8,8 @@ using Shopbe.Application.Order.Dtos;
 using Shopbe.Application.Order.Queries.GetMyOrderById;
 using Shopbe.Application.Order.Queries.GetMyOrderHistory;
 using Shopbe.Application.Order.Queries.GetMyOrders;
+using Shopbe.Application.Review.Dtos;
+using Shopbe.Application.Review.Queries.GetMyReviewableProducts;
 
 namespace Shopbe.Web.Controllers;
 
@@ -51,6 +53,17 @@ public class OrdersController(IMediator mediator, ICurrentUser currentUser, IUni
     {
         var userId = await GetAppUserIdAsync(cancellationToken);
         var result = await mediator.Send(new GetMyOrderHistoryQuery(userId, id), cancellationToken);
+        return Ok(result);
+    }
+
+    // Purchase history (products): list of products the current user bought in DELIVERED orders.
+    // Reuses the same policy/data as reviewable products, but exposed under /api/orders for discoverability.
+    [HttpGet("me/purchased-products")]
+    public async Task<ActionResult<IReadOnlyList<ReviewableProductDto>>> GetMyPurchasedProducts(
+        [FromQuery] bool onlyNotReviewed = false,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await mediator.Send(new GetMyReviewableProductsQuery(onlyNotReviewed), cancellationToken);
         return Ok(result);
     }
 

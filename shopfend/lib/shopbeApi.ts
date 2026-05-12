@@ -66,6 +66,17 @@ export type CreateStripePaymentIntentResponse = {
   clientSecret: string;
 };
 
+export type PurchasedProductDto = {
+  orderId: string;
+  productId: string;
+  productName: string;
+  productImageUrl?: string | null;
+  /** ISO datetime string */
+  purchasedAt: string;
+  isReviewed: boolean;
+  reviewId?: string | null;
+};
+
 export type ShopbeApiClientOptions = {
   /** Default timeout used when an endpoint doesn't provide one. */
   defaultTimeoutMs?: number;
@@ -233,27 +244,46 @@ async function requestJson<T>(
   return json as T;
 }
 
-export function productResponseToListItem(item: any): ProductListItem {
+export function productResponseToListItem(item: unknown): ProductListItem {
+  const obj = asRecord(item) ?? {};
+
+  const pickString = (k: string): string | undefined => {
+    const v = obj[k];
+    return typeof v === "string" ? v : undefined;
+  };
+
+  const pickStringOrNull = (k: string): string | null | undefined => {
+    const v = obj[k];
+    if (typeof v === "string") return v;
+    if (v === null) return null;
+    return undefined;
+  };
+
+  const pickNumber = (k: string): number | undefined => {
+    const v = obj[k];
+    return typeof v === "number" ? v : undefined;
+  };
+
   return {
-    id: item.id,
-    name: item.name,
-    description: item.description,
-    price: item.price,
-    discountPrice: item.discountPrice,
-    currency: item.currency,
-    primaryImageUrl: item.primaryImageUrl || item.imageUrl,
-    thumbnailUrl: item.thumbnailUrl,
+    id: pickString("id") ?? "",
+    name: pickString("name") ?? "",
+    description: pickStringOrNull("description"),
+    price: pickNumber("price"),
+    discountPrice: pickNumber("discountPrice"),
+    currency: pickString("currency"),
+    primaryImageUrl: pickStringOrNull("primaryImageUrl") ?? pickStringOrNull("imageUrl"),
+    thumbnailUrl: pickStringOrNull("thumbnailUrl"),
   };
 }
 
 export const shopbeApi = {
   recommendations: {
     topSelling: (limit: number, signal?: AbortSignal) =>
-      requestJson<any[]>(`/api/recommendations/top-selling?limit=${limit}`, { signal }),
+      requestJson<unknown[]>(`/api/recommendations/top-selling?limit=${limit}`, { signal }),
     me: (accessToken: string, limit: number, signal?: AbortSignal) =>
-      requestJson<any[]>(`/api/recommendations/me?limit=${limit}`, { accessToken, signal }),
+      requestJson<unknown[]>(`/api/recommendations/me?limit=${limit}`, { accessToken, signal }),
     similar: (productId: string, limit: number, signal?: AbortSignal) =>
-      requestJson<any[]>(`/api/recommendations/products/${productId}/similar?limit=${limit}`, { signal }),
+      requestJson<unknown[]>(`/api/recommendations/products/${productId}/similar?limit=${limit}`, { signal }),
   },
   products: {
     list: (accessToken?: string, signal?: AbortSignal) =>
@@ -331,6 +361,20 @@ export const shopbeApi = {
         body,
         signal,
       }),
+
+    purchasedProducts: (
+      accessToken: string,
+      opts?: { onlyNotReviewed?: boolean; signal?: AbortSignal }
+    ) => {
+      const onlyNotReviewed = opts?.onlyNotReviewed ? "true" : "false";
+      return requestJson<PurchasedProductDto[]>(
+        `/api/orders/me/purchased-products?onlyNotReviewed=${onlyNotReviewed}`,
+        {
+          accessToken,
+          signal: opts?.signal,
+        }
+      );
+    },
   },
   payments: {
     createStripePaymentIntent: (

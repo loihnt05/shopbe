@@ -74,10 +74,7 @@ export default function RecommendationsPage() {
   useEffect(() => {
     if (status === "loading") return;
 
-    if (!session?.accessToken) {
-      setPersonalized({ data: [], loading: false, error: null });
-      return;
-    }
+    if (!session?.accessToken) return;
 
     const abort = new AbortController();
 
@@ -110,10 +107,7 @@ export default function RecommendationsPage() {
 
   // Load similar (anonymous endpoint)
   useEffect(() => {
-    if (!selectedSeedId) {
-      setSimilar({ data: [], loading: false, error: null });
-      return;
-    }
+    if (!selectedSeedId) return;
 
     const abort = new AbortController();
 
@@ -144,6 +138,18 @@ export default function RecommendationsPage() {
     return () => abort.abort();
   }, [selectedSeedId]);
 
+  // If the user is signed out, hide personalized results (without mutating state in an effect).
+  const personalizedDisplay: LoadState<ProductListItem[]> = useMemo(() => {
+    if (!session) return { data: [], loading: false, error: null };
+    return personalized;
+  }, [personalized, session]);
+
+  // If no seed is selected, hide similar results (without mutating state in an effect).
+  const similarDisplay: LoadState<ProductListItem[]> = useMemo(() => {
+    if (!selectedSeedId) return { data: [], loading: false, error: null };
+    return similar;
+  }, [similar, selectedSeedId]);
+
   const seedOptions = useMemo(() => {
     return topSelling.data.map((p) => ({ id: p.id, name: p.name }));
   }, [topSelling.data]);
@@ -153,9 +159,9 @@ export default function RecommendationsPage() {
       <div className="sb-card p-6">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <div className="text-sm text-[var(--muted)]">Presentation demo</div>
+            <div className="text-sm text-(--muted)">Presentation demo</div>
             <h1 className="text-2xl font-semibold">Recommendations</h1>
-            <p className="mt-1 text-sm text-[var(--muted)] max-w-3xl">
+            <p className="mt-1 text-sm text-(--muted) max-w-3xl">
               This page calls the backend endpoints in <code>Shopbe.Web</code>:
               <code className="ml-2">/api/recommendations/top-selling</code>,
               <code className="ml-2">/api/recommendations/me</code>, and
@@ -168,7 +174,7 @@ export default function RecommendationsPage() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Top selling</h2>
-          <div className="text-sm text-[var(--muted)]">
+          <div className="text-sm text-(--muted)">
             {topSelling.loading ? "Loading…" : `${topSelling.data.length} items`}
           </div>
         </div>
@@ -189,28 +195,28 @@ export default function RecommendationsPage() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">For you (personalized)</h2>
-          <div className="text-sm text-[var(--muted)]">
+          <div className="text-sm text-(--muted)">
             {!session
               ? "Sign in to enable"
-              : personalized.loading
+              : personalizedDisplay.loading
                 ? "Loading…"
-                : `${personalized.data.length} items`}
+                : `${personalizedDisplay.data.length} items`}
           </div>
         </div>
 
         {!session ? (
-          <div className="sb-card p-4 text-sm text-[var(--muted)]">
+          <div className="sb-card p-4 text-sm text-(--muted)">
             Personalized recommendations require authentication because the backend
             uses your browsing / cart / purchase events.
           </div>
-        ) : personalized.error ? (
+        ) : personalizedDisplay.error ? (
           <div className="sb-card p-4 border border-red-300 bg-red-50 text-sm">
-            {personalized.error}
+            {personalizedDisplay.error}
           </div>
         ) : null}
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {personalized.data.map((p) => (
+          {personalizedDisplay.data.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
         </div>
@@ -220,7 +226,7 @@ export default function RecommendationsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <h2 className="text-lg font-semibold">Similar products</h2>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-[var(--muted)]" htmlFor="seed">
+            <label className="text-sm text-(--muted)" htmlFor="seed">
               Seed product
             </label>
             <select
@@ -242,14 +248,14 @@ export default function RecommendationsPage() {
           </div>
         </div>
 
-        {similar.error ? (
+        {similarDisplay.error ? (
           <div className="sb-card p-4 border border-red-300 bg-red-50 text-sm">
-            {similar.error}
+            {similarDisplay.error}
           </div>
         ) : null}
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {similar.data.map((p) => (
+          {similarDisplay.data.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
         </div>

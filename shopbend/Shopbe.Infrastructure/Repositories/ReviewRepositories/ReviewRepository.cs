@@ -95,19 +95,21 @@ public class ReviewRepository(ShopDbContext context) : IReviewRepository
             join r in context.Reviews.AsNoTracking().Where(r => r.UserId == userId)
                 on new { x.OrderId, x.ProductId } equals new { r.OrderId, r.ProductId } into rJoin
             from r in rJoin.DefaultIfEmpty()
-            select new ReviewableProductDto(
+            select new
+            {
                 x.OrderId,
                 x.ProductId,
                 x.ProductName,
-                context.ProductImages.AsNoTracking()
+                ProductImageUrl = context.ProductImages.AsNoTracking()
                     .Where(img => img.ProductId == x.ProductId)
                     .OrderByDescending(img => img.IsPrimary)
                     .ThenBy(img => img.SortOrder)
                     .Select(img => img.ImageUrl)
                     .FirstOrDefault(),
                 x.PurchasedAt,
-                r != null,
-                r != null ? r.Id : null);
+                IsReviewed = r != null,
+                ReviewId = r != null ? (Guid?)r.Id : null
+            };
 
         if (onlyNotReviewed)
             query = query.Where(x => !x.IsReviewed);
@@ -120,6 +122,14 @@ public class ReviewRepository(ShopDbContext context) : IReviewRepository
             .ToListAsync(cancellationToken);
 
         return result
+            .Select(x => new ReviewableProductDto(
+                x.OrderId,
+                x.ProductId,
+                x.ProductName,
+                x.ProductImageUrl,
+                x.PurchasedAt,
+                x.IsReviewed,
+                x.ReviewId))
             .GroupBy(x => new { x.OrderId, x.ProductId })
             .Select(g => g.First())
             .ToList();
