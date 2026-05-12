@@ -3,6 +3,7 @@
 import { useSession, signIn } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   isAbortError,
   shopbeApi,
@@ -15,6 +16,7 @@ import { errorMessage } from "@/lib/errors";
 
 export default function CheckoutPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
 
   const [cart, setCart] = useState<CartDto | null>(null);
   const [loadingCart, setLoadingCart] = useState(false);
@@ -22,6 +24,7 @@ export default function CheckoutPage() {
   const [order, setOrder] = useState<CreateOrderResponse | null>(null);
   const [paymentIntent, setPaymentIntent] =
     useState<CreateStripePaymentIntentResponse | null>(null);
+  const [markingPaid, setMarkingPaid] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -94,6 +97,30 @@ export default function CheckoutPage() {
       setError(errorMessage(e, "Checkout failed"));
     } finally {
       setCreating(false);
+    }
+  };
+
+  const markPaidDev = async () => {
+    if (!session?.accessToken) return;
+    if (!order?.id) return;
+
+    try {
+      setError(null);
+      setMarkingPaid(true);
+      await shopbeApi.payments.markStripePaymentPaidDev(session.accessToken, {
+        orderId: order.id,
+        paymentIntentId: paymentIntent?.paymentIntentId,
+      });
+      router.push("/purchases");
+    } catch (e: unknown) {
+      setError(
+        errorMessage(
+          e,
+          "Failed to mark payment as paid. If you're not running in Development, this endpoint returns 404."
+        )
+      );
+    } finally {
+      setMarkingPaid(false);
     }
   };
 
@@ -222,6 +249,15 @@ export default function CheckoutPage() {
                     {paymentIntent.paymentIntentId}
                   </div>
                 </div>
+
+                <button
+                  className="sb-btn-primary w-full mt-3"
+                  onClick={markPaidDev}
+                  disabled={markingPaid}
+                  title="Dev helper: simulates Stripe webhook and confirms the order"
+                >
+                  {markingPaid ? "Marking paid…" : "Mark as paid (dev) → View purchases"}
+                </button>
               </div>
             ) : null}
 

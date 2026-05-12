@@ -69,17 +69,41 @@ public class ReviewRepository(ShopDbContext context) : IReviewRepository
         CancellationToken cancellationToken = default)
     {
         // Reviewable/purchased policy: user must have a paid order containing the product.
-        // In this codebase, payment success moves order status from Pending -> Confirmed.
+        // In this codebase, payment success SHOULD move order status from Pending -> Confirmed.
+        // However, to be robust (e.g., webhook delays/misconfiguration), we also treat an order as
+        // purchased if it has at least one Paid/PartiallyRefunded payment record.
         // We treat any post-payment lifecycle status as purchased.
         // One review per (UserId, OrderId, ProductId).
 
         var purchasedOrderIds = context.Orders
             .AsNoTracking()
-            .Where(o => o.UserId == userId && (o.Status == OrderStatus.Confirmed
-                                              || o.Status == OrderStatus.Processing
-                                              || o.Status == OrderStatus.Shipped
-                                              || o.Status == OrderStatus.Delivered))
-            .Select(o => new { o.Id, o.CreatedAt });
+            .Where(o => o.UserId == userId)
+            .Select(o => new
+            {
+                o.Id,
+                o.CreatedAt,
+                o.Status,
+                PaidAt = context.Payments
+                    .AsNoTracking()
+                    .Where(p => p.OrderId == o.Id
+                                && (p.Status == PaymentStatus.Paid || p.Status == PaymentStatus.PartiallyRefunded))
+                    .Max(p => (DateTime?)p.PaidAt)
+                ,
+                HasPaidPayment = context.Payments
+                    .AsNoTracking()
+                    .Any(p => p.OrderId == o.Id
+                              && (p.Status == PaymentStatus.Paid || p.Status == PaymentStatus.PartiallyRefunded))
+            })
+            .Where(o => o.Status == OrderStatus.Confirmed
+                        || o.Status == OrderStatus.Processing
+                        || o.Status == OrderStatus.Shipped
+                        || o.Status == OrderStatus.Delivered
+                        || o.HasPaidPayment)
+            .Select(o => new
+            {
+                o.Id,
+                PurchasedAt = o.PaidAt ?? o.CreatedAt
+            });
 
         // Base: (OrderId, PurchasedAt, ProductId, Name)
         var purchased =
@@ -90,7 +114,7 @@ public class ReviewRepository(ShopDbContext context) : IReviewRepository
             select new
             {
                 OrderId = o.Id,
-                PurchasedAt = o.CreatedAt,
+                PurchasedAt = o.PurchasedAt,
                 ProductId = p.Id,
                 ProductName = p.Name
             };

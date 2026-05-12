@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +22,8 @@ public class PaymentsController(
     IStripeService stripeService,
     ICurrentUser currentUser,
     IUnitOfWork unitOfWork,
-    ShopDbContext dbContext) : ControllerBase
+    ShopDbContext dbContext,
+    IWebHostEnvironment environment) : ControllerBase
 {
     private async Task<Guid> GetAppUserIdAsync(CancellationToken cancellationToken)
     {
@@ -204,6 +206,116 @@ public class PaymentsController(
             t.Currency,
             t.Status,
             t.CreatedAt)).ToList());
+    }
+
+    public sealed class MarkStripePaymentPaidDevRequest
+    {
+        public Guid OrderId { get; set; }
+
+        /// <summary>
+        /// Optional. If provided, we will mark the payment with this Stripe PaymentIntent id as paid.
+        /// Otherwise, we pick the most recent pending Stripe payment for the order.
+        /// </summary>
+        public string? PaymentIntentId { get; set; }
+    }
+
+    public sealed class MarkStripePaymentPaidDevResponse
+    {
+        public bool Ok { get; set; }
+        public Guid OrderId { get; set; }
+        public Guid PaymentId { get; set; }
+        public string? Status { get; set; }
+    }
+
+    /// <summary>
+    /// Development-only helper endpoint that simulates the Stripe webhook (payment_intent.succeeded)
+    /// by marking an order's Stripe payment as paid and confirming the order.
+    /// Returns 404 when not running in the Development environment.
+    /// </summary>
+    [HttpPost("stripe/test/mark-paid")]
+    [Authorize]
+    public async Task<ActionResult<MarkStripePaymentPaidDevResponse>> MarkStripePaymentPaidDev(
+        [FromBody] MarkStripePaymentPaidDevRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!environment.IsDevelopment())
+            return NotFound();
+
+        var userId = await GetAppUserIdAsync(cancellationToken);
+
+        var order = await dbContext.Orders
+            .Include(o => o.Payments)
+            .FirstOrDefaultAsync(o => o.Id == request.OrderId && o.UserId == userId, cancellationToken);
+
+        if (order is null)
+            return NotFound("Order not found");
+
+        // Pick payment
+        Payment? payment = null;
+        if (!string.IsNullOrWhiteSpace(request.PaymentIntentId))
+        {
+            payment = order.Payments.FirstOrDefault(p => p.StripePaymentIntentId == request.PaymentIntentId);
+        }
+        else
+        {
+            payment = order.Payments
+                .OrderByDescending(p => p.CreatedAt)
+                .FirstOrDefault(p => p.StripePaymentIntentId != null);
+        }
+
+        if (payment is null)
+            return NotFound("Payment not found");
+
+        // Idempotency: already paid
+        if (payment.Status != PaymentStatus.Paid)
+        {
+            payment.Status = PaymentStatus.Paid;
+            payment.PaidAt = DateTime.UtcNow;
+            payment.LastStripeEventId = "dev-mark-paid-" + Guid.NewGuid();
+
+            dbContext.PaymentTransactions.Add(new PaymentTransaction
+            {
+                PaymentId = payment.Id,
+                Amount = payment.Amount,
+                Currency = payment.Currency,
+                Status = PaymentStatus.Paid,
+                GatewayTransactionId = request.PaymentIntentId ?? payment.StripePaymentIntentId ?? "dev",
+                GatewayResponse = JsonDocument.Parse(
+                    JsonSerializer.Serialize(new
+                    {
+                        dev = true,
+                        action = "mark-paid",
+                        orderId = order.Id,
+                        paymentId = payment.Id,
+                        paymentIntentId = request.PaymentIntentId ?? payment.StripePaymentIntentId
+                    }))
+            });
+
+            if (order.Status == OrderStatus.Pending)
+            {
+                order.Status = OrderStatus.Confirmed;
+
+                dbContext.OrderStatusHistory.Add(new OrderStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
+                    Status = OrderStatus.Confirmed,
+                    ChangedBy = null,
+                    ChangedAt = DateTime.UtcNow,
+                    Note = "Payment marked as paid (dev helper)"
+                });
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return Ok(new MarkStripePaymentPaidDevResponse
+        {
+            Ok = true,
+            OrderId = order.Id,
+            PaymentId = payment.Id,
+            Status = payment.Status.ToString()
+        });
     }
 
     public sealed class CreateRefundRequest

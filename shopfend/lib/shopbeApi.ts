@@ -66,6 +66,13 @@ export type CreateStripePaymentIntentResponse = {
   clientSecret: string;
 };
 
+export type MarkStripePaymentPaidResponse = {
+  ok: boolean;
+  orderId: string;
+  paymentId: string;
+  status?: string;
+};
+
 export type PurchasedProductDto = {
   orderId: string;
   productId: string;
@@ -384,6 +391,21 @@ export const shopbeApi = {
     ) =>
       requestJson<CreateStripePaymentIntentResponse>(
         "/api/payments/stripe/payment-intents",
+        {
+          accessToken,
+          body,
+          signal,
+        }
+      ),
+
+    /** Development-only helper. Backend returns 404 outside Development environment. */
+    markStripePaymentPaidDev: (
+      accessToken: string,
+      body: { orderId: string; paymentIntentId?: string },
+      signal?: AbortSignal
+    ) =>
+      requestJson<MarkStripePaymentPaidResponse>(
+        "/api/payments/stripe/test/mark-paid",
         {
           accessToken,
           body,
