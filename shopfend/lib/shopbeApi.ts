@@ -73,6 +73,15 @@ export type MarkStripePaymentPaidResponse = {
   status?: string;
 };
 
+export type SyncStripePaymentIntentResponse = {
+  ok: boolean;
+  orderId: string;
+  paymentId: string;
+  stripePaymentIntentStatus?: string;
+  paymentStatus?: string;
+  orderStatus?: string;
+};
+
 export type PurchasedProductDto = {
   orderId: string;
   productId: string;
@@ -409,6 +418,23 @@ export const shopbeApi = {
         {
           accessToken,
           body,
+          signal,
+        }
+      ),
+
+    /** Sync a PaymentIntent status from Stripe and update local payment/order (useful if webhooks aren't configured). */
+    syncStripePaymentIntent: (
+      accessToken: string,
+      paymentIntentId: string,
+      signal?: AbortSignal
+    ) =>
+      requestJson<SyncStripePaymentIntentResponse>(
+        `/api/payments/stripe/payment-intents/${encodeURIComponent(
+          paymentIntentId
+        )}/sync`,
+        {
+          accessToken,
+          method: "POST",
           signal,
         }
       ),

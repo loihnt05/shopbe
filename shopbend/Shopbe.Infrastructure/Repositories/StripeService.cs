@@ -54,6 +54,12 @@ public class StripeService : IStripeService
         return (intent.Id, intent.ClientSecret);  // trả về frontend
     }
 
+    public async Task<PaymentIntent> GetPaymentIntentAsync(string paymentIntentId, CancellationToken ct)
+    {
+        var service = new PaymentIntentService();
+        return await service.GetAsync(paymentIntentId, cancellationToken: ct);
+    }
+
     public async Task<string> CreateRefundAsync(
         string paymentIntentId, decimal amount, CancellationToken ct)
     {

@@ -25,6 +25,16 @@ public sealed class FakeStripeService : IStripeService
     public Task<string> CreateRefundAsync(string paymentIntentId, decimal amount, CancellationToken ct)
         => Task.FromResult($"re_test_{paymentIntentId}");
 
+    public Task<PaymentIntent> GetPaymentIntentAsync(string paymentIntentId, CancellationToken ct)
+    {
+        // Tests can override behavior by sending webhook payloads; for simple sync calls we assume success.
+        return Task.FromResult(new PaymentIntent
+        {
+            Id = paymentIntentId,
+            Status = "succeeded"
+        });
+    }
+
     public Event ConstructWebhookEvent(string payload, string signature)
     {
         // Minimal emulation: Stripe's SDK returns Event with Data.Object typed to PaymentIntent, etc.

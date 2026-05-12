@@ -227,6 +227,16 @@ public class PaymentsController(
         public string? Status { get; set; }
     }
 
+    public sealed class SyncStripePaymentIntentResponse
+    {
+        public bool Ok { get; set; }
+        public Guid OrderId { get; set; }
+        public Guid PaymentId { get; set; }
+        public string? StripePaymentIntentStatus { get; set; }
+        public string? PaymentStatus { get; set; }
+        public string? OrderStatus { get; set; }
+    }
+
     /// <summary>
     /// Development-only helper endpoint that simulates the Stripe webhook (payment_intent.succeeded)
     /// by marking an order's Stripe payment as paid and confirming the order.
@@ -315,6 +325,127 @@ public class PaymentsController(
             OrderId = order.Id,
             PaymentId = payment.Id,
             Status = payment.Status.ToString()
+        });
+    }
+
+    /// <summary>
+    /// Sync a Stripe PaymentIntent status from Stripe and update the local payment/order.
+    ///
+    /// Why: In production, Stripe webhooks are the source of truth. But in local/dev,
+    /// webhooks may not be configured (Stripe CLI not running), so after a successful
+    /// client-side confirmation (Stripe.js) the database wouldn't update.
+    ///
+    /// This endpoint lets the frontend call back after "payment succeeded" to make the
+    /// purchase appear immediately (idempotent).
+    /// </summary>
+    [HttpPost("stripe/payment-intents/{paymentIntentId}/sync")]
+    [Authorize]
+    public async Task<ActionResult<SyncStripePaymentIntentResponse>> SyncStripePaymentIntent(
+        [FromRoute] string paymentIntentId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(paymentIntentId))
+            return BadRequest("Missing paymentIntentId");
+
+        var userId = await GetAppUserIdAsync(cancellationToken);
+
+        var payment = await dbContext.Payments
+            .Include(p => p.Order)
+            .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
+
+        if (payment?.Order is null || payment.Order.UserId != userId)
+            return NotFound("Payment not found");
+
+        PaymentIntent intent;
+        try
+        {
+            intent = await stripeService.GetPaymentIntentAsync(paymentIntentId, cancellationToken);
+        }
+        catch (StripeException ex)
+        {
+            return BadRequest($"Stripe error: {ex.Message}");
+        }
+
+        var stripeStatus = intent.Status ?? string.Empty;
+
+        // Update local state based on Stripe status.
+        if (string.Equals(stripeStatus, "succeeded", StringComparison.OrdinalIgnoreCase))
+        {
+            if (payment.Status != PaymentStatus.Paid)
+            {
+                payment.Status = PaymentStatus.Paid;
+                payment.PaidAt = DateTime.UtcNow;
+                payment.LastStripeEventId = $"sync:{paymentIntentId}:{DateTime.UtcNow:O}";
+
+                dbContext.PaymentTransactions.Add(new PaymentTransaction
+                {
+                    PaymentId = payment.Id,
+                    Amount = payment.Amount,
+                    Currency = payment.Currency,
+                    Status = PaymentStatus.Paid,
+                    GatewayTransactionId = $"sync:{paymentIntentId}",
+                    GatewayResponse = JsonDocument.Parse(JsonSerializer.Serialize(new
+                    {
+                        synced = true,
+                        paymentIntentId,
+                        stripeStatus
+                    }))
+                });
+            }
+
+            if (payment.Order.Status == OrderStatus.Pending)
+            {
+                payment.Order.Status = OrderStatus.Confirmed;
+
+                dbContext.OrderStatusHistory.Add(new OrderStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = payment.Order.Id,
+                    Status = OrderStatus.Confirmed,
+                    ChangedBy = null,
+                    ChangedAt = DateTime.UtcNow,
+                    Note = "Payment succeeded (synced from Stripe)"
+                });
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        else if (string.Equals(stripeStatus, "canceled", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(stripeStatus, "requires_payment_method", StringComparison.OrdinalIgnoreCase))
+        {
+            // Only mark failed if still pending (avoid overwriting paid/refunded).
+            if (payment.Status == PaymentStatus.Pending)
+            {
+                payment.Status = PaymentStatus.Failed;
+                payment.LastStripeEventId = $"sync:{paymentIntentId}:{DateTime.UtcNow:O}";
+
+                dbContext.PaymentTransactions.Add(new PaymentTransaction
+                {
+                    PaymentId = payment.Id,
+                    Amount = payment.Amount,
+                    Currency = payment.Currency,
+                    Status = PaymentStatus.Failed,
+                    GatewayTransactionId = $"sync:{paymentIntentId}",
+                    GatewayResponse = JsonDocument.Parse(JsonSerializer.Serialize(new
+                    {
+                        synced = true,
+                        paymentIntentId,
+                        stripeStatus
+                    }))
+                });
+
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        return Ok(new SyncStripePaymentIntentResponse
+        {
+            Ok = true,
+            OrderId = payment.Order.Id,
+            PaymentId = payment.Id,
+            StripePaymentIntentStatus = stripeStatus,
+            PaymentStatus = payment.Status.ToString(),
+            OrderStatus = payment.Order.Status.ToString()
         });
     }
 

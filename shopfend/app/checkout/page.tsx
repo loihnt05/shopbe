@@ -1,9 +1,11 @@
 "use client";
 
 import { useSession, signIn } from "next-auth/react";
-import { useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 import {
   isAbortError,
   shopbeApi,
@@ -13,6 +15,97 @@ import {
 } from "@/lib/shopbeApi";
 import { formatMoney } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
+
+const STRIPE_PUBLISHABLE_KEY =
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
+
+const stripePromise = STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(STRIPE_PUBLISHABLE_KEY)
+  : null;
+
+function StripePaymentForm(props: {
+  accessToken: string;
+  orderId: string;
+  paymentIntentId: string;
+  onPaid: () => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const pay = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!stripe || !elements) {
+      setError("Stripe has not loaded yet.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const returnUrl = `${window.location.origin}/purchases`;
+
+      const result = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: returnUrl,
+        },
+        redirect: "if_required",
+      });
+
+      if (result.error) {
+        setError(result.error.message ?? "Payment failed");
+        return;
+      }
+
+      // If we didn't get an immediate PaymentIntent back, Stripe may have redirected.
+      // Our return_url should land in /purchases; still try syncing if we can.
+      if (result.paymentIntent) {
+        await shopbeApi.payments.syncStripePaymentIntent(
+          props.accessToken,
+          result.paymentIntent.id
+        );
+      } else {
+        // Fall back to syncing the known PI id.
+        await shopbeApi.payments.syncStripePaymentIntent(
+          props.accessToken,
+          props.paymentIntentId
+        );
+      }
+
+      props.onPaid();
+    } catch (e: unknown) {
+      setError(errorMessage(e, "Payment failed"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={pay} className="space-y-3">
+      <PaymentElement />
+      {error ? (
+        <div className="border border-red-300 bg-red-50 p-2 rounded text-sm text-red-800">
+          {error}
+        </div>
+      ) : null}
+      <button
+        type="submit"
+        className="sb-btn-primary w-full disabled:opacity-60"
+        disabled={submitting || !stripe || !elements}
+      >
+        {submitting ? "Processing…" : "Pay now"}
+      </button>
+      <div className="text-xs text-slate-500">
+        Use a Stripe test card (e.g. 4242 4242 4242 4242, any future expiry, any CVC)
+        in test mode.
+      </div>
+    </form>
+  );
+}
 
 export default function CheckoutPage() {
   const { data: session, status } = useSession();
@@ -207,7 +300,7 @@ export default function CheckoutPage() {
           <div className="sb-card p-5">
             <div className="font-semibold">Payment</div>
             <div className="text-sm text-slate-600 mt-1">
-              Click below to create an order and a Stripe PaymentIntent.
+              Create an order, then confirm payment with Stripe.
             </div>
 
             <button
@@ -217,6 +310,38 @@ export default function CheckoutPage() {
             >
               {creating ? "Creating…" : "Create order + Stripe PaymentIntent"}
             </button>
+
+            {paymentIntent ? (
+              <div className="mt-5">
+                {stripePromise ? (
+                  <div className="rounded-sm border border-black/10 bg-white p-4">
+                    <div className="text-sm font-medium mb-2">Pay with card</div>
+                    {session.accessToken ? (
+                      <Elements
+                        stripe={stripePromise}
+                        options={{ clientSecret: paymentIntent.clientSecret }}
+                      >
+                        <StripePaymentForm
+                          accessToken={session.accessToken}
+                          orderId={order?.id ?? ""}
+                          paymentIntentId={paymentIntent.paymentIntentId}
+                          onPaid={() => router.push("/purchases")}
+                        />
+                      </Elements>
+                    ) : (
+                      <div className="text-sm text-red-700">
+                        Missing access token. Please sign out and sign in again.
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="rounded-sm border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                    Missing <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>.
+                    You can still use the dev helper below to simulate payment.
+                  </div>
+                )}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -250,20 +375,24 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                <button
-                  className="sb-btn-primary w-full mt-3"
-                  onClick={markPaidDev}
-                  disabled={markingPaid}
-                  title="Dev helper: simulates Stripe webhook and confirms the order"
-                >
-                  {markingPaid ? "Marking paid…" : "Mark as paid (dev) → View purchases"}
-                </button>
+                {!stripePromise ? (
+                  <button
+                    className="sb-btn-primary w-full mt-3"
+                    onClick={markPaidDev}
+                    disabled={markingPaid}
+                    title="Dev helper: simulates Stripe webhook and confirms the order"
+                  >
+                    {markingPaid
+                      ? "Marking paid…"
+                      : "Mark as paid (dev) → View purchases"}
+                  </button>
+                ) : null}
               </div>
             ) : null}
 
             <div className="text-xs text-slate-500">
-              Tip: integrate Stripe.js Elements to confirm payment using the
-              clientSecret.
+              Purchases are shown after payment succeeds (Stripe webhook in prod, or
+              sync call after Stripe.js confirmation in dev).
             </div>
           </div>
         </aside>
