@@ -7,6 +7,7 @@ using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Payment.Payments.Dtos;
 using Shopbe.Application.Payment.PaymentTransaction.Dtos;
 using Shopbe.Application.Payment.Refund.Dtos;
+using Shopbe.Domain.Entities.Order;
 using Shopbe.Domain.Entities.Payment;
 using Shopbe.Domain.Enums;
 using Shopbe.Infrastructure.Persistence;
@@ -349,7 +350,20 @@ public class PaymentsController(
                 });
 
                 if (payment.Order is not null && payment.Order.Status == OrderStatus.Pending)
+                {
                     payment.Order.Status = OrderStatus.Confirmed;
+
+                    // Keep order history consistent with state transitions.
+                    dbContext.OrderStatusHistory.Add(new OrderStatusHistory
+                    {
+                        Id = Guid.NewGuid(),
+                        OrderId = payment.Order.Id,
+                        Status = OrderStatus.Confirmed,
+                        ChangedBy = null, // system/stripe webhook
+                        ChangedAt = DateTime.UtcNow,
+                        Note = "Payment succeeded"
+                    });
+                }
 
                 await dbContext.SaveChangesAsync(cancellationToken);
                 break;

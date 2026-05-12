@@ -106,6 +106,13 @@ public sealed class PurchaseFlowTests : IClassFixture<PostgresFixture>
         var webhookResp = await client.SendAsync(webhookReq);
         webhookResp.StatusCode.Should().Be(HttpStatusCode.OK);
 
+        // Act 5: purchase history should include bought product
+        var purchasedResp = await client.GetAsync("/api/orders/me/purchased-products?onlyNotReviewed=false");
+        purchasedResp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var purchasedJson = await purchasedResp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        purchasedJson.ValueKind.Should().Be(System.Text.Json.JsonValueKind.Array);
+        purchasedJson.GetArrayLength().Should().BeGreaterThan(0);
+
         // Assert: order becomes Confirmed and payment becomes Paid.
         using (var scope = factory.Services.CreateScope())
         {

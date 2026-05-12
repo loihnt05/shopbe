@@ -91,7 +91,7 @@ export default function PurchasesPage() {
         <div>
           <h1 className="text-2xl font-semibold">Purchase history</h1>
           <div className="text-sm text-slate-600">
-            Products from your delivered orders.
+            Products from your paid orders.
           </div>
         </div>
 
@@ -123,7 +123,7 @@ export default function PurchasesPage() {
         <div className="sb-card p-6 space-y-2">
           <div className="font-semibold">No purchases found</div>
           <div className="text-sm text-slate-600">
-            Once an order is delivered, the products will show up here.
+            Once an order is paid, the products will show up here.
           </div>
           <Link href="/products" className="sb-btn-primary">
             Browse products

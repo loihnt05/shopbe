@@ -56,7 +56,8 @@ public class OrdersController(IMediator mediator, ICurrentUser currentUser, IUni
         return Ok(result);
     }
 
-    // Purchase history (products): list of products the current user bought in DELIVERED orders.
+    // Purchase history (products): list of products the current user bought in PAID orders.
+    // In this codebase, payment success moves order status from Pending -> Confirmed.
     // Reuses the same policy/data as reviewable products, but exposed under /api/orders for discoverability.
     [HttpGet("me/purchased-products")]
     public async Task<ActionResult<IReadOnlyList<ReviewableProductDto>>> GetMyPurchasedProducts(

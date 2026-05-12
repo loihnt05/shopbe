@@ -68,17 +68,22 @@ public class ReviewRepository(ShopDbContext context) : IReviewRepository
         bool onlyNotReviewed = false,
         CancellationToken cancellationToken = default)
     {
-        // Reviewable policy: user must have a DELIVERED order containing the product.
+        // Reviewable/purchased policy: user must have a paid order containing the product.
+        // In this codebase, payment success moves order status from Pending -> Confirmed.
+        // We treat any post-payment lifecycle status as purchased.
         // One review per (UserId, OrderId, ProductId).
 
-        var deliveredOrderIds = context.Orders
+        var purchasedOrderIds = context.Orders
             .AsNoTracking()
-            .Where(o => o.UserId == userId && o.Status == OrderStatus.Delivered)
+            .Where(o => o.UserId == userId && (o.Status == OrderStatus.Confirmed
+                                              || o.Status == OrderStatus.Processing
+                                              || o.Status == OrderStatus.Shipped
+                                              || o.Status == OrderStatus.Delivered))
             .Select(o => new { o.Id, o.CreatedAt });
 
         // Base: (OrderId, PurchasedAt, ProductId, Name)
         var purchased =
-            from o in deliveredOrderIds
+            from o in purchasedOrderIds
             join oi in context.OrderItems.AsNoTracking() on o.Id equals oi.OrderId
             join pv in context.ProductVariants.AsNoTracking() on oi.ProductVariantId equals pv.Id
             join p in context.Products.AsNoTracking() on pv.ProductId equals p.Id
