@@ -66,6 +66,10 @@ export type CreateStripePaymentIntentResponse = {
   clientSecret: string;
 };
 
+export type StripeConfigResponse = {
+  publishableKey: string;
+};
+
 export type MarkStripePaymentPaidResponse = {
   ok: boolean;
   orderId: string;
@@ -393,6 +397,12 @@ export const shopbeApi = {
     },
   },
   payments: {
+    /** Public config used by frontend to initialize Stripe.js safely. */
+    getStripeConfig: (signal?: AbortSignal) =>
+      requestJson<StripeConfigResponse>("/api/payments/stripe/config", {
+        signal,
+      }),
+
     createStripePaymentIntent: (
       accessToken: string,
       body: { orderId: string },

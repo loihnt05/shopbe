@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Payment.Payments.Dtos;
 using Shopbe.Application.Payment.PaymentTransaction.Dtos;
@@ -11,6 +12,7 @@ using Shopbe.Application.Payment.Refund.Dtos;
 using Shopbe.Domain.Entities.Order;
 using Shopbe.Domain.Entities.Payment;
 using Shopbe.Domain.Enums;
+using Shopbe.Infrastructure;
 using Shopbe.Infrastructure.Persistence;
 using Stripe;
 
@@ -23,8 +25,20 @@ public class PaymentsController(
     ICurrentUser currentUser,
     IUnitOfWork unitOfWork,
     ShopDbContext dbContext,
-    IWebHostEnvironment environment) : ControllerBase
+    IWebHostEnvironment environment,
+    IOptions<StripeOptions> stripeOptions) : ControllerBase
 {
+    public sealed record StripeConfigResponse(string PublishableKey);
+
+    /// <summary>
+    /// Returns Stripe publishable configuration for the frontend.
+    /// Safe to expose publicly: publishable key is not a secret.
+    /// </summary>
+    [HttpGet("stripe/config")]
+    [AllowAnonymous]
+    public ActionResult<StripeConfigResponse> GetStripeConfig()
+        => Ok(new StripeConfigResponse(stripeOptions.Value.PublishableKey));
+
     private async Task<Guid> GetAppUserIdAsync(CancellationToken cancellationToken)
     {
         var keycloakId = currentUser.KeycloakId;

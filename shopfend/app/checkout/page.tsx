@@ -19,9 +19,14 @@ import { errorMessage } from "@/lib/errors";
 const STRIPE_PUBLISHABLE_KEY =
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
-const stripePromise = STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(STRIPE_PUBLISHABLE_KEY)
-  : null;
+function isLikelyStripeClientSecret(value: string | null | undefined): boolean {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    // Typical format: pi_..._secret_...
+    value.includes("_secret_")
+  );
+}
 
 function StripePaymentForm(props: {
   accessToken: string;
@@ -32,6 +37,7 @@ function StripePaymentForm(props: {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
+  const [paymentElementReady, setPaymentElementReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pay = async (e: FormEvent) => {
@@ -43,8 +49,23 @@ function StripePaymentForm(props: {
       return;
     }
 
+    // `elements` can be non-null before the PaymentElement is fully mounted.
+    // Calling confirmPayment too early causes:
+    // "Invalid value for stripe.confirmPayment(): elements should have a mounted Payment Element..."
+    if (!paymentElementReady) {
+      setError("Payment form is still loading. Please wait a moment and try again.");
+      return;
+    }
+
     try {
       setSubmitting(true);
+
+      // Trigger PaymentElement validation / wallet collection before confirming.
+      const submitResult = await elements.submit();
+      if (submitResult.error) {
+        setError(submitResult.error.message ?? "Payment details are incomplete");
+        return;
+      }
 
       const returnUrl = `${window.location.origin}/purchases`;
 
@@ -86,7 +107,13 @@ function StripePaymentForm(props: {
 
   return (
     <form onSubmit={pay} className="space-y-3">
-      <PaymentElement />
+      <PaymentElement
+        onReady={() => setPaymentElementReady(true)}
+        onLoadError={(e) => {
+          // react-stripe-js will also log this to console; show a readable message.
+          setError(e.error?.message ?? "Failed to load Stripe payment form");
+        }}
+      />
       {error ? (
         <div className="border border-red-300 bg-red-50 p-2 rounded text-sm text-red-800">
           {error}
@@ -95,7 +122,7 @@ function StripePaymentForm(props: {
       <button
         type="submit"
         className="sb-btn-primary w-full disabled:opacity-60"
-        disabled={submitting || !stripe || !elements}
+        disabled={submitting || !stripe || !elements || !paymentElementReady}
       >
         {submitting ? "Processing…" : "Pay now"}
       </button>
@@ -110,6 +137,44 @@ function StripePaymentForm(props: {
 export default function CheckoutPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
+  const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(
+    () => (STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null)
+  );
+  const [stripeKeyWarning, setStripeKeyWarning] = useState<string | null>(null);
+
+  // If the env publishable key isn't set, fetch it from backend config.
+  // Also warn when env key differs from backend key (common cause of PaymentElement loaderror).
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const cfg = await shopbeApi.payments.getStripeConfig();
+        if (cancelled) return;
+
+        const backendKey = cfg.publishableKey ?? "";
+        if (!backendKey) return;
+
+        if (!STRIPE_PUBLISHABLE_KEY) {
+          setStripePromise(loadStripe(backendKey));
+          return;
+        }
+
+        if (STRIPE_PUBLISHABLE_KEY !== backendKey) {
+          setStripeKeyWarning(
+            "Stripe publishable key mismatch: frontend NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY differs from backend Stripe:PublishableKey. This can prevent PaymentElement from loading."
+          );
+        }
+      } catch {
+        // ignore - frontend will show the existing missing-key message if Stripe isn't initialized.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [cart, setCart] = useState<CartDto | null>(null);
   const [loadingCart, setLoadingCart] = useState(false);
@@ -254,6 +319,12 @@ export default function CheckoutPage() {
         </div>
       )}
 
+      {stripeKeyWarning ? (
+        <div className="border border-amber-300 bg-amber-50 p-3 rounded text-sm text-amber-900">
+          {stripeKeyWarning}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-7 space-y-4">
           <div className="sb-card p-5">
@@ -317,17 +388,34 @@ export default function CheckoutPage() {
                   <div className="rounded-sm border border-black/10 bg-white p-4">
                     <div className="text-sm font-medium mb-2">Pay with card</div>
                     {session.accessToken ? (
-                      <Elements
-                        stripe={stripePromise}
-                        options={{ clientSecret: paymentIntent.clientSecret }}
-                      >
-                        <StripePaymentForm
-                          accessToken={session.accessToken}
-                          orderId={order?.id ?? ""}
-                          paymentIntentId={paymentIntent.paymentIntentId}
-                          onPaid={() => router.push("/purchases")}
-                        />
-                      </Elements>
+                      isLikelyStripeClientSecret(paymentIntent.clientSecret) ? (
+                        <Elements
+                          // IMPORTANT: Elements does not reliably support changing clientSecret after mount.
+                          // Key forces a remount when a new PaymentIntent is created.
+                          key={paymentIntent.clientSecret}
+                          stripe={stripePromise}
+                          options={{ clientSecret: paymentIntent.clientSecret }}
+                        >
+                          <StripePaymentForm
+                            accessToken={session.accessToken}
+                            orderId={order?.id ?? ""}
+                            paymentIntentId={paymentIntent.paymentIntentId}
+                            onPaid={() => router.push("/purchases")}
+                          />
+                        </Elements>
+                      ) : (
+                        <div className="rounded-sm border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                          Stripe did not return a valid <code>clientSecret</code> for the PaymentIntent.
+                          <div className="mt-1 text-xs text-red-700">
+                            clientSecret length: {paymentIntent.clientSecret?.length ?? 0}
+                          </div>
+                          <div className="mt-2 text-xs text-slate-600">
+                            Check your backend Stripe keys (SecretKey) and frontend publishable key
+                            (<code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>) are from the same Stripe account
+                            and same mode (test vs live).
+                          </div>
+                        </div>
+                      )
                     ) : (
                       <div className="text-sm text-red-700">
                         Missing access token. Please sign out and sign in again.

@@ -44,6 +44,27 @@ public class ProductController : ControllerBase
         return user?.Id;
     }
 
+    private static string? GetDeviceLabelFromUserAgent(string? userAgent)
+    {
+        if (string.IsNullOrWhiteSpace(userAgent))
+            return null;
+
+        // Keep this intentionally short: the DB column is varchar(64).
+        // This is used for coarse recommendation segmentation, not full UA logging.
+        var ua = userAgent;
+
+        if (ua.Contains("ipad", StringComparison.OrdinalIgnoreCase)
+            || ua.Contains("tablet", StringComparison.OrdinalIgnoreCase))
+            return "tablet";
+
+        if (ua.Contains("iphone", StringComparison.OrdinalIgnoreCase)
+            || ua.Contains("android", StringComparison.OrdinalIgnoreCase)
+            || ua.Contains("mobile", StringComparison.OrdinalIgnoreCase))
+            return "mobile";
+
+        return "desktop";
+    }
+
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetAll([FromQuery] ProductQueryDto filter, CancellationToken cancellationToken)
@@ -75,7 +96,7 @@ public class ProductController : ControllerBase
                 productId: id,
                 categoryId: result.CategoryId,
                 source: "web",
-                device: Request.Headers.UserAgent.ToString(),
+                device: GetDeviceLabelFromUserAgent(Request.Headers.UserAgent.ToString()),
                 referrer: Request.Headers.Referer.ToString(),
                 userAgent: Request.Headers.UserAgent.ToString(),
                 ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString(),

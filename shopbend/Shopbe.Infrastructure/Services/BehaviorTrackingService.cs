@@ -8,6 +8,14 @@ namespace Shopbe.Infrastructure.Services;
 
 public sealed class BehaviorTrackingService(ShopDbContext db) : IBehaviorTrackingService
 {
+    private static string? Truncate(string? value, int maxLength)
+    {
+        if (string.IsNullOrEmpty(value))
+            return value;
+
+        return value.Length <= maxLength ? value : value[..maxLength];
+    }
+
     public async Task TrackAsync(
         Guid? userId,
         string? sessionId,
@@ -40,23 +48,23 @@ public sealed class BehaviorTrackingService(ShopDbContext db) : IBehaviorTrackin
         var entity = new UserBehavior
         {
             UserId = userId,
-            SessionId = sessionId,
-            CorrelationId = correlationId,
+            SessionId = Truncate(sessionId, 128),
+            CorrelationId = Truncate(correlationId, 128),
             BehaviorType = behaviorType,
-            ActionType = actionType,
+            ActionType = Truncate(actionType, 100) ?? string.Empty,
             ProductId = productId,
             CategoryId = categoryId,
             OrderId = orderId,
             Quantity = quantity,
             Value = value,
-            Currency = currency,
-            Source = source,
-            Device = device,
-            Referrer = referrer,
-            UserAgent = userAgent,
-            IpAddress = ipAddress,
-            Country = country,
-            City = city,
+            Currency = Truncate(currency, 3),
+            Source = Truncate(source, 64),
+            Device = Truncate(device, 64),
+            Referrer = Truncate(referrer, 2048),
+            UserAgent = Truncate(userAgent, 512),
+            IpAddress = Truncate(ipAddress, 64),
+            Country = Truncate(country, 2),
+            City = Truncate(city, 128),
             Metadata = metadata,
             OccurredAt = occurredAtUtc,
             ExpiresAt = expiresAtUtc
