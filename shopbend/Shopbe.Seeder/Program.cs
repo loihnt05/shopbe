@@ -109,7 +109,8 @@ internal sealed record SeedOptions(
     SeedMode Mode,
     int RandomSeed,
     int BatchSize,
-    bool Verbose)
+    bool Verbose,
+    bool UseDummy)
 {
     public static string HelpText =>
         "Shopbe.Seeder - large data generator\n" +
@@ -127,6 +128,7 @@ internal sealed record SeedOptions(
         "  --max-items <n>             max items per order (default: 5)\n" +
         "  --batch <n>                 EF SaveChanges batch size (default: 2000)\n" +
         "  --seed <n>                  random seed (default: 1337)\n" +
+        "  --use-dummy                 use dummyjson.com for products instead of Bogus\n" +
         "  --verbose                   info logs\n";
 
     public static (SeedOptions options, List<string> errors) Parse(string[] args)
@@ -147,6 +149,7 @@ internal sealed record SeedOptions(
         int seed = 1337;
         int batch = 2000;
         bool verbose = false;
+        bool useDummy = false;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -206,6 +209,9 @@ internal sealed record SeedOptions(
                     case "--batch":
                         batch = int.Parse(Next());
                         break;
+                    case "--use-dummy":
+                        useDummy = true;
+                        break;
                     case "--verbose":
                         verbose = true;
                         break;
@@ -229,7 +235,7 @@ internal sealed record SeedOptions(
         if (variantsMax < variantsMin) errors.Add("--variants-max must be >= --variants-min");
         if (batch < 1) errors.Add("--batch must be >= 1");
 
-        return (new SeedOptions(conn, categories, brands, products, variantsMin, variantsMax, users, orders, maxItems, migrate, mode, seed, batch, verbose),
+        return (new SeedOptions(conn, categories, brands, products, variantsMin, variantsMax, users, orders, maxItems, migrate, mode, seed, batch, verbose, useDummy),
             errors);
     }
 }
@@ -282,9 +288,17 @@ internal sealed class ShopbeLargeDataSeeder
     {
         Bogus.Randomizer.Seed = new Random(options.RandomSeed);
 
-        await EnsureCategoriesAsync(db, logger, options, ct);
-        await EnsureBrandsAsync(db, logger, options, ct);
-        await EnsureProductsAsync(db, logger, options, ct);
+        if (options.UseDummy)
+        {
+            await DummyJsonSeeder.SeedAsync(db, logger, ct);
+        }
+        else
+        {
+            await EnsureCategoriesAsync(db, logger, options, ct);
+            await EnsureBrandsAsync(db, logger, options, ct);
+            await EnsureProductsAsync(db, logger, options, ct);
+        }
+
         await EnsureUsersAsync(db, logger, options, ct);
         await EnsureOrdersAsync(db, logger, options, ct);
     }

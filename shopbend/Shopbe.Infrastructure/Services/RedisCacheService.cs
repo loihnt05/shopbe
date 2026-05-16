@@ -35,7 +35,7 @@ public class RedisCacheService(IDistributedCache cache) : ICacheService
         await cache.RemoveAsync(key);
     }
 
-    public async Task RemoveByPrefixAsync(string prefix)
+    public Task RemoveByPrefixAsync(string prefix)
     {
         // dùng cho invalidate hàng loạt, ví dụ xóa cache "products:*"
         // cần IConnectionMultiplexer để scan keys
