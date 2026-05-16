@@ -449,6 +449,23 @@ export const shopbeApi = {
         }
       ),
   },
+  wishlist: {
+    get: async () => {
+      const res = await fetch(`${API_BASE_URL}/wishlist`, {
+        headers: {
+          Authorization: `Bearer ${await getAuthToken()}`,
+        },
+      });
+      if (!res.ok) {
+        throw new Error("Failed to fetch wishlist");
+      }
+      return res.json();
+    },
+  },
 };
 
-
+async function getAuthToken() {
+  // This is a placeholder. You need to implement a way to get the
+  // authentication token, for example, from next-auth session.
+  return "your-auth-token";
+}

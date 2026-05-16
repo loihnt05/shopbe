@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { ProductListItem } from "@/lib/shopbeApi";
-import { formatCompactMoney } from "@/lib/format";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
@@ -19,16 +18,15 @@ function resolveImageSrc(value?: string | null): string | undefined {
 }
 
 export default function ProductCard({ product }: { product: ProductListItem }) {
-  const price = product.discountPrice ?? product.price;
   const hasDiscount = product.discountPrice != null && product.price != null;
   const thumbnailSrc = resolveImageSrc(product.primaryImageUrl ?? product.thumbnailUrl);
 
   return (
     <Link
       href={`/products/${product.id}`}
-      className="group sb-card overflow-hidden hover:shadow-md transition-shadow"
+      className="group bg-white rounded-sm overflow-hidden hover:-translate-y-[1px] hover:shadow-[0_1px_2.5px_0_rgba(0,0,0,0.15)] transition-all duration-100 border border-transparent hover:border-[#ee4d2d] flex flex-col h-full"
     >
-      <div className="relative aspect-square bg-linear-to-br from-slate-50 to-slate-100 grid place-items-center">
+      <div className="relative aspect-square w-full bg-gray-100 grid place-items-center shrink-0">
         {thumbnailSrc ? (
           <Image
             src={thumbnailSrc}
@@ -41,38 +39,27 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
         ) : (
           <div className="text-slate-400 text-xs">No image</div>
         )}
+        {hasDiscount && (
+          <div className="absolute top-0 right-0 bg-[#ffea5f] text-[#ee4d2d] text-[10px] font-bold px-1 py-1 flex flex-col items-center leading-none">
+            <span>10%</span>
+            <span className="font-normal text-[9px] uppercase text-white bg-[#ee4d2d] px-1 mt-0.5">Off</span>
+          </div>
+        )}
       </div>
 
-      <div className="p-3 space-y-2">
-        <div className="line-clamp-2 text-sm text-slate-900 group-hover:text-(--brand)">
+      <div className="p-2 flex flex-col flex-1">
+        <div className="line-clamp-2 text-xs text-[#000000cc] mb-1 min-h-[32px] leading-tight">
           {product.name}
         </div>
 
-        {product.description ? (
-          <div className="line-clamp-2 text-xs text-slate-500">
-            {product.description}
+        <div className="mt-auto flex items-center justify-between">
+          <div className="text-[#ee4d2d] text-base truncate flex items-baseline">
+            <span className="text-[10px] mr-0.5">₫</span>
+            <span>{product.price ? product.price.toLocaleString() : "0"}</span>
           </div>
-        ) : null}
-
-        <div className="flex items-end justify-between gap-2">
-          <div>
-            <div className="text-(--brand) font-semibold">
-              {formatCompactMoney(price, product.currency)}
-            </div>
-            {hasDiscount ? (
-              <div className="text-xs text-slate-400 line-through">
-                {formatCompactMoney(product.price, product.currency)}
-              </div>
-            ) : null}
+          <div className="text-[10px] text-black/50 ml-2 truncate">
+            1.2k sold
           </div>
-
-          {hasDiscount ? (
-            <span className="sb-badge sb-badge-brand">
-              Sale
-            </span>
-          ) : (
-            <span className="sb-badge sb-badge-muted">New</span>
-          )}
         </div>
       </div>
     </Link>

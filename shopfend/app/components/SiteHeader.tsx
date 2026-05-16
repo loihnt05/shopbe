@@ -1,19 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 import { CartIcon, SearchIcon, UserIcon } from "./icons";
 
-function cx(...parts: Array<string | false | null | undefined>) {
-  return parts.filter(Boolean).join(" ");
-}
-
 export default function SiteHeader() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const initialQ = useMemo(() => searchParams.get("q") ?? "", [searchParams]);
@@ -31,32 +26,49 @@ export default function SiteHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-50">
+    <header className="sticky top-0 z-50 bg-[#ee4d2d] text-white">
       {/* top strip */}
-      <div className="bg-[var(--brand)] text-white text-xs">
-        <div className="sb-container h-9 flex items-center justify-between">
-          <div className="flex items-center gap-3 opacity-95">
-            <span className="hidden sm:inline">Free shipping demo • 0₫ returns</span>
-            <span className="sb-badge bg-white/15">Hot deals</span>
+      <div className="text-xs">
+        <div className="sb-container h-8 flex items-center justify-between px-4">
+          <div className="flex items-center gap-4 opacity-90">
+            <Link href="#" className="hover:opacity-80">Seller Centre</Link>
+            <span className="w-px h-3 bg-white/40"></span>
+            <Link href="#" className="hover:opacity-80">Start Selling</Link>
+            <span className="w-px h-3 bg-white/40"></span>
+            <Link href="#" className="hover:opacity-80">Download</Link>
+            <span className="w-px h-3 bg-white/40"></span>
+            <span className="flex items-center gap-1">
+              Follow us on
+              {/* social icons placeholder */}
+            </span>
           </div>
-          <div className="flex items-center gap-3">
-            {session ? (
-              <span className="hidden sm:inline opacity-95">
-                {session.user?.email ?? session.user?.name}
-              </span>
-            ) : null}
+          <div className="flex items-center gap-4 opacity-90">
+            <Link href="/notifications" className="hover:opacity-80 flex items-center gap-1">
+              Notifications
+            </Link>
+            <Link href="/help" className="hover:opacity-80 flex items-center gap-1">
+              Help
+            </Link>
             {status !== "loading" ? (
               session ? (
-                <button
-                  className="hover:underline"
-                  onClick={() => signOut({ redirect: false })}
-                >
-                  Sign out
-                </button>
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1 font-medium hover:opacity-80 cursor-pointer">
+                    <UserIcon className="h-4 w-4" />
+                    {session.user?.name ?? session.user?.email ?? "User"}
+                  </span>
+                  <button
+                    className="hover:opacity-80 font-medium"
+                    onClick={() => signOut({ redirect: false })}
+                  >
+                    Logout
+                  </button>
+                </div>
               ) : (
-                <button className="hover:underline" onClick={() => signIn("keycloak")}>
-                  Sign in
-                </button>
+                <div className="flex items-center gap-2 font-medium">
+                  <button className="hover:opacity-80" onClick={() => signIn("keycloak")}>Sign Up</button>
+                  <span className="w-px h-3 bg-white/40"></span>
+                  <button className="hover:opacity-80" onClick={() => signIn("keycloak")}>Login</button>
+                </div>
               )
             ) : null}
           </div>
@@ -64,104 +76,49 @@ export default function SiteHeader() {
       </div>
 
       {/* main bar */}
-      <div className="bg-[var(--surface)] border-b border-black/10">
-        <div className="sb-container py-4 flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-sm bg-[var(--brand)] text-white grid place-items-center font-bold">
-              S
-            </div>
-            <div className="leading-tight">
-              <div className="font-semibold text-[var(--foreground)]">Shopbee</div>
-              <div className="text-[11px] text-[var(--muted)] -mt-0.5">Marketplace</div>
+      <div className="pb-4 pt-2">
+        <div className="sb-container px-4 flex items-center gap-10">
+          <Link href="/" className="flex items-center gap-2 shrink-0 group">
+            <div className="text-4xl font-semibold tracking-tighter flex items-center">
+              <span className="text-white">Shopbee</span>
             </div>
           </Link>
 
-          <form onSubmit={onSearch} className="flex-1">
-            <div className="flex items-stretch rounded-sm overflow-hidden border border-black/15 focus-within:border-[var(--brand)]">
-              <div className="px-3 grid place-items-center text-[var(--muted)]">
-                <SearchIcon className="h-4 w-4" />
-              </div>
+          <div className="flex-1 min-w-0 flex flex-col gap-1">
+            <form onSubmit={onSearch} className="flex relative bg-white rounded-[2px] p-[2px] shadow-sm">
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search products, brands, categories…"
-                className="w-full bg-[var(--surface)] px-2 py-2 text-sm outline-none"
+                placeholder="Register and get 100% off your first order!"
+                className="w-full bg-white px-3 py-2 text-[14px] text-black outline-none rounded-sm"
               />
               <button
                 type="submit"
-                className="px-4 text-sm font-semibold text-white bg-[var(--brand)] hover:bg-[var(--brand-2)]"
+                className="px-6 py-2 text-sm font-medium text-white bg-[#ee4d2d] hover:bg-[#fb5533] rounded-[2px]"
               >
-                Search
+                <SearchIcon className="h-4 w-4" />
               </button>
-            </div>
-          </form>
+            </form>
+            <nav className="flex items-center gap-3 text-[12px] text-white/90 overflow-hidden whitespace-nowrap">
+              <Link className="hover:text-white" href="/products">All Products</Link>
+              <Link className="hover:text-white" href="/recommendations">Recommendations</Link>
+              <Link className="hover:text-white" href="/chat">Chat</Link>
+              <Link className="hover:text-white" href="/purchases">My Purchases</Link>
+            </nav>
+          </div>
 
-          <nav className="hidden md:flex items-center gap-4 text-sm text-[var(--muted)]">
+          <div className="shrink-0 flex items-center justify-center w-[100px]">
             <Link
-              className={cx(
-                "hover:text-[var(--foreground)]",
-                pathname === "/products" && "text-[var(--foreground)] font-medium"
-              )}
-              href="/products"
+              href="/cart"
+              className="relative inline-flex items-center justify-center p-2 hover:opacity-80"
+              aria-label="Cart"
             >
-              Products
+              <CartIcon className="h-8 w-8 text-white" />
+              {/* Optional: Add a real cart count badge here later */}
             </Link>
-            <Link
-              className={cx(
-                "hover:text-[var(--foreground)]",
-                pathname === "/recommendations" && "text-[var(--foreground)] font-medium"
-              )}
-              href="/recommendations"
-            >
-              Recommendations
-            </Link>
-            <Link
-              className={cx(
-                "hover:text-[var(--foreground)]",
-                pathname === "/chat" && "text-[var(--foreground)] font-medium"
-              )}
-              href="/chat"
-            >
-              Chat
-            </Link>
-            <Link
-              className={cx(
-                "hover:text-[var(--foreground)]",
-                pathname === "/checkout" && "text-[var(--foreground)] font-medium"
-              )}
-              href="/checkout"
-            >
-              Checkout
-            </Link>
-            <Link
-              className={cx(
-                "hover:text-[var(--foreground)]",
-                pathname === "/purchases" && "text-[var(--foreground)] font-medium"
-              )}
-              href="/purchases"
-            >
-              Purchases
-            </Link>
-          </nav>
-
-          <Link
-            href="/cart"
-            className="ml-1 inline-flex items-center gap-2 rounded-sm px-3 py-2 hover:bg-[color:color-mix(in_srgb,var(--foreground)_6%,transparent)]"
-            aria-label="Cart"
-          >
-            <CartIcon className="h-5 w-5 text-[var(--foreground)]" />
-            <span className="hidden sm:inline text-sm font-medium">Cart</span>
-          </Link>
-
-          <div className="hidden sm:flex items-center gap-2 text-sm text-[var(--muted)]">
-            <UserIcon className="h-5 w-5" />
-            <span className="max-w-40 truncate">
-              {session?.user?.name ?? (session ? "Account" : "Guest")}
-            </span>
           </div>
         </div>
       </div>
     </header>
   );
 }
-
