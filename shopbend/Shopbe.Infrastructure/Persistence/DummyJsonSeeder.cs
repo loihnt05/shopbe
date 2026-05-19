@@ -15,11 +15,12 @@ public static class DummyJsonSeeder
         logger?.LogInformation("Fetching products from DummyJSON...");
         using var http = new HttpClient();
         
-        // Fetch products. DummyJSON has ~200 products total. Fetching 100 for a good sample.
+        // Fetch all products from DummyJSON.
         DummyResponse? response;
         try
         {
-            response = await http.GetFromJsonAsync<DummyResponse>("https://dummyjson.com/products?limit=100", ct);
+            var url = "https://dummyjson.com/products?limit=0";
+            response = await http.GetFromJsonAsync<DummyResponse>(url, ct);
         }
         catch (Exception ex)
         {
@@ -33,7 +34,7 @@ public static class DummyJsonSeeder
             return;
         }
 
-        logger?.LogInformation("Seeding {Count} products from DummyJSON...", response.Products.Count);
+        logger?.LogInformation("Seeding {Count} products from DummyJSON (total available: {Total})...", response.Products.Count, response.Total);
 
         var usedCategorySlugs = new HashSet<string>(
             await db.Categories.Select(c => c.Slug).ToListAsync(ct), StringComparer.OrdinalIgnoreCase);
@@ -209,5 +210,6 @@ public static class DummyJsonSeeder
     private class DummyResponse
     {
         public List<DummyProduct> Products { get; set; } = new();
+        public int Total { get; set; }
     }
 }

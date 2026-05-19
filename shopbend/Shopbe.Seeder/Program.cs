@@ -128,7 +128,7 @@ internal sealed record SeedOptions(
         "  --max-items <n>             max items per order (default: 5)\n" +
         "  --batch <n>                 EF SaveChanges batch size (default: 2000)\n" +
         "  --seed <n>                  random seed (default: 1337)\n" +
-        "  --use-dummy                 use dummyjson.com for products instead of Bogus\n" +
+        "  --use-dummy [true|false]    use dummyjson.com for products instead of Bogus (default: true)\n" +
         "  --verbose                   info logs\n";
 
     public static (SeedOptions options, List<string> errors) Parse(string[] args)
@@ -149,7 +149,7 @@ internal sealed record SeedOptions(
         int seed = 1337;
         int batch = 2000;
         bool verbose = false;
-        bool useDummy = false;
+        bool useDummy = true;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -210,7 +210,15 @@ internal sealed record SeedOptions(
                         batch = int.Parse(Next());
                         break;
                     case "--use-dummy":
-                        useDummy = true;
+                        if (i + 1 < args.Length && bool.TryParse(args[i + 1], out var val))
+                        {
+                            useDummy = val;
+                            i++;
+                        }
+                        else
+                        {
+                            useDummy = true;
+                        }
                         break;
                     case "--verbose":
                         verbose = true;
@@ -250,6 +258,28 @@ internal sealed class ShopbeLargeDataSeeder
         // Note: we keep this conservative and only delete core data sets.
         var tables = new[]
         {
+            "\"AuditLogs\"",
+            "\"EmailMessages\"",
+            "\"NotificationLogs\"",
+            "\"Notifications\"",
+            "\"ChatMessages\"",
+            "\"Conversations\"",
+            "\"UserBehaviors\"",
+            "\"WishlistItems\"",
+            "\"ReviewImages\"",
+            "\"Reviews\"",
+            "\"ShippingZoneDistricts\"",
+            "\"ShippingZones\"",
+            "\"ShippingFees\"",
+            "\"Shipments\"",
+            "\"IdempotencyKeys\"",
+            "\"Refunds\"",
+            "\"PaymentLogs\"",
+            "\"PaymentTransactions\"",
+            "\"CouponUsages\"",
+            "\"Coupons\"",
+            "\"OrderStatusHistory\"",
+            "\"InventoryTransactions\"",
             "\"OrderItems\"",
             "\"Orders\"",
             "\"CartItems\"",
@@ -270,11 +300,10 @@ internal sealed class ShopbeLargeDataSeeder
         {
             try
             {
-                // t is a constant from our hard-coded list above (not user input).
-                // Avoid string interpolation directly in SQL (EF1002): use parameterized SQL.
+                // Note: PostgreSQL does NOT allow parameterizing table names (e.g. TRUNCATE TABLE @p0).
+                // Since 'tables' is a hard-coded list above, we can safely use string interpolation.
                 await db.Database.ExecuteSqlRawAsync(
-                    "TRUNCATE TABLE {0} RESTART IDENTITY CASCADE;",
-                    parameters: [t],
+                    $"TRUNCATE TABLE {t} RESTART IDENTITY CASCADE;",
                     cancellationToken: ct);
             }
             catch (Exception ex)
@@ -287,6 +316,8 @@ internal sealed class ShopbeLargeDataSeeder
     public async Task SeedAsync(ShopDbContext db, ILogger logger, SeedOptions options, CancellationToken ct = default)
     {
         Bogus.Randomizer.Seed = new Random(options.RandomSeed);
+
+        await SeedShippingLocationsAsync(db, logger, ct);
 
         if (options.UseDummy)
         {
@@ -301,6 +332,94 @@ internal sealed class ShopbeLargeDataSeeder
 
         await EnsureUsersAsync(db, logger, options, ct);
         await EnsureOrdersAsync(db, logger, options, ct);
+    }
+
+    private static async Task SeedShippingLocationsAsync(ShopDbContext db, ILogger logger, CancellationToken ct)
+    {
+        // Create or load zones
+        var desiredZones = new (string Name, decimal Fee)[]
+        {
+            ("HCMC", 25000m),
+            ("Hanoi", 30000m),
+            ("Other", 40000m)
+        };
+
+        var zoneNames = desiredZones.Select(z => z.Name.Trim()).ToArray();
+        var existingZones = await db.ShippingZones
+            .Where(z => zoneNames.Contains(z.Name))
+            .ToListAsync(ct);
+
+        var zonesByName = existingZones.ToDictionary(z => z.Name, StringComparer.Ordinal);
+        var createdZones = 0;
+
+        foreach (var (nameRaw, fee) in desiredZones)
+        {
+            var name = nameRaw.Trim();
+            if (zonesByName.TryGetValue(name, out var existing))
+            {
+                if (existing.Fee != fee)
+                {
+                    existing.Fee = fee;
+                }
+                continue;
+            }
+
+            var zone = new Shopbe.Domain.Entities.Shipping.ShippingZone { Name = name, Fee = fee };
+            db.ShippingZones.Add(zone);
+            zonesByName[name] = zone;
+            createdZones++;
+        }
+
+        if (createdZones > 0)
+        {
+            await db.SaveChangesAsync(ct);
+        }
+
+        // Create district mappings
+        var desiredMappings = new (string ZoneName, string City, string District)[]
+        {
+            ("HCMC", "Ho Chi Minh", "District 1"),
+            ("HCMC", "Ho Chi Minh", "District 3"),
+            ("HCMC", "Ho Chi Minh", "Binh Thanh"),
+            ("Hanoi", "Ha Noi", "Ba Dinh"),
+            ("Hanoi", "Ha Noi", "Cau Giay"),
+            ("Other", "Da Nang", "Hai Chau")
+        };
+
+        var createdMappings = 0;
+        foreach (var (zoneNameRaw, cityRaw, districtRaw) in desiredMappings)
+        {
+            var zoneName = zoneNameRaw.Trim();
+            var city = cityRaw.Trim();
+            var district = districtRaw.Trim();
+
+            if (!zonesByName.TryGetValue(zoneName, out var zone))
+            {
+                continue;
+            }
+
+            var exists = await db.ShippingZoneDistricts.AsNoTracking().AnyAsync(d =>
+                d.ZoneId == zone.Id && d.City == city && d.District == district, ct);
+
+            if (exists)
+            {
+                continue;
+            }
+
+            db.ShippingZoneDistricts.Add(new Shopbe.Domain.Entities.Shipping.ShippingZoneDistrict
+            {
+                ZoneId = zone.Id,
+                City = city,
+                District = district
+            });
+            createdMappings++;
+        }
+
+        if (createdZones > 0 || createdMappings > 0)
+        {
+            await db.SaveChangesAsync(ct);
+            logger.LogWarning("Seeded shipping locations: +{Zones} zones, +{Mappings} mappings.", createdZones, createdMappings);
+        }
     }
 
     private static async Task EnsureCategoriesAsync(ShopDbContext db, ILogger logger, SeedOptions options, CancellationToken ct)

@@ -11,6 +11,7 @@ It generates:
 - Orders + order items (with snapshot fields)
 
 The default mode is **idempotent “top-up”**: it checks existing counts and only creates the missing rows up to the requested target.
+By default, **products** are seeded from [dummyjson.com](https://dummyjson.com/products) (~200 realistic products). If you need more (thousands), use `--use-dummy false` to fall back to Bogus (fake data).
 
 ## Run locally
 
