@@ -1,14 +1,22 @@
 import type { NextConfig } from "next";
 
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+
 const apiBaseUrl =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
   "http://localhost:5072";
 
 const { protocol, hostname, port } = new URL(apiBaseUrl);
 
+// Ensure Turbopack resolves modules from this Next.js app's directory.
+// When running from the monorepo root, `process.cwd()` may point outside `shopfend`,
+// which breaks CSS imports like `@import "tailwindcss";`.
+const appRoot = dirname(fileURLToPath(import.meta.url));
+
 const nextConfig: NextConfig = {
   turbopack: {
-    root: process.cwd(),
+    root: appRoot,
   },
   images: {
     remotePatterns: [
