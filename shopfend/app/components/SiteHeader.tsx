@@ -85,25 +85,25 @@ export default function SiteHeader() {
           </Link>
 
           <div className="flex-1 min-w-0 flex flex-col gap-1">
-            <form onSubmit={onSearch} className="flex relative bg-white rounded-[2px] p-[2px] shadow-sm">
+            <form onSubmit={onSearch} className="flex relative bg-white rounded-lg p-[2px] shadow-sm ring-1 ring-black/5 focus-within:ring-brand transition-all">
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Register and get 100% off your first order!"
-                className="w-full bg-white px-3 py-2 text-[14px] text-black outline-none rounded-sm"
+                className="w-full bg-white px-4 py-2 text-[14px] text-black outline-none rounded-l-lg"
               />
               <button
                 type="submit"
-                className="px-6 py-2 text-sm font-medium text-white bg-[#ee4d2d] hover:bg-[#fb5533] rounded-[2px]"
+                className="px-6 py-2 text-sm font-medium text-white bg-[#ee4d2d] hover:bg-[#fb5533] rounded-md m-[2px] transition-colors"
               >
                 <SearchIcon className="h-4 w-4" />
               </button>
             </form>
-            <nav className="flex items-center gap-3 text-[12px] text-white/90 overflow-hidden whitespace-nowrap">
-              <Link className="hover:text-white" href="/products">All Products</Link>
-              <Link className="hover:text-white" href="/recommendations">Recommendations</Link>
-              <Link className="hover:text-white" href="/chat">Chat</Link>
-              <Link className="hover:text-white" href="/purchases">My Purchases</Link>
+            <nav className="flex items-center gap-4 text-[12px] text-white/80 overflow-hidden whitespace-nowrap">
+              <Link className="hover:text-white transition-colors" href="/products">All Products</Link>
+              <Link className="hover:text-white transition-colors" href="/recommendations">Recommendations</Link>
+              <Link className="hover:text-white transition-colors" href="/chat">Chat</Link>
+              <Link className="hover:text-white transition-colors" href="/purchases">My Purchases</Link>
             </nav>
           </div>
 

@@ -26,30 +26,39 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 pb-10">
       {/* Top Banner Section */}
-      <div className="flex gap-2 h-[235px]">
+      <div className="flex gap-4 h-[280px]">
         {/* Main Banner Slider (Placeholder) */}
-        <div className="w-2/3 bg-white rounded-sm overflow-hidden relative">
-          <div className="w-full h-full bg-gradient-to-r from-orange-400 to-[#ee4d2d] flex items-center justify-center text-white text-2xl font-bold">
-            Big Sale - Up to 50% Off
+        <div className="w-2/3 bg-white rounded-xl overflow-hidden relative shadow-lg group cursor-pointer">
+          <div className="w-full h-full bg-gradient-to-br from-orange-500 via-brand to-red-600 flex flex-col items-center justify-center text-white text-center p-8 transition-transform duration-700 group-hover:scale-105">
+            <h2 className="text-4xl font-extrabold mb-4 tracking-tight drop-shadow-md">SUMMER MEGA SALE</h2>
+            <p className="text-white/90 text-lg font-medium max-w-md">Up to 70% off on all electronics and fashion. Limited time only!</p>
+            <div className="mt-6 bg-white text-brand px-8 py-2.5 rounded-full font-bold shadow-lg hover:bg-orange-50 transition-colors">Shop Now</div>
           </div>
         </div>
         {/* Side Banners (Placeholder) */}
-        <div className="w-1/3 flex flex-col gap-2">
-          <div className="h-1/2 bg-blue-100 rounded-sm overflow-hidden flex items-center justify-center text-blue-800 font-bold">
-            Free Shipping
+        <div className="w-1/3 flex flex-col gap-4">
+          <div className="h-1/2 bg-gradient-to-tr from-blue-500 to-cyan-400 rounded-xl overflow-hidden flex flex-col items-center justify-center text-white p-4 shadow-md hover:shadow-lg transition-all cursor-pointer">
+            <span className="text-2xl mb-1">🚚</span>
+            <span className="font-bold text-lg">Free Shipping</span>
+            <span className="text-white/80 text-xs">For orders over ₫500k</span>
           </div>
-          <div className="h-1/2 bg-purple-100 rounded-sm overflow-hidden flex items-center justify-center text-purple-800 font-bold">
-            Shopee Mall Brands
+          <div className="h-1/2 bg-gradient-to-tr from-purple-600 to-pink-500 rounded-xl overflow-hidden flex flex-col items-center justify-center text-white p-4 shadow-md hover:shadow-lg transition-all cursor-pointer">
+            <span className="text-2xl mb-1">💎</span>
+            <span className="font-bold text-lg">Premium Mall</span>
+            <span className="text-white/80 text-xs">100% Authentic Brands</span>
           </div>
         </div>
       </div>
 
       {/* Categories */}
-      <div className="bg-white rounded-sm shadow-sm pb-4 pt-2">
-        <div className="px-4 py-4 text-gray-500 font-medium bg-white">CATEGORIES</div>
-        <div className="grid grid-cols-5 md:grid-cols-10 gap-x-2 gap-y-4 px-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
+          <h3 className="text-gray-900 font-bold tracking-wide uppercase text-sm">Shop by Category</h3>
+          <Link href="/products" className="text-brand text-xs font-semibold hover:underline">View All</Link>
+        </div>
+        <div className="grid grid-cols-5 md:grid-cols-10 gap-x-2 gap-y-6 p-6">
           {[
             { id: "electronics", name: "Electronics", icon: "💻" },
             { id: "clothing", name: "Men's Clothing", icon: "👕" },
@@ -65,12 +74,12 @@ export default function Home() {
             <Link
               key={cat.id}
               href={`/products?category=${cat.id}`}
-              className="flex flex-col items-center justify-start gap-2 hover:-translate-y-[1px] transition-transform"
+              className="flex flex-col items-center justify-start gap-3 hover:-translate-y-1 transition-all duration-300 group"
             >
-              <div className="w-[70px] h-[70px] rounded-full border border-gray-100 flex items-center justify-center text-3xl bg-gray-50">
+              <div className="w-16 h-16 rounded-2xl border border-gray-100 flex items-center justify-center text-2xl bg-slate-50 group-hover:bg-orange-50 group-hover:border-brand/20 transition-colors shadow-sm">
                 {cat.icon}
               </div>
-              <span className="text-[14px] text-center text-gray-700 leading-tight">
+              <span className="text-[13px] text-center text-gray-600 font-medium group-hover:text-brand transition-colors leading-tight">
                 {cat.name}
               </span>
             </Link>
@@ -80,20 +89,22 @@ export default function Home() {
 
       {/* Daily Discover */}
       <div>
-        <div className="bg-white sticky top-[118px] z-40 border-b-4 border-[#ee4d2d] mb-4">
-          <div className="text-[#ee4d2d] font-medium text-center py-4 bg-white uppercase">
+        <div className="bg-white sticky top-[110px] z-40 border-b-2 border-brand/10 mb-6 rounded-t-xl">
+          <div className="text-brand font-bold text-center py-5 bg-white uppercase tracking-widest text-sm flex items-center justify-center gap-2">
+            <span className="w-8 h-px bg-brand/30"></span>
             Daily Discover
+            <span className="w-8 h-px bg-brand/30"></span>
           </div>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {[...Array(12)].map((_, i) => (
-              <div key={i} className="bg-white h-[280px] animate-pulse rounded-sm"></div>
+              <div key={i} className="bg-white aspect-[3/4] animate-pulse rounded-xl shadow-sm"></div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -101,9 +112,9 @@ export default function Home() {
         )}
 
         {!loading && products.length > 0 && (
-          <div className="flex justify-center mt-6">
-            <button className="bg-white border border-gray-300 text-gray-600 px-10 py-2 rounded-sm hover:bg-gray-50 transition-colors w-[390px]">
-              See More
+          <div className="flex justify-center mt-10">
+            <button className="bg-white border-2 border-brand/20 text-brand px-12 py-3 rounded-xl font-bold hover:bg-brand hover:text-white transition-all duration-300 shadow-sm hover:shadow-md">
+              Discover More
             </button>
           </div>
         )}

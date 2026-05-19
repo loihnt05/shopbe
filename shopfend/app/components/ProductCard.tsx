@@ -24,40 +24,40 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
   return (
     <Link
       href={`/products/${product.id}`}
-      className="group bg-white rounded-sm overflow-hidden hover:-translate-y-[1px] hover:shadow-[0_1px_2.5px_0_rgba(0,0,0,0.15)] transition-all duration-100 border border-transparent hover:border-[#ee4d2d] flex flex-col h-full"
+      className="group bg-white rounded-xl overflow-hidden hover:scale-[1.02] hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col h-full"
     >
-      <div className="relative aspect-square w-full bg-gray-100 grid place-items-center shrink-0">
+      <div className="relative aspect-square w-full bg-slate-50 grid place-items-center shrink-0">
         {thumbnailSrc ? (
           <Image
             src={thumbnailSrc}
             alt={product.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            className="object-cover"
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
             unoptimized
           />
         ) : (
           <div className="text-slate-400 text-xs">No image</div>
         )}
         {hasDiscount && (
-          <div className="absolute top-0 right-0 bg-[#ffea5f] text-[#ee4d2d] text-[10px] font-bold px-1 py-1 flex flex-col items-center leading-none">
+          <div className="absolute top-2 right-2 bg-yellow-300 text-brand text-[10px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-0.5">
             <span>10%</span>
-            <span className="font-normal text-[9px] uppercase text-white bg-[#ee4d2d] px-1 mt-0.5">Off</span>
+            <span className="uppercase text-[8px] opacity-80">Off</span>
           </div>
         )}
       </div>
 
-      <div className="p-2 flex flex-col flex-1">
-        <div className="line-clamp-2 text-xs text-[#000000cc] mb-1 min-h-[32px] leading-tight">
+      <div className="p-3 flex flex-col flex-1">
+        <div className="line-clamp-2 text-sm text-gray-800 mb-2 min-h-[40px] leading-snug group-hover:text-brand transition-colors">
           {product.name}
         </div>
 
         <div className="mt-auto flex items-center justify-between">
-          <div className="text-[#ee4d2d] text-base truncate flex items-baseline">
-            <span className="text-[10px] mr-0.5">₫</span>
+          <div className="text-brand text-lg font-semibold flex items-baseline">
+            <span className="text-xs mr-0.5 font-normal">₫</span>
             <span>{product.price ? product.price.toLocaleString() : "0"}</span>
           </div>
-          <div className="text-[10px] text-black/50 ml-2 truncate">
+          <div className="text-[10px] text-gray-400 ml-2 font-medium">
             1.2k sold
           </div>
         </div>

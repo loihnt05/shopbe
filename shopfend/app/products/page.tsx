@@ -60,40 +60,41 @@ function ProductsPageInner() {
   }, [session?.accessToken, status]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Products</h1>
-          <div className="text-sm text-slate-600">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">All Products</h1>
+          <div className="text-[14px] text-gray-500 mt-1">
             {q ? (
               <>
-                Results for <span className="font-medium">“{q}”</span>
+                Search results for <span className="font-semibold text-brand italic">“{q}”</span>
               </>
             ) : (
-              <>Browse what’s available</>
+              <>Explore our full collection</>
             )}
           </div>
         </div>
 
-        <div className="text-sm text-slate-500">
-          {loading ? "Loading…" : `${items.length} items loaded`}
+        <div className="text-xs font-semibold bg-gray-100 text-gray-500 px-3 py-1.5 rounded-full uppercase tracking-widest">
+          {loading ? "Loading…" : `${items.length} Products`}
         </div>
       </div>
 
-      {loading && <p>Loading…</p>}
       {error && (
-        <div className="border border-red-300 bg-red-50 p-3 rounded text-sm">
+        <div className="border border-red-100 bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium">
           {error}
         </div>
       )}
 
       {!loading && !error && items.length === 0 && (
-        <p className="opacity-70">
-          No products yet. Start backend and ensure DB seeding ran.
-        </p>
+        <div className="sb-card p-12 text-center">
+          <p className="text-gray-400 font-medium">
+            No products found. Start backend and ensure DB seeding ran.
+          </p>
+        </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {(q
           ? items.filter((p) => {
               const hay = `${p.name} ${p.description ?? ""}`.toLowerCase();
