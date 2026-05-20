@@ -11,6 +11,8 @@ public class Product : BaseEntity
     public string Slug { get; set; } = string.Empty;
     public string? Description { get; set; }
     public decimal BasePrice { get; set; }
+    public decimal? DiscountPrice { get; set; }
+    public int SoldCount { get; set; }
     public Guid CategoryId { get; set; }
     public Guid? BrandId { get; set; }
     public bool IsActive { get; set; }

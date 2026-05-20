@@ -61,7 +61,9 @@ export default function ProductDetailPage({
   }, [id, session?.accessToken]);
 
   const primaryVariantId = product?.variants?.[0]?.id;
-  const displayPrice = product?.price ?? product?.variants?.[0]?.price;
+  const hasDiscount = product?.discountPrice != null && product?.price != null && product.discountPrice < product.price;
+  const displayPrice = hasDiscount ? product?.discountPrice : (product?.price ?? product?.variants?.[0]?.price);
+  const originalPrice = hasDiscount ? product?.price : null;
   const displayCurrency = product?.currency ?? product?.variants?.[0]?.currency;
   const primaryImageSrc = resolveImageSrc(
     product?.primaryImageUrl ?? product?.images?.[0]?.imageUrl
@@ -156,8 +158,15 @@ export default function ProductDetailPage({
                 </div>
                 <div className="text-right">
                   <div className="text-xs text-slate-500">Price</div>
-                  <div className="text-2xl font-bold text-(--brand)">
-                    {formatMoney(displayPrice ?? null, displayCurrency)}
+                  <div className="flex flex-col items-end">
+                    <div className="text-2xl font-bold text-(--brand)">
+                      {formatMoney(displayPrice ?? null, displayCurrency)}
+                    </div>
+                    {originalPrice && (
+                      <div className="text-sm text-slate-400 line-through">
+                        {formatMoney(originalPrice, displayCurrency)}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

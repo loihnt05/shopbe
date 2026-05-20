@@ -38,9 +38,10 @@ public class GetAllProductVariantHandler(IUnitOfWork unitOfWork)
                 v.ProductId,
                 v.Sku,
                 v.Price,
+                "VND",
                 v.StockQuantity,
                 v.IsActive,
-                Array.Empty<Guid>())
+                Array.Empty<string>())
             )
             .ToList();
     }

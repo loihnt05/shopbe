@@ -5,7 +5,8 @@ public record ProductVariantResponseDto(
     Guid ProductId,
     string SKU,
     decimal Price,
+    string Currency,
     int StockQuantity,
     bool IsActive,
-    IReadOnlyCollection<Guid> AttributeValueIds
+    IReadOnlyCollection<string> AttributeValues
 );

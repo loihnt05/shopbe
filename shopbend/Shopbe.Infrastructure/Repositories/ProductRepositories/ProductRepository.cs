@@ -12,6 +12,8 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
         return await context.Products
             .Include(p => p.Images)
             .Include(p => p.Variants)
+                .ThenInclude(v => v.ProductVariantAttributes)
+                    .ThenInclude(pva => pva.AttributeValue)
             .FirstOrDefaultAsync(p => p.Id == productId);
     }
     public async Task<IEnumerable<Product>> GetAllProductsAsync()
@@ -19,6 +21,8 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
         return await context.Products
             .Include(p => p.Images)
             .Include(p => p.Variants)
+                .ThenInclude(v => v.ProductVariantAttributes)
+                    .ThenInclude(pva => pva.AttributeValue)
             .ToListAsync();
     }
 
@@ -35,6 +39,8 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             .AsNoTracking()
             .Include(p => p.Images)
             .Include(p => p.Variants)
+                .ThenInclude(v => v.ProductVariantAttributes)
+                    .ThenInclude(pva => pva.AttributeValue)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(name))

@@ -1,5 +1,7 @@
 using Shopbe.Application.Product.ProductImages.Dtos;
 using Shopbe.Application.Product.ProductVariants.Dtos;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Shopbe.Application.Product.Products.Dtos;
 
@@ -28,10 +30,12 @@ public static class ProductDtoMapper
                 v.ProductId,
                 v.Sku,
                 v.Price,
+                "VND",
                 v.StockQuantity,
                 v.IsActive,
                 v.ProductVariantAttributes
-                    .Select(a => a.AttributeValueId)
+                    .Select(a => a.AttributeValue?.Value ?? string.Empty)
+                    .Where(v => !string.IsNullOrEmpty(v))
                     .Distinct()
                     .ToList()
             ))
@@ -43,6 +47,8 @@ public static class ProductDtoMapper
             product.Slug,
             product.Description ?? string.Empty,
             product.BasePrice,
+            product.DiscountPrice,
+            "VND",
             primaryImageUrl,
             totalStockQuantity,
             product.CategoryId,
@@ -51,5 +57,73 @@ public static class ProductDtoMapper
             images,
             variants
         );
+    }
+
+    public static ProductResponseDto MapFromDummy(DummyProductDto dp)
+    {
+        var productId = Guid.NewGuid(); // Or use a deterministic GUID from dp.Id if preferred
+        var categoryId = GuidFromName(dp.Category);
+        var brandId = !string.IsNullOrEmpty(dp.Brand) ? GuidFromName(dp.Brand) : (Guid?)null;
+        
+        var discountPrice = dp.DiscountPercentage > 0 
+            ? Math.Round(dp.Price * (1 - dp.DiscountPercentage / 100), 2) 
+            : (decimal?)null;
+
+        var images = new List<ProductImageResponseDto>();
+        if (dp.Images != null)
+        {
+            images.AddRange(dp.Images.Select((url, index) => 
+                new ProductImageResponseDto(Guid.NewGuid(), url, index == 0)));
+        }
+        else if (!string.IsNullOrEmpty(dp.Thumbnail))
+        {
+            images.Add(new ProductImageResponseDto(Guid.NewGuid(), dp.Thumbnail, true));
+        }
+
+        var primaryImageUrl = images.FirstOrDefault(i => i.IsPrimary)?.ImageUrl ?? dp.Thumbnail ?? string.Empty;
+
+        var variant = new ProductVariantResponseDto(
+            Guid.NewGuid(),
+            productId,
+            dp.Sku ?? $"SKU-{dp.Id}",
+            dp.Price,
+            "USD",
+            dp.Stock,
+            true,
+            new List<string>() // Fake attributes
+        );
+
+        return new ProductResponseDto(
+            productId,
+            dp.Title,
+            Slugify(dp.Title),
+            dp.Description,
+            dp.Price,
+            discountPrice,
+            "USD",
+            primaryImageUrl,
+            dp.Stock,
+            categoryId,
+            brandId,
+            true,
+            images,
+            new[] { variant }
+        );
+    }
+
+    private static string Slugify(string value)
+    {
+        var s = value.Trim().ToLowerInvariant();
+        var chars = s.Select(ch => char.IsLetterOrDigit(ch) ? ch : '-').ToArray();
+        var slug = new string(chars);
+        while (slug.Contains("--", StringComparison.Ordinal)) slug = slug.Replace("--", "-", StringComparison.Ordinal);
+        return slug.Trim('-');
+    }
+
+    private static Guid GuidFromName(string name)
+    {
+        using var md5 = MD5.Create();
+        var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(name));
+        return new Guid(hash);
     }
 }

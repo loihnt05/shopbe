@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Shopbe.Application.Product.Products.Dtos;
 using Shopbe.Domain.Entities.Category;
 using Shopbe.Domain.Entities.Product;
 
@@ -16,11 +17,11 @@ public static class DummyJsonSeeder
         using var http = new HttpClient();
         
         // Fetch all products from DummyJSON.
-        DummyResponse? response;
+        DummyResponseDto? response;
         try
         {
             var url = "https://dummyjson.com/products?limit=0";
-            response = await http.GetFromJsonAsync<DummyResponse>(url, ct);
+            response = await http.GetFromJsonAsync<DummyResponseDto>(url, ct);
         }
         catch (Exception ex)
         {
@@ -191,25 +192,5 @@ public static class DummyJsonSeeder
     {
         if (string.IsNullOrEmpty(str)) return str;
         return char.ToUpper(str[0]) + str[1..].Replace("-", " ");
-    }
-
-    private class DummyProduct
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string Category { get; set; } = string.Empty;
-        public decimal Price { get; set; }
-        public string? Brand { get; set; }
-        public string? Sku { get; set; }
-        public int Stock { get; set; }
-        public List<string>? Images { get; set; }
-        public string? Thumbnail { get; set; }
-    }
-
-    private class DummyResponse
-    {
-        public List<DummyProduct> Products { get; set; } = new();
-        public int Total { get; set; }
     }
 }

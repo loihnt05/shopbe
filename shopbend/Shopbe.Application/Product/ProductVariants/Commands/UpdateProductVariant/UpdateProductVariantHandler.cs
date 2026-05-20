@@ -77,14 +77,22 @@ public class UpdateProductVariantHandler(IUnitOfWork unitOfWork)
         await _unitOfWork.ProductVariant.UpdateProductVariantAsync(variant);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        var finalAttributeValues = new List<string>();
+        foreach (var id in attributeValueIds)
+        {
+            var av = await _unitOfWork.AttributeValue.GetValueByIdAsync(id);
+            if (av != null) finalAttributeValues.Add(av.Value);
+        }
+
         return new ProductVariantResponseDto(
             variant.Id,
             variant.ProductId,
             variant.Sku,
             variant.Price,
+            "VND",
             variant.StockQuantity,
             variant.IsActive,
-            attributeValueIds
+            finalAttributeValues
         );
     }
 }

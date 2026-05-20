@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { ProductListItem } from "@/lib/shopbeApi";
+import { formatMoney } from "@/lib/format";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
@@ -18,7 +19,14 @@ function resolveImageSrc(value?: string | null): string | undefined {
 }
 
 export default function ProductCard({ product }: { product: ProductListItem }) {
-  const hasDiscount = product.discountPrice != null && product.price != null;
+  const hasDiscount = product.discountPrice != null && product.price != null && product.discountPrice < product.price;
+  const displayPrice = hasDiscount ? product.discountPrice : product.price;
+  const originalPrice = hasDiscount ? product.price : null;
+  
+  const discountPercentage = hasDiscount 
+    ? Math.round((1 - (product.discountPrice! / product.price!)) * 100) 
+    : 0;
+
   const thumbnailSrc = resolveImageSrc(product.primaryImageUrl ?? product.thumbnailUrl);
 
   return (
@@ -41,7 +49,7 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
         )}
         {hasDiscount && (
           <div className="absolute top-2 right-2 bg-yellow-300 text-brand text-[10px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-0.5">
-            <span>10%</span>
+            <span>{discountPercentage}%</span>
             <span className="uppercase text-[8px] opacity-80">Off</span>
           </div>
         )}
@@ -52,12 +60,18 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
           {product.name}
         </div>
 
-        <div className="mt-auto flex items-center justify-between">
-          <div className="text-brand text-lg font-semibold flex items-baseline">
-            <span className="text-xs mr-0.5 font-normal">₫</span>
-            <span>{product.price ? product.price.toLocaleString() : "0"}</span>
+        <div className="mt-auto flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <div className="text-brand text-lg font-semibold">
+              {formatMoney(displayPrice, product.currency)}
+            </div>
+            {originalPrice && (
+              <div className="text-xs text-gray-400 line-through">
+                {formatMoney(originalPrice, product.currency)}
+              </div>
+            )}
           </div>
-          <div className="text-[10px] text-gray-400 ml-2 font-medium">
+          <div className="text-[10px] text-gray-400 font-medium">
             1.2k sold
           </div>
         </div>

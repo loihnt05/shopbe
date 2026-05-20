@@ -21,6 +21,7 @@ export type ProductVariantDto = {
   price: number;
   currency: string;
   stockQuantity?: number | null;
+  attributeValues?: string[];
 };
 
 export type ProductDetail = {
@@ -33,6 +34,7 @@ export type ProductDetail = {
   variants?: ProductVariantDto[];
   // backend may also expose aggregate price fields; keep optional
   price?: number | null;
+  discountPrice?: number | null;
   currency?: string | null;
 };
 
