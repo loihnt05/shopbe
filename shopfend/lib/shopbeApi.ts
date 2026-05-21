@@ -13,6 +13,7 @@ export type ProductListItem = {
   currency?: string | null;
   primaryImageUrl?: string | null;
   thumbnailUrl?: string | null;
+  soldCount?: number | null;
 };
 
 export type ProductVariantDto = {
@@ -36,6 +37,7 @@ export type ProductDetail = {
   price?: number | null;
   discountPrice?: number | null;
   currency?: string | null;
+  soldCount?: number | null;
 };
 
 export type CartItem = {
@@ -295,6 +297,7 @@ export function productResponseToListItem(item: unknown): ProductListItem {
     currency: pickString("currency"),
     primaryImageUrl: pickStringOrNull("primaryImageUrl") ?? pickStringOrNull("imageUrl"),
     thumbnailUrl: pickStringOrNull("thumbnailUrl"),
+    soldCount: pickNumber("soldCount"),
   };
 }
 

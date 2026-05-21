@@ -150,6 +150,19 @@ export default function ProductDetailPage({
                   <div className="text-xl font-semibold text-slate-900">
                     {product.name}
                   </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="text-xs text-slate-500">
+                      {product.soldCount && product.soldCount > 0 ? (
+                        <span className="bg-slate-100 px-2 py-0.5 rounded-full font-medium">
+                          {product.soldCount >= 1000 
+                            ? `${(product.soldCount / 1000).toFixed(1)}k` 
+                            : product.soldCount} sold
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">No sales yet</span>
+                      )}
+                    </div>
+                  </div>
                   {product.description ? (
                     <p className="text-sm text-slate-600 mt-2">
                       {product.description}

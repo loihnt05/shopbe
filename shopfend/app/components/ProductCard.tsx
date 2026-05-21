@@ -72,10 +72,18 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
             )}
           </div>
           <div className="text-[10px] text-gray-400 font-medium">
-            1.2k sold
+            {product.soldCount && product.soldCount > 0 ? (
+              <>
+                {product.soldCount >= 1000 
+                  ? `${(product.soldCount / 1000).toFixed(1)}k` 
+                  : product.soldCount} sold
+              </>
+            ) : (
+              "No sales yet"
+            )}
           </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
+          </div>
+          </div>
+          </Link>
+          );
+          }

@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Shopbe.Application.Product.Products.Dtos;
@@ -99,12 +100,17 @@ public static class DummyJsonSeeder
             var category = categoryMap[dp.Category];
             var brand = !string.IsNullOrEmpty(dp.Brand) && brandMap.TryGetValue(dp.Brand, out var b) ? b : null;
 
+            // Realistic sold count: higher rating generally means more sales.
+            var baseSold = (int)(dp.Rating * 100);
+            var soldCount = baseSold + RandomNumberGenerator.GetInt32(0, 500);
+
             var product = new Product
             {
                 Name = dp.Title,
                 Slug = UniqueSlug(slugBase, usedProductSlugs),
                 Description = dp.Description,
                 BasePrice = dp.Price * VndExchangeRate,
+                SoldCount = soldCount,
                 CategoryId = category.Id,
                 BrandId = brand?.Id,
                 IsActive = true

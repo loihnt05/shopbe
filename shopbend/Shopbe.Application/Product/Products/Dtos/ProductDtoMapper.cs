@@ -51,6 +51,7 @@ public static class ProductDtoMapper
             "VND",
             primaryImageUrl,
             totalStockQuantity,
+            product.SoldCount,
             product.CategoryId,
             product.BrandId,
             product.IsActive,
@@ -68,6 +69,11 @@ public static class ProductDtoMapper
         var discountPrice = dp.DiscountPercentage > 0 
             ? Math.Round(dp.Price * (1 - dp.DiscountPercentage / 100), 2) 
             : (decimal?)null;
+
+        // Realistic sold count: higher rating generally means more sales.
+        // Also add some randomness.
+        var baseSold = (int)(dp.Rating * 100);
+        var soldCount = baseSold + RandomNumberGenerator.GetInt32(0, 500);
 
         var images = new List<ProductImageResponseDto>();
         if (dp.Images != null)
@@ -103,6 +109,7 @@ public static class ProductDtoMapper
             "USD",
             primaryImageUrl,
             dp.Stock,
+            soldCount,
             categoryId,
             brandId,
             true,

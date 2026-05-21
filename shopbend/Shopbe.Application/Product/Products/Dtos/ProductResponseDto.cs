@@ -13,6 +13,7 @@ public record ProductResponseDto(
     string Currency,
     string PrimaryImageUrl,
     int TotalStockQuantity,
+    int SoldCount,
     Guid CategoryId,
     Guid? BrandId,
     bool IsActive,

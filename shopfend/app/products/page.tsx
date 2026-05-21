@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import {
   isAbortError,
   shopbeApi,
+  productResponseToListItem,
   type ProductListItem,
 } from "@/lib/shopbeApi";
 import ProductCard from "../components/ProductCard";
@@ -44,7 +45,8 @@ function ProductsPageInner() {
           abort.signal
         );
         if (!abort.signal.aborted) {
-          setItems(data ?? []);
+          const productList = (data ?? []).map(productResponseToListItem);
+          setItems(productList);
         }
       } catch (e: unknown) {
         if (isAbortError(e)) return;
