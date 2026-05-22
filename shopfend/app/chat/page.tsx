@@ -71,7 +71,7 @@ export default function ChatPage() {
                   className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
                     m.role === "user"
                       ? "bg-[var(--brand)] text-white rounded-br-none"
-                      : "bg-[color:color-mix(in_srgb,var(--foreground)_5%,transparent)] text-[var(--foreground)] rounded-bl-none"
+                      : "bg-foreground/5 text-[var(--foreground)] rounded-bl-none"
                   }`}
                 >
                   {m.content}
@@ -80,7 +80,7 @@ export default function ChatPage() {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-[color:color-mix(in_srgb,var(--foreground)_5%,transparent)] text-[var(--foreground)] max-w-[80%] rounded-2xl rounded-bl-none px-4 py-2 text-sm flex gap-1 items-center">
+                <div className="bg-foreground/5 text-[var(--foreground)] max-w-[80%] rounded-2xl rounded-bl-none px-4 py-2 text-sm flex gap-1 items-center">
                   <div className="w-2 h-2 bg-current rounded-full animate-bounce"></div>
                   <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                   <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>

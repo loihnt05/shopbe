@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: appRoot,
   },
+  webpack: (config) => {
+    // Ensure Webpack also resolves from the app root
+    config.resolve.modules.push(appRoot);
+    return config;
+  },
   images: {
     remotePatterns: [
       {
