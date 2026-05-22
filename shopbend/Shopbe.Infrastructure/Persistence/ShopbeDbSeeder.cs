@@ -18,16 +18,11 @@ public static class ShopbeDbSeeder
         // (e.g. shipping locations) without being blocked by existing catalog data.
         await SeedShippingLocationsAsync(db, logger, ct);
 
-        // Only seed catalog if we don't have any products yet.
-        if (await db.Products.AsNoTracking().AnyAsync(ct))
-        {
-            logger?.LogInformation("Catalog seeder skipped: products already exist.");
-            return;
-        }
+        logger?.LogInformation("Seeding sample catalog data...");
 
-        logger?.LogInformation("Seeding sample catalog data from DummyJSON...");
-
-        await DummyJsonSeeder.SeedAsync(db, logger, ct);
+        // Seed from multiple sources. Seeders are idempotent by slug/sku.
+        await DummyJsonSeeder.SeedAsync(db, logger, ct: ct);
+        await EscuelaSeeder.SeedAsync(db, logger, ct: ct);
 
         await db.SaveChangesAsync(ct);
 

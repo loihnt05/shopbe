@@ -10,6 +10,8 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
     public async Task<Product?> GetProductByIdAsync(Guid productId)
     {
         return await context.Products
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
             .Include(p => p.Images)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
@@ -19,6 +21,8 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
     public async Task<IEnumerable<Product>> GetAllProductsAsync()
     {
         return await context.Products
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
             .Include(p => p.Images)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
@@ -37,6 +41,8 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
     {
         var query = context.Products
             .AsNoTracking()
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
             .Include(p => p.Images)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)

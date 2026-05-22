@@ -8,60 +8,61 @@ using Shopbe.Domain.Entities.Product;
 
 namespace Shopbe.Infrastructure.Persistence;
 
-public static class DummyJsonSeeder
+public static class EscuelaSeeder
 {
     private const decimal VndExchangeRate = 25000m;
 
-    public static async Task SeedAsync(ShopDbContext db, ILogger? logger = null, int maxCount = int.MaxValue, CancellationToken ct = default)
+    public static async Task SeedAsync(ShopDbContext db, ILogger? logger = null, CancellationToken ct = default)
     {
-        logger?.LogInformation("Fetching products from DummyJSON...");
+        logger?.LogInformation("Fetching products from EscuelaJS (Platzi Fake Store)...");
         using var http = new HttpClient();
         
-        // Fetch products from DummyJSON.
-        DummyResponseDto? response;
+        List<EscuelaProductDto>? products;
         try
         {
-            var url = $"https://dummyjson.com/products?limit={maxCount}";
-            response = await http.GetFromJsonAsync<DummyResponseDto>(url, ct);
+            // Fetch 100 products
+            var url = "https://api.escuelajs.co/api/v1/products?offset=0&limit=100";
+            products = await http.GetFromJsonAsync<List<EscuelaProductDto>>(url, ct);
         }
         catch (Exception ex)
         {
-            logger?.LogError(ex, "Failed to fetch products from DummyJSON.");
+            logger?.LogError(ex, "Failed to fetch products from EscuelaJS.");
             return;
         }
 
-        if (response == null || response.Products.Count == 0)
+        if (products == null || products.Count == 0)
         {
-            logger?.LogWarning("No products found from DummyJSON.");
+            logger?.LogWarning("No products found from EscuelaJS.");
             return;
         }
 
-        var productsToSeed = response.Products.Take(maxCount).ToList();
-        logger?.LogInformation("Seeding {Count} products from DummyJSON...", productsToSeed.Count);
+        logger?.LogInformation("Seeding {Count} products from EscuelaJS...", products.Count);
 
         var usedCategorySlugs = new HashSet<string>(
             await db.Categories.Select(c => c.Slug).ToListAsync(ct), StringComparer.OrdinalIgnoreCase);
-        var usedBrandSlugs = new HashSet<string>(
-            await db.Brands.Select(b => b.Slug).ToListAsync(ct), StringComparer.OrdinalIgnoreCase);
         var usedProductSlugs = new HashSet<string>(
             await db.Products.Select(p => p.Slug).ToListAsync(ct), StringComparer.OrdinalIgnoreCase);
         var usedSkus = new HashSet<string>(
             await db.ProductVariants.Select(v => v.Sku).ToListAsync(ct), StringComparer.OrdinalIgnoreCase);
 
-        var categoryMap = new Dictionary<string, Category>(StringComparer.OrdinalIgnoreCase);
-        var brandMap = new Dictionary<string, Brand>(StringComparer.OrdinalIgnoreCase);
+        var categoryMap = new Dictionary<int, Category>();
 
         // 1. Prepare Categories
-        var uniqueCategories = productsToSeed.Select(p => p.Category).Distinct(StringComparer.OrdinalIgnoreCase);
-        foreach (var catName in uniqueCategories)
+        var uniqueCategories = products
+            .Select(p => p.Category)
+            .GroupBy(c => c.Id)
+            .Select(g => g.First())
+            .ToList();
+
+        foreach (var catDto in uniqueCategories)
         {
-            var slug = Slugify(catName);
+            var slug = Slugify(catDto.Name);
             var category = await db.Categories.FirstOrDefaultAsync(c => c.Slug == slug, ct);
             if (category == null)
             {
                 category = new Category
                 {
-                    Name = ToTitleCase(catName),
+                    Name = ToTitleCase(catDto.Name),
                     Slug = UniqueSlug(slug, usedCategorySlugs),
                     IsActive = true,
                     SortOrder = 0
@@ -69,98 +70,71 @@ public static class DummyJsonSeeder
                 db.Categories.Add(category);
                 await db.SaveChangesAsync(ct);
             }
-            categoryMap[catName] = category;
+            categoryMap[catDto.Id] = category;
         }
 
-        // 2. Prepare Brands
-        var uniqueBrands = productsToSeed.Select(p => p.Brand).Where(b => !string.IsNullOrEmpty(b)).Distinct(StringComparer.OrdinalIgnoreCase);
-        foreach (var brandName in uniqueBrands!)
+        // 2. Seed Products
+        foreach (var ep in products)
         {
-            var slug = Slugify(brandName!);
-            var brand = await db.Brands.FirstOrDefaultAsync(b => b.Slug == slug, ct);
-            if (brand == null)
-            {
-                brand = new Brand
-                {
-                    Name = brandName!,
-                    Slug = UniqueSlug(slug, usedBrandSlugs),
-                    IsActive = true
-                };
-                db.Brands.Add(brand);
-                await db.SaveChangesAsync(ct);
-            }
-            brandMap[brandName!] = brand;
-        }
-
-        // 3. Seed Products
-        foreach (var dp in productsToSeed)
-        {
-            var slugBase = Slugify(dp.Title);
+            var slugBase = Slugify(ep.Title);
             if (usedProductSlugs.Contains(slugBase)) continue;
 
-            var category = categoryMap[dp.Category];
-            var brand = !string.IsNullOrEmpty(dp.Brand) && brandMap.TryGetValue(dp.Brand, out var b) ? b : null;
+            if (!categoryMap.TryGetValue(ep.Category.Id, out var category))
+            {
+                // Fallback or skip if category wasn't created
+                continue;
+            }
 
-            // Realistic sold count: higher rating generally means more sales.
-            var baseSold = (int)(dp.Rating * 100);
-            var soldCount = baseSold + RandomNumberGenerator.GetInt32(0, 500);
+            // Realistic sold count
+            var soldCount = RandomNumberGenerator.GetInt32(50, 1000);
 
             var product = new Product
             {
-                Name = dp.Title,
+                Name = ep.Title,
                 Slug = UniqueSlug(slugBase, usedProductSlugs),
-                Description = dp.Description,
-                BasePrice = dp.Price * VndExchangeRate,
+                Description = ep.Description,
+                BasePrice = ep.Price * VndExchangeRate,
                 SoldCount = soldCount,
                 CategoryId = category.Id,
-                BrandId = brand?.Id,
                 IsActive = true
             };
             db.Products.Add(product);
             await db.SaveChangesAsync(ct);
 
             // Images
-            if (dp.Images != null && dp.Images.Count > 0)
+            if (ep.Images != null && ep.Images.Count > 0)
             {
-                for (int i = 0; i < dp.Images.Count; i++)
+                for (int i = 0; i < ep.Images.Count; i++)
                 {
+                    // Platzi sometimes returns images as JSON strings or with escaped quotes
+                    var imgUrl = ep.Images[i].Trim('[', ']', '"');
+                    
                     db.ProductImages.Add(new ProductImage
                     {
                         ProductId = product.Id,
-                        ImageUrl = dp.Images[i],
+                        ImageUrl = imgUrl,
                         AltText = product.Name,
                         IsPrimary = i == 0,
                         SortOrder = i
                     });
                 }
             }
-            else if (!string.IsNullOrEmpty(dp.Thumbnail))
-            {
-                db.ProductImages.Add(new ProductImage
-                {
-                    ProductId = product.Id,
-                    ImageUrl = dp.Thumbnail,
-                    AltText = product.Name,
-                    IsPrimary = true,
-                    SortOrder = 0
-                });
-            }
 
             // Variants
-            var skuBase = !string.IsNullOrEmpty(dp.Sku) ? dp.Sku : $"{product.Slug.Replace('-', '_').ToUpperInvariant()}_1";
+            var skuBase = $"ESC_{product.Slug.Replace('-', '_').ToUpperInvariant()}";
             db.ProductVariants.Add(new ProductVariant
             {
                 ProductId = product.Id,
                 Sku = UniqueSku(skuBase, usedSkus),
                 Price = product.BasePrice,
-                StockQuantity = dp.Stock,
+                StockQuantity = RandomNumberGenerator.GetInt32(10, 200),
                 IsActive = true
             });
 
             await db.SaveChangesAsync(ct);
         }
 
-        logger?.LogInformation("DummyJSON seeding complete. Total products: {Count}", await db.Products.CountAsync(ct));
+        logger?.LogInformation("EscuelaJS seeding complete. Total products: {Count}", await db.Products.CountAsync(ct));
     }
 
     private static string Slugify(string value)

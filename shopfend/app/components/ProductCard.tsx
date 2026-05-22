@@ -27,7 +27,7 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
     ? Math.round((1 - (product.discountPrice! / product.price!)) * 100) 
     : 0;
 
-  const thumbnailSrc = resolveImageSrc(product.primaryImageUrl ?? product.thumbnailUrl);
+  const thumbnailSrc = resolveImageSrc(product.primaryImageUrl);
 
   return (
     <Link
@@ -56,6 +56,11 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
       </div>
 
       <div className="p-3 flex flex-col flex-1">
+        {product.categoryName && (
+          <div className="text-[10px] text-brand/70 font-bold uppercase tracking-wider mb-1">
+            {product.categoryName}
+          </div>
+        )}
         <div className="line-clamp-2 text-sm text-gray-800 mb-2 min-h-[40px] leading-snug group-hover:text-brand transition-colors">
           {product.name}
         </div>

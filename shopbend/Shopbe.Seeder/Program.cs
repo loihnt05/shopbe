@@ -321,7 +321,8 @@ internal sealed class ShopbeLargeDataSeeder
 
         if (options.UseDummy)
         {
-            await DummyJsonSeeder.SeedAsync(db, logger, ct);
+            await DummyJsonSeeder.SeedAsync(db, logger, 54, ct);
+            await EscuelaSeeder.SeedAsync(db, logger, ct);
         }
         else
         {

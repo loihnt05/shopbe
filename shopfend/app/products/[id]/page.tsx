@@ -126,27 +126,64 @@ export default function ProductDetailPage({
         <div className="sb-card p-6">Loading…</div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-5 sb-card overflow-hidden">
-            <div className="aspect-square bg-linear-to-br from-slate-50 to-slate-100 grid place-items-center">
-              {primaryImageSrc ? (
-                <Image
-                  src={primaryImageSrc}
-                  alt={product.name}
-                  width={700}
-                  height={700}
-                  className="h-full w-full object-cover"
-                  unoptimized
-                />
-              ) : (
-                <div className="text-slate-400 text-sm">No image</div>
-              )}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="sb-card overflow-hidden">
+              <div className="aspect-square bg-linear-to-br from-slate-50 to-slate-100 grid place-items-center">
+                {primaryImageSrc ? (
+                  <Image
+                    src={primaryImageSrc}
+                    alt={product.name}
+                    width={700}
+                    height={700}
+                    className="h-full w-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="text-slate-400 text-sm">No image</div>
+                )}
+              </div>
             </div>
+
+            {/* Thumbnail Gallery */}
+            {product.images && product.images.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {product.images.map((img) => (
+                  <div 
+                    key={img.id} 
+                    className={`shrink-0 w-20 h-20 rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${
+                      resolveImageSrc(img.imageUrl) === primaryImageSrc ? 'border-brand' : 'border-transparent opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <Image
+                      src={resolveImageSrc(img.imageUrl) ?? ""}
+                      alt={product.name}
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
+                      unoptimized
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="lg:col-span-7 space-y-4">
             <div className="sb-card p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    {product.categoryName && (
+                      <span className="text-[10px] bg-brand/10 text-brand font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        {product.categoryName}
+                      </span>
+                    )}
+                    {product.brandName && (
+                      <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        {product.brandName}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xl font-semibold text-slate-900">
                     {product.name}
                   </div>
@@ -222,19 +259,38 @@ export default function ProductDetailPage({
             </div>
 
             <div className="sb-card p-5">
-              <div className="font-semibold">Variant (test)</div>
-              <div className="text-sm text-slate-600 mt-1">
-                This demo uses the first variant to add-to-cart.
-              </div>
-              {primaryVariantId ? (
-                <div className="mt-2 font-mono text-xs break-all text-slate-700">
-                  {primaryVariantId}
+              <div className="font-semibold text-sm mb-3">Available Variants</div>
+              {product.variants && product.variants.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {product.variants.map((v) => (
+                    <div 
+                      key={v.id} 
+                      className={`px-3 py-2 rounded-lg border text-xs transition-all ${
+                        v.id === primaryVariantId ? 'border-brand bg-orange-50 text-brand font-bold' : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex flex-col gap-1">
+                        <span>{v.sku}</span>
+                        <span className="opacity-80 font-medium">
+                          {formatMoney(v.price, v.currency)}
+                        </span>
+                        {v.attributeValues && v.attributeValues.length > 0 && (
+                          <div className="flex gap-1 mt-1">
+                            {v.attributeValues.map((attr, idx) => (
+                              <span key={idx} className="bg-white/50 px-1 rounded border border-black/5 text-[8px] uppercase">{attr}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <div className="mt-2 text-sm text-red-600">
-                  No variants found
-                </div>
+                <div className="text-sm text-red-600">No variants found</div>
               )}
+              <div className="text-[10px] text-slate-400 mt-3 italic">
+                * This demo currently uses the first variant for add-to-cart.
+              </div>
             </div>
           </div>
         </div>

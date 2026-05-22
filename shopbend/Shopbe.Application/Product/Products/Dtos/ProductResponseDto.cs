@@ -15,7 +15,9 @@ public record ProductResponseDto(
     int TotalStockQuantity,
     int SoldCount,
     Guid CategoryId,
+    string? CategoryName,
     Guid? BrandId,
+    string? BrandName,
     bool IsActive,
     IEnumerable<ProductImageResponseDto> Images,
     IEnumerable<ProductVariantResponseDto> Variants

@@ -4,41 +4,44 @@ export type ApiEnvelope<T> = {
 
 import { asRecord, errorMessage } from "./errors";
 
+export type ProductImageDto = {
+  id: string;
+  imageUrl: string;
+  isPrimary: boolean;
+};
+
 export type ProductListItem = {
   id: string;
   name: string;
+  slug: string;
   description?: string | null;
   price?: number | null;
   discountPrice?: number | null;
   currency?: string | null;
   primaryImageUrl?: string | null;
-  thumbnailUrl?: string | null;
+  totalStockQuantity?: number | null;
   soldCount?: number | null;
+  categoryId: string;
+  categoryName?: string | null;
+  brandId?: string | null;
+  brandName?: string | null;
+  isActive: boolean;
+  images?: ProductImageDto[];
+  variants?: ProductVariantDto[];
 };
 
 export type ProductVariantDto = {
   id: string;
+  productId: string;
   sku?: string | null;
   price: number;
   currency: string;
   stockQuantity?: number | null;
+  isActive: boolean;
   attributeValues?: string[];
 };
 
-export type ProductDetail = {
-  id: string;
-  name: string;
-  description?: string | null;
-  categoryId?: string | null;
-  primaryImageUrl?: string | null;
-  images?: Array<{ id: string; imageUrl: string }>;
-  variants?: ProductVariantDto[];
-  // backend may also expose aggregate price fields; keep optional
-  price?: number | null;
-  discountPrice?: number | null;
-  currency?: string | null;
-  soldCount?: number | null;
-};
+export type ProductDetail = ProductListItem;
 
 export type CartItem = {
   productVariantId: string;
@@ -288,16 +291,58 @@ export function productResponseToListItem(item: unknown): ProductListItem {
     return typeof v === "number" ? v : undefined;
   };
 
+  const pickBoolean = (k: string): boolean => {
+    const v = obj[k];
+    return typeof v === "boolean" ? v : false;
+  };
+
+  const mapImages = (imgs: unknown): ProductImageDto[] | undefined => {
+    if (!Array.isArray(imgs)) return undefined;
+    return imgs.map((img: unknown) => {
+      const i = asRecord(img) ?? {};
+      return {
+        id: (i.id as string) ?? "",
+        imageUrl: (i.imageUrl as string) ?? "",
+        isPrimary: (i.isPrimary as boolean) ?? false,
+      };
+    });
+  };
+
+  const mapVariants = (vars: unknown): ProductVariantDto[] | undefined => {
+    if (!Array.isArray(vars)) return undefined;
+    return vars.map((v: unknown) => {
+      const r = asRecord(v) ?? {};
+      return {
+        id: (r.id as string) ?? "",
+        productId: (r.productId as string) ?? "",
+        sku: (r.sku as string) ?? null,
+        price: (r.price as number) ?? 0,
+        currency: (r.currency as string) ?? "VND",
+        stockQuantity: (r.stockQuantity as number) ?? 0,
+        isActive: (r.isActive as boolean) ?? true,
+        attributeValues: Array.isArray(r.attributeValues) ? (r.attributeValues as string[]) : [],
+      };
+    });
+  };
+
   return {
     id: pickString("id") ?? "",
     name: pickString("name") ?? "",
+    slug: pickString("slug") ?? "",
     description: pickStringOrNull("description"),
     price: pickNumber("price"),
     discountPrice: pickNumber("discountPrice"),
     currency: pickString("currency"),
     primaryImageUrl: pickStringOrNull("primaryImageUrl") ?? pickStringOrNull("imageUrl"),
-    thumbnailUrl: pickStringOrNull("thumbnailUrl"),
+    totalStockQuantity: pickNumber("totalStockQuantity"),
     soldCount: pickNumber("soldCount"),
+    categoryId: pickString("categoryId") ?? "",
+    categoryName: pickStringOrNull("categoryName"),
+    brandId: pickStringOrNull("brandId"),
+    brandName: pickStringOrNull("brandName"),
+    isActive: pickBoolean("isActive"),
+    images: mapImages(obj.images),
+    variants: mapVariants(obj.variants),
   };
 }
 

@@ -53,7 +53,9 @@ public static class ProductDtoMapper
             totalStockQuantity,
             product.SoldCount,
             product.CategoryId,
+            product.Category?.Name,
             product.BrandId,
+            product.Brand?.Name,
             product.IsActive,
             images,
             variants
@@ -111,7 +113,9 @@ public static class ProductDtoMapper
             dp.Stock,
             soldCount,
             categoryId,
+            dp.Category,
             brandId,
+            dp.Brand,
             true,
             images,
             new[] { variant }
