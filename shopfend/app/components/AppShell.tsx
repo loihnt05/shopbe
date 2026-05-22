@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
 import CartDrawer from "./CartDrawer";
+import Chatbot from "./chatbot/Chatbot";
 
 export default function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -23,6 +24,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <main className="sb-container py-6">{children}</main>
       <SiteFooter />
       <CartDrawer />
+      <Chatbot />
     </div>
   );
 }

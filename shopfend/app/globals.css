@@ -59,6 +59,26 @@
   }
 }
 
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes addPop {
   0%, 100% {
     transform: scale(1);
@@ -69,4 +89,21 @@
   70% {
     transform: scale(1.04);
   }
+}
+
+.animate-in {
+  animation-duration: 300ms;
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.slide-in-from-bottom-10 {
+  animation-name: slideInUp;
+}
+
+.zoom-in {
+  animation-name: addPop;
 }
