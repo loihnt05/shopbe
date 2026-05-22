@@ -1,62 +1,25 @@
 "use client";
 
+import Image from "next/image";
+
 import { useEffect, useRef, useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import Link from "next/link";
-import { isAbortError, shopbeApi, type CartDto } from "@/lib/shopbeApi";
+import { isAbortError, shopbeApi, resolveApiUrl, type CartDto } from "@/lib/shopbeApi";
+import { useCart } from "../components/CartContext";
 import { formatMoney } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
 
 export default function CartPage() {
   const { data: session, status } = useSession();
-  const [cart, setCart] = useState<CartDto | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { cart, loading, updateQuantity, removeItem, refreshCart } = useCart();
   const [error, setError] = useState<string | null>(null);
   const [busyItem, setBusyItem] = useState<string | null>(null);
 
-  const abortRef = useRef<AbortController | null>(null);
-
-  const getSignal = () => {
-    // abort any in-flight request before starting a new one
-    abortRef.current?.abort();
-    abortRef.current = new AbortController();
-    return abortRef.current.signal;
-  };
-
-  const refresh = async () => {
-    if (!session?.accessToken) return;
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await shopbeApi.cart.getMyCart(
-        session.accessToken,
-        getSignal()
-      );
-      setCart(data);
-    } catch (e: unknown) {
-      if (isAbortError(e)) return;
-      setError(errorMessage(e, "Failed to load cart"));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (status === "authenticated") refresh();
-    return () => abortRef.current?.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
-
   const setQty = async (productVariantId: string, quantity: number) => {
-    if (!session?.accessToken) return;
     try {
       setBusyItem(productVariantId);
-      const data = await shopbeApi.cart.setQuantity(
-        session.accessToken,
-        productVariantId,
-        { quantity }
-      );
-      setCart(data);
+      await updateQuantity(productVariantId, quantity);
     } catch (e: unknown) {
       setError(errorMessage(e, "Failed to update quantity"));
     } finally {
@@ -65,11 +28,9 @@ export default function CartPage() {
   };
 
   const remove = async (productVariantId: string) => {
-    if (!session?.accessToken) return;
     try {
       setBusyItem(productVariantId);
-      const data = await shopbeApi.cart.removeItem(session.accessToken, productVariantId);
-      setCart(data);
+      await removeItem(productVariantId);
     } catch (e: unknown) {
       setError(errorMessage(e, "Failed to remove item"));
     } finally {
@@ -106,7 +67,7 @@ export default function CartPage() {
         <div className="flex items-center gap-3 text-sm">
           <button
             className="sb-btn-outline"
-            onClick={refresh}
+            onClick={refreshCart}
             disabled={loading}
           >
             {loading ? "Refreshing…" : "Refresh"}
@@ -143,8 +104,19 @@ export default function CartPage() {
             {cart.items.map((it) => (
               <div key={it.productVariantId} className="sb-card p-4">
                 <div className="flex gap-4">
-                  <div className="h-20 w-20 rounded-sm bg-gradient-to-br from-slate-50 to-slate-100 grid place-items-center text-slate-400 text-xs">
-                    Img
+                  <div className="h-20 w-20 rounded-sm bg-gradient-to-br from-slate-50 to-slate-100 grid place-items-center text-slate-400 text-xs overflow-hidden shrink-0">
+                    {it.imageUrl ? (
+                      <Image
+                        src={resolveApiUrl(it.imageUrl) || ""}
+                        alt={it.productName ?? "Item"}
+                        width={80}
+                        height={80}
+                        className="h-full w-full object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      "Img"
+                    )}
                   </div>
 
                   <div className="min-w-0 flex-1">
@@ -155,11 +127,11 @@ export default function CartPage() {
                       variant: {it.productVariantId}
                     </div>
                     <div className="text-sm text-slate-700 mt-2">
-                      {it.price != null ? (
+                      {it.unitPrice != null ? (
                         <>
                           <span className="opacity-70">Price:</span>{" "}
                           <span className="font-semibold text-[var(--brand)]">
-                            {formatMoney(it.price, it.currency)}
+                            {formatMoney(it.unitPrice, cart.currency)}
                           </span>
                         </>
                       ) : null}
@@ -203,7 +175,7 @@ export default function CartPage() {
               <div className="mt-2 flex items-center justify-between">
                 <span className="text-sm text-slate-600">Total</span>
                 <span className="text-lg font-bold text-slate-900">
-                  {formatMoney(cart.totalAmount ?? null, cart.currency)}
+                  {formatMoney(cart.subtotal ?? null, cart.currency)}
                 </span>
               </div>
 

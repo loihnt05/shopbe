@@ -5,9 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 import { CartIcon, SearchIcon, UserIcon } from "./icons";
+import { useCart } from "./CartContext";
+import { Badge } from "./Badge";
 
 export default function SiteHeader() {
   const { data: session, status } = useSession();
+  const { totalQuantity, openDrawer } = useCart();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -107,15 +110,15 @@ export default function SiteHeader() {
             </nav>
           </div>
 
-          <div className="shrink-0 flex items-center justify-center w-[100px]">
-            <Link
-              href="/cart"
-              className="relative inline-flex items-center justify-center p-2 hover:opacity-80"
+          <div className="shrink-0 flex items-center justify-center w-[80px]">
+            <button
+              onClick={openDrawer}
+              className="relative inline-flex items-center justify-center p-2 group"
               aria-label="Cart"
             >
               <CartIcon className="h-8 w-8 text-white" />
-              {/* Optional: Add a real cart count badge here later */}
-            </Link>
+              <Badge count={totalQuantity} />
+            </button>
           </div>
         </div>
       </div>

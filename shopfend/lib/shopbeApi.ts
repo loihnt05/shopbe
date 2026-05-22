@@ -45,25 +45,25 @@ export type ProductDetail = ProductListItem;
 
 export type CartItem = {
   productVariantId: string;
-  quantity: number;
-  productId?: string;
   productName?: string;
-  price?: number;
-  currency?: string;
   imageUrl?: string | null;
+  quantity: number;
+  unitPrice?: number;
+  lineTotal?: number;
 };
-
 export type CartDto = {
   userId?: string;
   items: CartItem[];
-  totalAmount?: number;
+  subtotal?: number;
+  totalQuantity?: number;  totalItems?: number;  displayQuantity?: string;
   currency?: string;
 };
 
 export type CreateOrderResponse = {
   id: string;
   status?: string;
-  totalAmount?: number;
+  subtotal?: number;
+  totalQuantity?: number;  totalItems?: number;  displayQuantity?: string;
   currency?: string;
 };
 
@@ -354,6 +354,10 @@ export const shopbeApi = {
       requestJson<unknown[]>(`/api/recommendations/me?limit=${limit}`, { accessToken, signal }),
     similar: (productId: string, limit: number, signal?: AbortSignal) =>
       requestJson<unknown[]>(`/api/recommendations/products/${productId}/similar?limit=${limit}`, { signal }),
+    discover: (limit: number, excludeIds?: string[], signal?: AbortSignal) => {
+      const ids = excludeIds?.join(",") ?? "";
+      return requestJson<unknown[]>(`/api/recommendations/discover?limit=${limit}&excludeIds=${ids}`, { signal });
+    },
   },
   products: {
     list: (accessToken?: string, signal?: AbortSignal) =>

@@ -9,6 +9,7 @@ import {
 } from "@/lib/shopbeApi";
 import Link from "next/link";
 import { formatMoney } from "@/lib/format";
+import { useCart } from "../../components/CartContext";
 import { errorMessage } from "@/lib/errors";
 import Image from "next/image";
 
@@ -34,11 +35,12 @@ export default function ProductDetailPage({
 }) {
   const { id } = use(params);
   const { data: session } = useSession();
+  const { refreshCart, openDrawer } = useCart();
   const [product, setProduct] = useState<ProductDetail | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const abort = new AbortController();
@@ -65,12 +67,11 @@ export default function ProductDetailPage({
   const displayPrice = hasDiscount ? product?.discountPrice : (product?.price ?? product?.variants?.[0]?.price);
   const originalPrice = hasDiscount ? product?.price : null;
   const displayCurrency = product?.currency ?? product?.variants?.[0]?.currency;
-  const primaryImageSrc = resolveImageSrc(
+  const primaryImageSrc = selectedImage ?? resolveImageSrc(
     product?.primaryImageUrl ?? product?.images?.[0]?.imageUrl
   );
 
   const addToCart = async () => {
-    setMessage(null);
     setError(null);
 
     if (!session?.accessToken) {
@@ -91,7 +92,8 @@ export default function ProductDetailPage({
         { productId: id, productVariantId: primaryVariantId, quantity },
         undefined
       );
-      setMessage("Added to cart.");
+      await refreshCart();
+      openDrawer();
     } catch (e: unknown) {
       setError(errorMessage(e, "Failed to add to cart"));
     } finally {
@@ -114,11 +116,6 @@ export default function ProductDetailPage({
       {error && (
         <div className="border  border-red-300 bg-white text-red-800 p-3 rounded text-sm">
           {error}
-        </div>
-      )}
-      {message && (
-        <div className="border text-green-600 border-emerald-300 bg-emerald-50 p-3 rounded text-sm">
-          {message}
         </div>
       )}
 
@@ -150,8 +147,9 @@ export default function ProductDetailPage({
                 {product.images.map((img) => (
                   <div 
                     key={img.id} 
+                    onClick={() => setSelectedImage(resolveImageSrc(img.imageUrl) ?? null)}
                     className={`shrink-0 w-20 h-20 rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${
-                      resolveImageSrc(img.imageUrl) === primaryImageSrc ? 'border-brand' : 'border-transparent opacity-70 hover:opacity-100'
+                      resolveImageSrc(img.imageUrl ?? "") === primaryImageSrc ? 'border-brand' : 'border-transparent opacity-70 hover:opacity-100'
                     }`}
                   >
                     <Image

@@ -12,7 +12,6 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
     {
         count = NormalizeCount(count, 10);
 
-        // Use OrderItems as the source of truth for "selling".
         var topProductIds = await db.OrderItems
             .AsNoTracking()
             .GroupBy(oi => oi.ProductVariantId)
@@ -31,7 +30,6 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
         if (topProductIds.Count == 0)
             return [];
 
-        // Preserve ranking.
         var products = await db.Products
             .AsNoTracking()
             .Where(p => topProductIds.Contains(p.Id))
@@ -78,10 +76,6 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
 
         var userGuid = userId;
 
-        // Strategy:
-        // 1) Find most interacted category based on recent events.
-        // 2) Recommend newest items in that category.
-        // 3) Fallback to top selling.
         var topCategoryId = await db.UserBehaviors
             .AsNoTracking()
             .Where(b => b.UserId == userGuid && b.CategoryId != null)
@@ -116,14 +110,32 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
             : await GetTopSellingAsync(count);
     }
 
+    public async Task<List<ProductResponseDto>> GetRandomDiscoverAsync(int limit, List<Guid> excludeIds)
+    {
+        limit = NormalizeCount(limit, 10);
+
+        var query = db.Products
+            .AsNoTracking()
+            .Where(p => p.IsActive);
+
+        if (excludeIds != null && excludeIds.Count != 0)
+        {
+            query = query.Where(p => !excludeIds.Contains(p.Id));
+        }
+
+        var products = await query
+            .OrderBy(p => EF.Functions.Random())
+            .Include(p => p.Images)
+            .Include(p => p.Variants)
+            .Take(limit)
+            .ToListAsync();
+
+        return products.Select(ProductDtoMapper.ToResponse).ToList();
+    }
+
     private static int NormalizeCount(int count, int @default)
     {
         if (count <= 0) return @default;
         return Math.Clamp(count, 1, 50);
     }
-
 }
-
-
-
-

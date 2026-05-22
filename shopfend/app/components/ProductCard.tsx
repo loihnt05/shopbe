@@ -27,7 +27,7 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
     ? Math.round((1 - (product.discountPrice! / product.price!)) * 100) 
     : 0;
 
-  const thumbnailSrc = resolveImageSrc(product.primaryImageUrl);
+  const thumbnailSrc = resolveImageSrc(product.primaryImageUrl ?? "");
 
   return (
     <Link

@@ -57,6 +57,27 @@ public sealed class RecommendationsController(
         var result = await recommendations.GetPersonalizedAsync(userId, count);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Discover random products with exclusion list.
+    /// </summary>
+    [HttpGet("discover")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Discover([FromQuery] int limit = 20, [FromQuery] string? excludeIds = null)
+    {
+        var excludeGuids = new List<Guid>();
+        if (!string.IsNullOrWhiteSpace(excludeIds))
+        {
+            foreach (var idStr in excludeIds.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (Guid.TryParse(idStr.Trim(), out var guid))
+                {
+                    excludeGuids.Add(guid);
+                }
+            }
+        }
+
+        var result = await recommendations.GetRandomDiscoverAsync(limit, excludeGuids);
+        return Ok(result);
+    }
 }
-
-

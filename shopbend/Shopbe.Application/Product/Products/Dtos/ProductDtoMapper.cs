@@ -2,6 +2,7 @@ using Shopbe.Application.Product.ProductImages.Dtos;
 using Shopbe.Application.Product.ProductVariants.Dtos;
 using System.Security.Cryptography;
 using System.Text;
+using System.Linq;
 
 namespace Shopbe.Application.Product.Products.Dtos;
 
@@ -11,13 +12,11 @@ public static class ProductDtoMapper
     {
         var primaryImageUrl = product.Images
             .OrderByDescending(i => i.IsPrimary)
-            .ThenBy(i => i.SortOrder)
             .Select(i => i.ImageUrl)
             .FirstOrDefault() ?? string.Empty;
 
         var images = product.Images
             .OrderByDescending(i => i.IsPrimary)
-            .ThenBy(i => i.SortOrder)
             .Select(i => new ProductImageResponseDto(i.Id, i.ImageUrl, i.IsPrimary))
             .ToList();
 

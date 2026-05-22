@@ -47,3 +47,26 @@
     @apply text-xs font-bold text-gray-500 uppercase tracking-wider mb-1;
   }
 }
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes addPop {
+  0%, 100% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(0.94);
+  }
+  70% {
+    transform: scale(1.04);
+  }
+}

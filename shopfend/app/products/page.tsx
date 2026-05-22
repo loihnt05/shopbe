@@ -46,7 +46,7 @@ function ProductsPageInner() {
         );
         if (!abort.signal.aborted) {
           const productList = (data ?? []).map(productResponseToListItem);
-          setItems(productList);
+          setItems(productList.slice(0, 20));
         }
       } catch (e: unknown) {
         if (isAbortError(e)) return;

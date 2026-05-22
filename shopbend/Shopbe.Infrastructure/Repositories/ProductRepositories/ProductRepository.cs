@@ -49,32 +49,46 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
                     .ThenInclude(pva => pva.AttributeValue)
             .AsQueryable();
 
+        var isFiltered = false;
+
         if (!string.IsNullOrWhiteSpace(name))
         {
-            // Use ILIKE for Postgres when possible (EF.Functions) for efficient case-insensitive search.
             query = query.Where(p => EF.Functions.ILike(p.Name, $"%{name}%"));
+            isFiltered = true;
         }
 
         if (categoryId is not null)
         {
             query = query.Where(p => p.CategoryId == categoryId);
+            isFiltered = true;
         }
 
         if (minBasePrice is not null)
         {
             query = query.Where(p => p.BasePrice >= minBasePrice);
+            isFiltered = true;
         }
 
         if (maxBasePrice is not null)
         {
             query = query.Where(p => p.BasePrice <= maxBasePrice);
+            isFiltered = true;
         }
-
-        // Stable order for paging.
-        query = query.OrderBy(p => p.CreatedAt).ThenBy(p => p.Id);
 
         pageNumber = pageNumber < 1 ? 1 : pageNumber;
         pageSize = pageSize < 1 ? 20 : pageSize;
+
+        if (!isFiltered)
+        {
+            // When not filtered, return 20 random products.
+            // Note: Guid.NewGuid() in OrderBy is a common trick for randomization in many EF providers (like SQL Server/Postgres).
+            query = query.OrderBy(p => Guid.NewGuid());
+        }
+        else
+        {
+            // Stable order for paging when filtered.
+            query = query.OrderBy(p => p.CreatedAt).ThenBy(p => p.Id);
+        }
 
         return await query
             .Skip((pageNumber - 1) * pageSize)

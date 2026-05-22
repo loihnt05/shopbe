@@ -5,5 +5,7 @@ public sealed record CartResponseDto(
     Guid UserId,
     IReadOnlyList<CartItemResponseDto> Items,
     decimal Subtotal,
-    int TotalQuantity);
-
+    int TotalQuantity,
+    int TotalItems,
+    string DisplayQuantity,
+    string Currency = "VND");

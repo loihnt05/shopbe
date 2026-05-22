@@ -3,19 +3,19 @@ import type { SVGProps } from "react";
 export function CartIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox="0 0 26.6 25.6"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeMiterlimit="10"
       aria-hidden="true"
       {...props}
     >
-      <path d="M6 6h15l-1.5 9h-12z" />
-      <path d="M6 6l-2-3H1" />
-      <circle cx="9" cy="20" r="1" />
-      <circle cx="18" cy="20" r="1" />
+      <polyline points="2 1.7 5.5 1.7 9.6 18.3 21.2 18.3 24.6 6.1 7 6.1" />
+      <circle cx="10.7" cy="23" r="2.2" fill="currentColor" stroke="none" />
+      <circle cx="19.7" cy="23" r="2.2" fill="currentColor" stroke="none" />
     </svg>
   );
 }

@@ -106,9 +106,26 @@ public static class EscuelaSeeder
             {
                 for (int i = 0; i < ep.Images.Count; i++)
                 {
-                    // Platzi sometimes returns images as JSON strings or with escaped quotes
-                    var imgUrl = ep.Images[i].Trim('[', ']', '"');
+                    // Platzi sometimes returns images as JSON strings like "[\"https://...\"]" 
+                    // or even nested arrays. Clean up common formatting artifacts.
+                    var raw = ep.Images[i];
+                    if (string.IsNullOrWhiteSpace(raw)) continue;
+
+                    var imgUrl = raw.Trim('[', ']', '"', '\\', ' ', '\n', '\r', '\t');
                     
+                    // If it still contains a comma, it might have been a JSON array string with multiple URLs.
+                    // Just take the first one if so.
+                    if (imgUrl.Contains("\",\""))
+                    {
+                        imgUrl = imgUrl.Split(new[] { "\",\"" }, StringSplitOptions.None).First().Trim('"');
+                    }
+                    else if (imgUrl.Contains(","))
+                    {
+                         imgUrl = imgUrl.Split(',').First().Trim('"');
+                    }
+
+                    if (string.IsNullOrWhiteSpace(imgUrl)) continue;
+
                     db.ProductImages.Add(new ProductImage
                     {
                         ProductId = product.Id,

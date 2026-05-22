@@ -12,5 +12,7 @@ public interface IRecommendationService
 
     // Dành cho user đã đăng nhập — dựa trên lịch sử
     Task<List<ProductResponseDto>> GetPersonalizedAsync(Guid userId, int count = 10);
-}
 
+    // Khám phá sản phẩm ngẫu nhiên
+    Task<List<ProductResponseDto>> GetRandomDiscoverAsync(int limit, List<Guid> excludeIds);
+}

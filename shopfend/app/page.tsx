@@ -8,22 +8,50 @@ import Link from "next/link";
 export default function Home() {
   const [products, setProducts] = useState<ProductListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
+  const fetchInitialProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await shopbeApi.recommendations.discover(20);
+      const productList = (data ?? []).map(productResponseToListItem);
+      setProducts(productList);
+      setHasMore(productList.length === 20);
+    } catch (error) {
+      console.error("Failed to fetch initial products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const data = await shopbeApi.products.list();
-        const productList = data.map(productResponseToListItem);
-        setProducts(productList);
-      } catch (error) {
-        console.error("Failed to fetch products:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
+    fetchInitialProducts();
   }, []);
+
+  const handleDiscoverMore = async () => {
+    if (loadingMore) return;
+    
+    try {
+      setLoadingMore(true);
+      const excludeIds = products.map(p => p.id);
+      const data = await shopbeApi.recommendations.discover(10, excludeIds);
+      const newProducts = (data ?? []).map(productResponseToListItem);
+      
+      if (newProducts.length === 0) {
+        setHasMore(false);
+      } else {
+        setProducts(prev => [...prev, ...newProducts]);
+        if (newProducts.length < 10) {
+          setHasMore(false);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch more products:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <div className="space-y-8 pb-10">
@@ -108,13 +136,20 @@ export default function Home() {
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
+            {loadingMore && [...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white aspect-[3/4] animate-pulse rounded-xl shadow-sm"></div>
+            ))}
           </div>
         )}
 
-        {!loading && products.length > 0 && (
+        {!loading && hasMore && (
           <div className="flex justify-center mt-10">
-            <button className="bg-white border-2 border-brand/20 text-brand px-12 py-3 rounded-xl font-bold hover:bg-brand hover:text-white transition-all duration-300 shadow-sm hover:shadow-md">
-              Discover More
+            <button 
+              onClick={handleDiscoverMore}
+              disabled={loadingMore}
+              className="bg-white border-2 border-brand/20 text-brand px-12 py-3 rounded-xl font-bold hover:bg-brand hover:text-white transition-all duration-300 shadow-sm hover:shadow-md disabled:opacity-50"
+            >
+              {loadingMore ? "Loading..." : "Discover More"}
             </button>
           </div>
         )}

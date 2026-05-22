@@ -11,6 +11,9 @@ public sealed class CartRepository(ShopDbContext context) : ICartRepository
     {
         return await context.ShoppingCarts
             .Include(c => c.CartItems)
+                .ThenInclude(i => i.ProductVariant)
+                    .ThenInclude(v => v!.Product)
+                        .ThenInclude(p => p!.Images)
             .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
     }
