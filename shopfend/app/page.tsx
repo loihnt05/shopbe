@@ -14,7 +14,7 @@ export default function Home() {
   const fetchInitialProducts = async () => {
     try {
       setLoading(true);
-      const data = await shopbeApi.recommendations.discover(20);
+      const data = await shopbeApi.products.discover(20);
       const productList = (data ?? []).map(productResponseToListItem);
       setProducts(productList);
       setHasMore(productList.length === 20);
@@ -35,7 +35,7 @@ export default function Home() {
     try {
       setLoadingMore(true);
       const excludeIds = products.map(p => p.id);
-      const data = await shopbeApi.recommendations.discover(10, excludeIds);
+      const data = await shopbeApi.products.discover(10, excludeIds);
       const newProducts = (data ?? []).map(productResponseToListItem);
       
       if (newProducts.length === 0) {

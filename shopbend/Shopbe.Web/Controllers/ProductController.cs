@@ -134,4 +134,27 @@ public class ProductController : ControllerBase
         await _mediator.Send(new DeleteProductCommand(id), cancellationToken);
         return NoContent();
     }
+
+    [HttpGet("discover")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Discover(
+        [FromQuery] int limit = 20,
+        [FromQuery] string? excludeIds = null,
+        [FromServices] IRecommendationService recommendations = null!)
+    {
+        var excludeGuids = new List<Guid>();
+        if (!string.IsNullOrWhiteSpace(excludeIds))
+        {
+            foreach (var idStr in excludeIds.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (Guid.TryParse(idStr.Trim(), out var guid))
+                {
+                    excludeGuids.Add(guid);
+                }
+            }
+        }
+
+        var result = await recommendations.GetRandomDiscoverAsync(limit, excludeGuids);
+        return Ok(result);
+    }
 } 

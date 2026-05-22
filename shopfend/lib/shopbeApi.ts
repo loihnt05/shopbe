@@ -354,10 +354,6 @@ export const shopbeApi = {
       requestJson<unknown[]>(`/api/recommendations/me?limit=${limit}`, { accessToken, signal }),
     similar: (productId: string, limit: number, signal?: AbortSignal) =>
       requestJson<unknown[]>(`/api/recommendations/products/${productId}/similar?limit=${limit}`, { signal }),
-    discover: (limit: number, excludeIds?: string[], signal?: AbortSignal) => {
-      const ids = excludeIds?.join(",") ?? "";
-      return requestJson<unknown[]>(`/api/recommendations/discover?limit=${limit}&excludeIds=${ids}`, { signal });
-    },
   },
   products: {
     list: (accessToken?: string, signal?: AbortSignal) =>
@@ -370,6 +366,10 @@ export const shopbeApi = {
         accessToken,
         signal,
       }),
+    discover: (limit: number, excludeIds?: string[], signal?: AbortSignal) => {
+      const ids = excludeIds?.join(",") ?? "";
+      return requestJson<unknown[]>(`/api/products/discover?limit=${limit}&excludeIds=${ids}`, { signal });
+    },
   },
   cart: {
     getMyCart: (accessToken: string, signal?: AbortSignal) =>
