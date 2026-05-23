@@ -3,4 +3,4 @@ using Shopbe.Application.Product.Products.Dtos;
 
 namespace Shopbe.Application.Product.Products.Queries.GetAllProducts;
 
-public record GetAllProductsQuery(ProductQueryDto Filter) : IRequest<IEnumerable<ProductResponseDto>>;
+public record GetAllProductsQuery(ProductQueryDto Filter) : IRequest<ProductSearchResponseDto>;

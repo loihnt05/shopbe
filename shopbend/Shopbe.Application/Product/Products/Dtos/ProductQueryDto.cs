@@ -2,7 +2,7 @@ namespace Shopbe.Application.Product.Products.Dtos;
 
 public record ProductQueryDto(
     string? Name,
-    Guid? CategoryId,
+    IEnumerable<Guid>? CategoryIds,
     decimal? MinBasePrice,
     decimal? MaxBasePrice,
     int PageNumber = 1,

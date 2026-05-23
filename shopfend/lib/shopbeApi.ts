@@ -346,6 +346,28 @@ export function productResponseToListItem(item: unknown): ProductListItem {
   };
 }
 
+export type CategoryFacetDto = {
+  id: string;
+  name: string;
+  slug: string;
+  count: number;
+};
+
+export type ProductSearchResponse = {
+  products: ProductListItem[];
+  categoryFacets: CategoryFacetDto[];
+  totalCount: number;
+};
+
+export type ProductQueryDto = {
+  name?: string;
+  categoryIds?: string[];
+  minBasePrice?: number;
+  maxBasePrice?: number;
+  pageNumber?: number;
+  pageSize?: number;
+};
+
 export const shopbeApi = {
   recommendations: {
     topSelling: (limit: number, signal?: AbortSignal) =>
@@ -356,11 +378,23 @@ export const shopbeApi = {
       requestJson<unknown[]>(`/api/recommendations/products/${productId}/similar?limit=${limit}`, { signal }),
   },
   products: {
-    list: (accessToken?: string, signal?: AbortSignal) =>
-      requestJson<ProductListItem[]>("/api/products", {
+    list: (filter?: ProductQueryDto, accessToken?: string, signal?: AbortSignal) => {
+      const params = new URLSearchParams();
+      if (filter?.name) params.append("name", filter.name);
+      if (filter?.categoryIds) {
+        filter.categoryIds.forEach((id) => params.append("categoryIds", id));
+      }
+      if (filter?.minBasePrice) params.append("minBasePrice", filter.minBasePrice.toString());
+      if (filter?.maxBasePrice) params.append("maxBasePrice", filter.maxBasePrice.toString());
+      if (filter?.pageNumber) params.append("pageNumber", filter.pageNumber.toString());
+      if (filter?.pageSize) params.append("pageSize", filter.pageSize.toString());
+
+      const queryString = params.toString();
+      return requestJson<ProductSearchResponse>(`/api/products${queryString ? `?${queryString}` : ""}`, {
         accessToken,
         signal,
-      }),
+      });
+    },
     getById: (id: string, accessToken?: string, signal?: AbortSignal) =>
       requestJson<ProductDetail>(`/api/products/${id}`, {
         accessToken,

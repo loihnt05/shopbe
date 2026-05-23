@@ -30,63 +30,70 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             .ToListAsync();
     }
 
+    private IQueryable<Product> BuildSearchQuery(
+        string? name,
+        IEnumerable<Guid>? categoryIds,
+        decimal? minBasePrice,
+        decimal? maxBasePrice)
+    {
+        var query = context.Products
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            query = query.Where(p => EF.Functions.ILike(p.Name, $"%{name}%"));
+        }
+
+        if (categoryIds != null && categoryIds.Any())
+        {
+            query = query.Where(p => categoryIds.Contains(p.CategoryId));
+        }
+
+        if (minBasePrice is not null)
+        {
+            query = query.Where(p => p.BasePrice >= minBasePrice);
+        }
+
+        if (maxBasePrice is not null)
+        {
+            query = query.Where(p => p.BasePrice <= maxBasePrice);
+        }
+
+        return query;
+    }
+
     public async Task<IEnumerable<Product>> GetProductsPageAsync(
         string? name,
-        Guid? categoryId,
+        IEnumerable<Guid>? categoryIds,
         decimal? minBasePrice,
         decimal? maxBasePrice,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        var query = context.Products
-            .AsNoTracking()
+        IQueryable<Product> query = BuildSearchQuery(name, categoryIds, minBasePrice, maxBasePrice)
             .Include(p => p.Category)
             .Include(p => p.Brand)
             .Include(p => p.Images)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
-                    .ThenInclude(pva => pva.AttributeValue)
-            .AsQueryable();
+                    .ThenInclude(pva => pva.AttributeValue);
 
-        var isFiltered = false;
-
-        if (!string.IsNullOrWhiteSpace(name))
-        {
-            query = query.Where(p => EF.Functions.ILike(p.Name, $"%{name}%"));
-            isFiltered = true;
-        }
-
-        if (categoryId is not null)
-        {
-            query = query.Where(p => p.CategoryId == categoryId);
-            isFiltered = true;
-        }
-
-        if (minBasePrice is not null)
-        {
-            query = query.Where(p => p.BasePrice >= minBasePrice);
-            isFiltered = true;
-        }
-
-        if (maxBasePrice is not null)
-        {
-            query = query.Where(p => p.BasePrice <= maxBasePrice);
-            isFiltered = true;
-        }
+        var isFiltered = !string.IsNullOrWhiteSpace(name) || 
+                        (categoryIds != null && categoryIds.Any()) || 
+                        minBasePrice != null || 
+                        maxBasePrice != null;
 
         pageNumber = pageNumber < 1 ? 1 : pageNumber;
         pageSize = pageSize < 1 ? 20 : pageSize;
 
         if (!isFiltered)
         {
-            // When not filtered, return 20 random products.
-            // Note: Guid.NewGuid() in OrderBy is a common trick for randomization in many EF providers (like SQL Server/Postgres).
             query = query.OrderBy(p => Guid.NewGuid());
         }
         else
         {
-            // Stable order for paging when filtered.
             query = query.OrderBy(p => p.CreatedAt).ThenBy(p => p.Id);
         }
 
@@ -94,6 +101,38 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> GetTotalCountAsync(
+        string? name,
+        IEnumerable<Guid>? categoryIds,
+        decimal? minBasePrice,
+        decimal? maxBasePrice,
+        CancellationToken cancellationToken = default)
+    {
+        return await BuildSearchQuery(name, categoryIds, minBasePrice, maxBasePrice)
+            .CountAsync(cancellationToken);
+    }
+
+    public async Task<IDictionary<Guid, int>> GetCategoryCountsAsync(
+        string? name,
+        IEnumerable<Guid>? categoryIds,
+        decimal? minBasePrice,
+        decimal? maxBasePrice,
+        CancellationToken cancellationToken = default)
+    {
+        // For category counts, we want to know how many products match the current filters (EXCEPT the category filter itself, often, but let's stick to matching ALL filters for now as requested).
+        // Actually, usually when you filter by category A, you still want to see counts for category B.
+        // But for simplicity and matching the prompt "Display the number of matching products for each category", I'll matching current search + other filters.
+        
+        var query = BuildSearchQuery(name, null, minBasePrice, maxBasePrice); // Ignore categoryIds for facets to show other categories too? 
+        // No, the prompt says "matching products". If I have 10 products in Shoes and I filter by Apparel, it should probably show Shoes(10) still if that's how the sidebar works, or Shoes(0) if it's strictly matching.
+        // Let's go with matching ALL filters including name, but excluding the category filter itself so we can see other categories.
+        
+        return await query
+            .GroupBy(p => p.CategoryId)
+            .Select(g => new { CategoryId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.CategoryId, x => x.Count, cancellationToken);
     }
     public async Task AddProductAsync(Product product)
     {
