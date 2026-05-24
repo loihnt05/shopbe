@@ -13,6 +13,7 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             .Include(p => p.Category)
             .Include(p => p.Brand)
             .Include(p => p.Images)
+            .Include(p => p.Reviews)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
                     .ThenInclude(pva => pva.AttributeValue)
@@ -24,6 +25,7 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             .Include(p => p.Category)
             .Include(p => p.Brand)
             .Include(p => p.Images)
+            .Include(p => p.Reviews)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
                     .ThenInclude(pva => pva.AttributeValue)
@@ -33,8 +35,11 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
     private IQueryable<Product> BuildSearchQuery(
         string? name,
         IEnumerable<Guid>? categoryIds,
+        IEnumerable<string>? categorySlugs,
+        IEnumerable<Guid>? brandIds,
         decimal? minBasePrice,
-        decimal? maxBasePrice)
+        decimal? maxBasePrice,
+        int? minRating)
     {
         var query = context.Products
             .AsNoTracking()
@@ -50,6 +55,16 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             query = query.Where(p => categoryIds.Contains(p.CategoryId));
         }
 
+        if (categorySlugs != null && categorySlugs.Any())
+        {
+            query = query.Where(p => p.Category != null && categorySlugs.Contains(p.Category.Slug));
+        }
+
+        if (brandIds != null && brandIds.Any())
+        {
+            query = query.Where(p => p.BrandId != null && brandIds.Contains(p.BrandId.Value));
+        }
+
         if (minBasePrice is not null)
         {
             query = query.Where(p => p.BasePrice >= minBasePrice);
@@ -60,42 +75,50 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             query = query.Where(p => p.BasePrice <= maxBasePrice);
         }
 
+        if (minRating is not null && minRating > 0)
+        {
+            query = query.Where(p => p.Reviews.Any() 
+                ? p.Reviews.Average(r => (double)r.Rating) >= minRating 
+                : 0 >= minRating);
+        }
+
         return query;
     }
 
     public async Task<IEnumerable<Product>> GetProductsPageAsync(
         string? name,
         IEnumerable<Guid>? categoryIds,
+        IEnumerable<string>? categorySlugs,
+        IEnumerable<Guid>? brandIds,
         decimal? minBasePrice,
         decimal? maxBasePrice,
+        int? minRating,
+        string? sortBy,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        IQueryable<Product> query = BuildSearchQuery(name, categoryIds, minBasePrice, maxBasePrice)
+        IQueryable<Product> query = BuildSearchQuery(name, categoryIds, categorySlugs, brandIds, minBasePrice, maxBasePrice, minRating)
             .Include(p => p.Category)
             .Include(p => p.Brand)
             .Include(p => p.Images)
+            .Include(p => p.Reviews)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
                     .ThenInclude(pva => pva.AttributeValue);
 
-        var isFiltered = !string.IsNullOrWhiteSpace(name) || 
-                        (categoryIds != null && categoryIds.Any()) || 
-                        minBasePrice != null || 
-                        maxBasePrice != null;
+        query = sortBy?.ToLower() switch
+        {
+            "price_asc" => query.OrderBy(p => p.BasePrice),
+            "price_desc" => query.OrderByDescending(p => p.BasePrice),
+            "newest" => query.OrderByDescending(p => p.CreatedAt),
+            "popular" => query.OrderByDescending(p => p.SoldCount),
+            "rating" => query.OrderByDescending(p => p.Reviews.Any() ? p.Reviews.Average(r => (double)r.Rating) : 0),
+            _ => query.OrderByDescending(p => p.CreatedAt)
+        };
 
         pageNumber = pageNumber < 1 ? 1 : pageNumber;
         pageSize = pageSize < 1 ? 20 : pageSize;
-
-        if (!isFiltered)
-        {
-            query = query.OrderBy(p => Guid.NewGuid());
-        }
-        else
-        {
-            query = query.OrderBy(p => p.CreatedAt).ThenBy(p => p.Id);
-        }
 
         return await query
             .Skip((pageNumber - 1) * pageSize)
@@ -106,34 +129,56 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
     public async Task<int> GetTotalCountAsync(
         string? name,
         IEnumerable<Guid>? categoryIds,
+        IEnumerable<string>? categorySlugs,
+        IEnumerable<Guid>? brandIds,
         decimal? minBasePrice,
         decimal? maxBasePrice,
+        int? minRating,
         CancellationToken cancellationToken = default)
     {
-        return await BuildSearchQuery(name, categoryIds, minBasePrice, maxBasePrice)
+        return await BuildSearchQuery(name, categoryIds, categorySlugs, brandIds, minBasePrice, maxBasePrice, minRating)
             .CountAsync(cancellationToken);
     }
 
     public async Task<IDictionary<Guid, int>> GetCategoryCountsAsync(
         string? name,
         IEnumerable<Guid>? categoryIds,
+        IEnumerable<string>? categorySlugs,
+        IEnumerable<Guid>? brandIds,
         decimal? minBasePrice,
         decimal? maxBasePrice,
+        int? minRating,
         CancellationToken cancellationToken = default)
     {
-        // For category counts, we want to know how many products match the current filters (EXCEPT the category filter itself, often, but let's stick to matching ALL filters for now as requested).
-        // Actually, usually when you filter by category A, you still want to see counts for category B.
-        // But for simplicity and matching the prompt "Display the number of matching products for each category", I'll matching current search + other filters.
-        
-        var query = BuildSearchQuery(name, null, minBasePrice, maxBasePrice); // Ignore categoryIds for facets to show other categories too? 
-        // No, the prompt says "matching products". If I have 10 products in Shoes and I filter by Apparel, it should probably show Shoes(10) still if that's how the sidebar works, or Shoes(0) if it's strictly matching.
-        // Let's go with matching ALL filters including name, but excluding the category filter itself so we can see other categories.
+        // When counting categories, we usually ignore the current category filter but keep others.
+        var query = BuildSearchQuery(name, null, null, brandIds, minBasePrice, maxBasePrice, minRating);
         
         return await query
             .GroupBy(p => p.CategoryId)
             .Select(g => new { CategoryId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.CategoryId, x => x.Count, cancellationToken);
     }
+
+    public async Task<IDictionary<Guid, int>> GetBrandCountsAsync(
+        string? name,
+        IEnumerable<Guid>? categoryIds,
+        IEnumerable<string>? categorySlugs,
+        IEnumerable<Guid>? brandIds,
+        decimal? minBasePrice,
+        decimal? maxBasePrice,
+        int? minRating,
+        CancellationToken cancellationToken = default)
+    {
+        // When counting brands, we usually ignore the current brand filter but keep others.
+        var query = BuildSearchQuery(name, categoryIds, categorySlugs, null, minBasePrice, maxBasePrice, minRating);
+        
+        return await query
+            .Where(p => p.BrandId != null)
+            .GroupBy(p => p.BrandId!.Value)
+            .Select(g => new { BrandId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.BrandId, x => x.Count, cancellationToken);
+    }
+
     public async Task AddProductAsync(Product product)
     {
         await context.Products.AddAsync(product);

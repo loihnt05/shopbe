@@ -6,7 +6,7 @@ using Shopbe.Domain.Enums;
 
 namespace Shopbe.Application.Order.Commands.CreateOrder;
 
-public sealed class CreateOrderHandler(IUnitOfWork unitOfWork) : IRequestHandler<CreateOrderCommand, OrderDetailsDto>
+public sealed class CreateOrderHandler(IUnitOfWork unitOfWork, IBehaviorTrackingService tracking) : IRequestHandler<CreateOrderCommand, OrderDetailsDto>
 {
     public async Task<OrderDetailsDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
@@ -210,6 +210,18 @@ public sealed class CreateOrderHandler(IUnitOfWork unitOfWork) : IRequestHandler
             });
 
             await unitOfWork.Orders.AddAsync(order, cancellationToken);
+
+            // Track purchase behavior for each item
+            foreach (var item in order.OrderItems)
+            {
+                var variant = await unitOfWork.ProductVariant.GetProductVariantByIdAsync(item.ProductVariantId);
+                await tracking.TrackAsync(
+                    request.UserId, null, null, 
+                    BehaviorType.Purchase, "Purchase", 
+                    variant?.ProductId, null, order.Id, 
+                    item.Quantity, item.TotalPrice, order.Currency,
+                    ct: cancellationToken);
+            }
 
             // Mutate cart based on selection.
             if (!hasSelection)

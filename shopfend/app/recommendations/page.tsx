@@ -36,9 +36,53 @@ export default function RecommendationsPage() {
     loading: false,
     error: null,
   }));
+  const [recentlyViewed, setRecentlyViewed] = useState<LoadState<ProductListItem[]>>(
+    () => ({ data: [], loading: false, error: null })
+  );
 
   const [selectedSeedId, setSelectedSeedId] = useState<string | null>(null);
+  const [simulating, setSimulating] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Load recently viewed
+  useEffect(() => {
+    if (!session?.accessToken) return;
+    const abort = new AbortController();
+    
+    (async () => {
+      try {
+        setRecentlyViewed(s => ({ ...s, loading: true, error: null }));
+        const data = await shopbeApi.recommendations.recentlyViewed(session.accessToken!, 10, abort.signal);
+        const mapped = (data ?? []).map(productResponseToListItem);
+        if (!abort.signal.aborted) {
+          setRecentlyViewed({ data: mapped, loading: false, error: null });
+        }
+      } catch (e) {
+        if (!isAbortError(e) && !abort.signal.aborted) {
+          setRecentlyViewed({ data: [], loading: false, error: errorMessage(e, "Failed to load recently viewed") });
+        }
+      }
+    })();
+    
+    return () => abort.abort();
+  }, [session?.accessToken]);
+
+  const runSimulation = async () => {
+    if (!session?.accessToken) {
+      alert("Please sign in to run the simulation.");
+      return;
+    }
+    try {
+      setSimulating(true);
+      const res = await shopbeApi.simulation.run(session.accessToken);
+      alert(`${res.message}\nProfile built for: ${res.profileCategories.join(", ")}`);
+      window.location.reload();
+    } catch (e) {
+      alert(errorMessage(e, "Simulation failed"));
+    } finally {
+      setSimulating(false);
+    }
+  };
 
   // Load top-selling (anonymous endpoint)
   useEffect(() => {
@@ -157,26 +201,75 @@ export default function RecommendationsPage() {
   return (
     <div className="space-y-6">
       <div className="sb-card p-6">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="text-sm text-(--muted)">Presentation demo</div>
-            <h1 className="text-2xl font-semibold">Recommendations</h1>
-            <p className="mt-1 text-sm text-(--muted) max-w-3xl">
-              This page calls the backend endpoints in <code>Shopbe.Web</code>:
-              <code className="ml-2">/api/recommendations/top-selling</code>,
-              <code className="ml-2">/api/recommendations/me</code>, and
-              <code className="ml-2">/api/recommendations/products/{"{id}"}/similar</code>.
+            <div className="text-sm text-(--muted)">Personalized Engine</div>
+            <h1 className="text-2xl font-bold">Product Recommendations</h1>
+            <p className="mt-1 text-sm text-(--muted) max-w-xl">
+              Recommendations update in real-time based on your clicks, views, and purchases.
             </p>
           </div>
+          <button 
+            onClick={runSimulation} 
+            disabled={simulating}
+            className="sb-btn-primary whitespace-nowrap"
+          >
+            {simulating ? "Generating Data..." : "🧪 Run Behavior Simulation"}
+          </button>
         </div>
       </div>
 
+      {session && recentlyViewed.data.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <span className="text-xl">🕒</span> Recently Viewed
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {recentlyViewed.data.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Top selling</h2>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <span className="text-xl">✨</span> Recommended For You
+          </h2>
           <div className="text-sm text-(--muted)">
-            {topSelling.loading ? "Loading…" : `${topSelling.data.length} items`}
+            {!session
+              ? "Sign in for personal picks"
+              : personalizedDisplay.loading
+                ? "Loading…"
+                : `${personalizedDisplay.data.length} items`}
           </div>
+        </div>
+
+        {!session ? (
+          <div className="sb-card p-4 text-sm text-(--muted) bg-slate-50/50 border-dashed">
+            Sign in to see products matched to your browsing and purchase history.
+          </div>
+        ) : personalizedDisplay.error ? (
+          <div className="sb-card p-4 border border-red-300 bg-red-50 text-sm">
+            {personalizedDisplay.error}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {personalizedDisplay.data.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <span className="text-xl">🔥</span> Trending Now
+          </h2>
         </div>
 
         {topSelling.error ? (
@@ -192,52 +285,21 @@ export default function RecommendationsPage() {
         </div>
       </section>
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">For you (personalized)</h2>
-          <div className="text-sm text-(--muted)">
-            {!session
-              ? "Sign in to enable"
-              : personalizedDisplay.loading
-                ? "Loading…"
-                : `${personalizedDisplay.data.length} items`}
-          </div>
-        </div>
-
-        {!session ? (
-          <div className="sb-card p-4 text-sm text-(--muted)">
-            Personalized recommendations require authentication because the backend
-            uses your browsing / cart / purchase events.
-          </div>
-        ) : personalizedDisplay.error ? (
-          <div className="sb-card p-4 border border-red-300 bg-red-50 text-sm">
-            {personalizedDisplay.error}
-          </div>
-        ) : null}
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {personalizedDisplay.data.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      </section>
-
-      <section className="space-y-3">
+      <section className="space-y-3 pt-6 border-t border-slate-100">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <h2 className="text-lg font-semibold">Similar products</h2>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <span className="text-xl">🔍</span> Explore Similar To...
+          </h2>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-(--muted)" htmlFor="seed">
-              Seed product
-            </label>
             <select
               id="seed"
-              className="sb-input max-w-xs"
+              className="sb-input text-xs h-9 py-0"
               value={selectedSeedId ?? ""}
               onChange={(e) => setSelectedSeedId(e.target.value || null)}
               disabled={seedOptions.length === 0}
             >
               {seedOptions.length === 0 ? (
-                <option value="">(load top-selling first)</option>
+                <option value="">(load trending first)</option>
               ) : null}
               {seedOptions.map((o) => (
                 <option key={o.id} value={o.id}>

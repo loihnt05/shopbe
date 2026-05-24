@@ -24,8 +24,16 @@ export default function SiteHeader() {
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const url = q.trim() ? `/products?q=${encodeURIComponent(q.trim())}` : "/products";
-    router.push(url);
+    const params = new URLSearchParams(searchParams.toString());
+    if (q.trim()) {
+      params.set("q", q.trim());
+    } else {
+      params.delete("q");
+    }
+    // Optional: Reset page number when searching
+    params.delete("pageNumber");
+    
+    router.push(`/products?${params.toString()}`);
   };
 
   return (

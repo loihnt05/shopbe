@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+import { useCart } from "../components/CartContext";
 import {
   isAbortError,
   shopbeApi,
@@ -137,6 +138,7 @@ function StripePaymentForm(props: {
 export default function CheckoutPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { refreshCart } = useCart();
 
   const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(
     () => (STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null)
@@ -243,6 +245,9 @@ export default function CheckoutPage() {
         shippingWard: "Demo Ward"
       });
       setOrder(created);
+
+      // Refresh the global cart state now that it's been cleared in the DB.
+      await refreshCart();
 
       // Create Stripe PaymentIntent for that order.
       const pi = await shopbeApi.payments.createStripePaymentIntent(
@@ -356,8 +361,8 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                     <div className="text-sm font-semibold text-[var(--brand)]">
-                      {it.price != null
-                        ? formatMoney(it.price * it.quantity, it.currency)
+                      {it.unitPrice != null
+                        ? formatMoney(it.unitPrice * it.quantity, cart?.currency)
                         : "—"}
                     </div>
                   </div>
@@ -439,7 +444,7 @@ export default function CheckoutPage() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-600">Total</span>
               <span className="text-lg font-bold text-slate-900">
-                {formatMoney(cart?.totalAmount ?? null, cart?.currency)}
+                {formatMoney(cart?.subtotal ?? null, cart?.currency)}
               </span>
             </div>
 

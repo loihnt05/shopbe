@@ -15,4 +15,10 @@ public interface IRecommendationService
 
     // Khám phá sản phẩm ngẫu nhiên
     Task<List<ProductResponseDto>> GetRandomDiscoverAsync(int limit, List<Guid> excludeIds);
+
+    // Mua cùng nhau
+    Task<List<ProductResponseDto>> GetFrequentlyBoughtTogetherAsync(Guid productId, int count = 5);
+
+    // Vừa xem gần đây
+    Task<List<ProductResponseDto>> GetRecentlyViewedAsync(Guid userId, int count = 10);
 }

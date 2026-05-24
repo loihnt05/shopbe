@@ -48,26 +48,29 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
     {
         count = NormalizeCount(count, 8);
 
-        var productGuid = productId;
-        var categoryId = await db.Products
+        var product = await db.Products
             .AsNoTracking()
-            .Where(p => p.Id == productGuid)
-            .Select(p => (Guid?)p.CategoryId)
+            .Where(p => p.Id == productId)
+            .Select(p => new { p.CategoryId, p.BasePrice })
             .FirstOrDefaultAsync();
 
-        if (categoryId is null)
+        if (product is null)
             return [];
+
+        // Same category, similar price range (+/- 25%)
+        var minPrice = product.BasePrice * 0.75m;
+        var maxPrice = product.BasePrice * 1.25m;
 
         var products = await db.Products
             .AsNoTracking()
-            .Where(p => p.CategoryId == categoryId && p.Id != productGuid)
-            .OrderByDescending(p => p.CreatedAt)
+            .Where(p => p.CategoryId == product.CategoryId && p.Id != productId)
+            .OrderBy(p => Math.Abs((double)(p.BasePrice - product.BasePrice)))
             .Include(p => p.Images)
             .Include(p => p.Variants)
             .Take(count)
             .ToListAsync();
 
-        return products.Select(ProductDtoMapper.ToResponse).ToList();
+        return products.Select(p => ProductDtoMapper.ToResponse(p, "Similar category & price")).ToList();
     }
 
     public async Task<List<ProductResponseDto>> GetPersonalizedAsync(Guid userId, int count = 10)
@@ -76,7 +79,8 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
 
         var userGuid = userId;
 
-        var topCategoryId = await db.UserBehaviors
+        // Get top categories based on behavior weight
+        var topCategoryIds = await db.UserBehaviors
             .AsNoTracking()
             .Where(b => b.UserId == userGuid && b.CategoryId != null)
             .OrderByDescending(b => b.OccurredAt)
@@ -85,29 +89,40 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
             .Select(g => new
             {
                 CategoryId = g.Key,
-                Score = g.Sum(x => x.BehaviorType == BehaviorType.Purchase ? 5
-                    : x.BehaviorType == BehaviorType.AddToCart ? 3
+                Score = g.Sum(x => x.BehaviorType == BehaviorType.Purchase ? 10
+                    : x.BehaviorType == BehaviorType.AddToCart ? 5
                     : 1)
             })
             .OrderByDescending(x => x.Score)
-            .Select(x => x.CategoryId)
-            .FirstOrDefaultAsync();
+            .Take(3)
+            .Select(x => x.CategoryId!.Value)
+            .ToListAsync();
 
-        if (topCategoryId is null)
+        if (topCategoryIds.Count == 0)
             return await GetTopSellingAsync(count);
+
+        // Get products from these categories, excluding ones already purchased
+        var purchasedProductIds = await db.UserBehaviors
+            .AsNoTracking()
+            .Where(b => b.UserId == userGuid && b.BehaviorType == BehaviorType.Purchase && b.ProductId != null)
+            .Select(b => b.ProductId!.Value)
+            .Distinct()
+            .ToListAsync();
 
         var products = await db.Products
             .AsNoTracking()
-            .Where(p => p.CategoryId == topCategoryId)
-            .OrderByDescending(p => p.CreatedAt)
+            .Where(p => topCategoryIds.Contains(p.CategoryId) && !purchasedProductIds.Contains(p.Id))
+            .OrderByDescending(p => p.SoldCount)
+            .Include(p => p.Category)
             .Include(p => p.Images)
             .Include(p => p.Variants)
             .Take(count)
             .ToListAsync();
 
-        return products.Count != 0
-            ? products.Select(ProductDtoMapper.ToResponse).ToList()
-            : await GetTopSellingAsync(count);
+        if (products.Count == 0)
+            return await GetTopSellingAsync(count);
+
+        return products.Select(p => ProductDtoMapper.ToResponse(p, $"Recommended based on your interest in {p.Category?.Name ?? "similar items"}")).ToList();
     }
 
     public async Task<List<ProductResponseDto>> GetRandomDiscoverAsync(int limit, List<Guid> excludeIds)
@@ -130,7 +145,80 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
             .Take(limit)
             .ToListAsync();
 
-        return products.Select(ProductDtoMapper.ToResponse).ToList();
+        return products.Select(p => ProductDtoMapper.ToResponse(p, "Discover something new")).ToList();
+    }
+
+    public async Task<List<ProductResponseDto>> GetFrequentlyBoughtTogetherAsync(Guid productId, int count = 5)
+    {
+        count = NormalizeCount(count, 5);
+
+        // Find variants for this product
+        var variantIds = await db.ProductVariants
+            .AsNoTracking()
+            .Where(v => v.ProductId == productId)
+            .Select(v => v.Id)
+            .ToListAsync();
+
+        // Find orders containing these variants
+        var orderIds = await db.OrderItems
+            .AsNoTracking()
+            .Where(oi => variantIds.Contains(oi.ProductVariantId))
+            .Select(oi => oi.OrderId)
+            .Distinct()
+            .ToListAsync();
+
+        if (orderIds.Count == 0) return [];
+
+        // Find other products in those orders
+        var otherProductIds = await db.OrderItems
+            .AsNoTracking()
+            .Where(oi => orderIds.Contains(oi.OrderId) && !variantIds.Contains(oi.ProductVariantId))
+            .GroupBy(oi => oi.ProductVariantId)
+            .Select(g => new { VariantId = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .Take(count * 2)
+            .Join(db.ProductVariants.AsNoTracking(), x => x.VariantId, v => v.Id, (x, v) => v.ProductId)
+            .Distinct()
+            .Take(count)
+            .ToListAsync();
+
+        var products = await db.Products
+            .AsNoTracking()
+            .Where(p => otherProductIds.Contains(p.Id))
+            .Include(p => p.Images)
+            .Include(p => p.Variants)
+            .ToListAsync();
+
+        return products.Select(p => ProductDtoMapper.ToResponse(p, "Frequently bought together")).ToList();
+    }
+
+    public async Task<List<ProductResponseDto>> GetRecentlyViewedAsync(Guid userId, int count = 10)
+    {
+        count = NormalizeCount(count, 10);
+
+        var productIds = await db.UserBehaviors
+            .AsNoTracking()
+            .Where(b => b.UserId == userId && b.BehaviorType == BehaviorType.ProductView && b.ProductId != null)
+            .OrderByDescending(b => b.OccurredAt)
+            .Select(b => b.ProductId!.Value)
+            .Distinct()
+            .Take(count)
+            .ToListAsync();
+
+        var products = await db.Products
+            .AsNoTracking()
+            .Where(p => productIds.Contains(p.Id))
+            .Include(p => p.Images)
+            .Include(p => p.Variants)
+            .ToListAsync();
+
+        var byId = products.ToDictionary(p => p.Id);
+        
+        // Return in the order of viewing
+        return productIds
+            .Where(id => byId.ContainsKey(id))
+            .Select(id => ProductDtoMapper.ToResponse(byId[id]))
+            .ToList();
     }
 
     private static int NormalizeCount(int count, int @default)

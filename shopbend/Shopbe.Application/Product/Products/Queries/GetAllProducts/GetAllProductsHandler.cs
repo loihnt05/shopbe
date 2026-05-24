@@ -15,14 +15,20 @@ public class GetAllProductsHandler(IUnitOfWork unitOfWork, ICacheService cache)
         var pageSize = filter.PageSize < 1 ? 20 : filter.PageSize;
 
         var categoryIdsStr = filter.CategoryIds != null ? string.Join(',', filter.CategoryIds) : string.Empty;
+        var categorySlugsStr = filter.CategorySlugs != null ? string.Join(',', filter.CategorySlugs) : string.Empty;
+        var brandIdsStr = filter.BrandIds != null ? string.Join(',', filter.BrandIds) : string.Empty;
 
         var cacheKey = string.Join('|', new[]
         {
-            "products:search",
+            "products:search:v4",
             $"name={filter.Name ?? string.Empty}",
             $"categoryIds={categoryIdsStr}",
-            $"min={(filter.MinBasePrice?.ToString() ?? string.Empty)}",
-            $"max={(filter.MaxBasePrice?.ToString() ?? string.Empty)}",
+            $"categorySlugs={categorySlugsStr}",
+            $"brandIds={brandIdsStr}",
+            $"min={(filter.minBasePrice?.ToString() ?? string.Empty)}",
+            $"max={(filter.maxBasePrice?.ToString() ?? string.Empty)}",
+            $"minRating={(filter.MinRating?.ToString() ?? string.Empty)}",
+            $"sortBy={filter.SortBy ?? string.Empty}",
             $"page={pageNumber}",
             $"size={pageSize}"
         });
@@ -36,8 +42,12 @@ public class GetAllProductsHandler(IUnitOfWork unitOfWork, ICacheService cache)
         var products = await unitOfWork.Product.GetProductsPageAsync(
             filter.Name,
             filter.CategoryIds,
-            filter.MinBasePrice,
-            filter.MaxBasePrice,
+            filter.CategorySlugs,
+            filter.BrandIds,
+            filter.minBasePrice,
+            filter.maxBasePrice,
+            filter.MinRating,
+            filter.SortBy,
             pageNumber,
             pageSize,
             cancellationToken);
@@ -45,27 +55,50 @@ public class GetAllProductsHandler(IUnitOfWork unitOfWork, ICacheService cache)
         var totalCount = await unitOfWork.Product.GetTotalCountAsync(
             filter.Name,
             filter.CategoryIds,
-            filter.MinBasePrice,
-            filter.MaxBasePrice,
+            filter.CategorySlugs,
+            filter.BrandIds,
+            filter.minBasePrice,
+            filter.maxBasePrice,
+            filter.MinRating,
             cancellationToken);
 
         var categoryCounts = await unitOfWork.Product.GetCategoryCountsAsync(
             filter.Name,
             filter.CategoryIds,
-            filter.MinBasePrice,
-            filter.MaxBasePrice,
+            filter.CategorySlugs,
+            filter.BrandIds,
+            filter.minBasePrice,
+            filter.maxBasePrice,
+            filter.MinRating,
+            cancellationToken);
+
+        var brandCounts = await unitOfWork.Product.GetBrandCountsAsync(
+            filter.Name,
+            filter.CategoryIds,
+            filter.CategorySlugs,
+            filter.BrandIds,
+            filter.minBasePrice,
+            filter.maxBasePrice,
+            filter.MinRating,
             cancellationToken);
 
         var categories = await unitOfWork.Category.GetAllCategoriesAsync();
-        var facets = categories
+        var categoryFacets = categories
             .Where(c => categoryCounts.ContainsKey(c.Id))
             .Select(c => new CategoryFacetDto(c.Id, c.Name, c.Slug, categoryCounts[c.Id]))
             .OrderByDescending(f => f.Count)
             .ToList();
 
-        var productDtos = products.Select(ProductDtoMapper.ToResponse).ToList();
+        var brands = await unitOfWork.Brand.GetAllBrandsAsync();
+        var brandFacets = brands
+            .Where(b => brandCounts.ContainsKey(b.Id))
+            .Select(b => new BrandFacetDto(b.Id, b.Name, b.Slug, brandCounts[b.Id]))
+            .OrderByDescending(f => f.Count)
+            .ToList();
+
+        var productDtos = products.Select(p => ProductDtoMapper.ToResponse(p, null)).ToList();
         
-        var result = new ProductSearchResponseDto(productDtos, facets, totalCount);
+        var result = new ProductSearchResponseDto(productDtos, categoryFacets, brandFacets, totalCount);
 
         await cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(2));
         return result;

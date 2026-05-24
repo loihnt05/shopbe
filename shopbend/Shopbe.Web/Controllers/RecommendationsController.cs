@@ -58,4 +58,26 @@ public sealed class RecommendationsController(
         return Ok(result);
     }
 
+    /// <summary>
+    /// Products frequently bought with the seed product.
+    /// </summary>
+    [HttpGet("products/{productId:guid}/frequently-bought-together")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetFrequentlyBoughtTogether(Guid productId, [FromQuery] int count = 5, CancellationToken cancellationToken = default)
+    {
+        var result = await recommendations.GetFrequentlyBoughtTogetherAsync(productId, count);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Recently viewed products for the current user.
+    /// </summary>
+    [HttpGet("me/recently-viewed")]
+    [Authorize]
+    public async Task<IActionResult> GetRecentlyViewed([FromQuery] int count = 10, CancellationToken cancellationToken = default)
+    {
+        var userId = await GetAppUserIdAsync();
+        var result = await recommendations.GetRecentlyViewedAsync(userId, count);
+        return Ok(result);
+    }
 }

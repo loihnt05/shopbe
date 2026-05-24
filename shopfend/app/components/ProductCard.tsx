@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { ProductListItem } from "@/lib/shopbeApi";
 import { formatMoney } from "@/lib/format";
+import { StarIcon } from "./icons";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
@@ -47,6 +48,13 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
         ) : (
           <div className="text-slate-400 text-xs">No image</div>
         )}
+        
+        {product.recommendationReason && (
+          <div className="absolute top-2 left-2 bg-brand/90 text-white text-[8px] font-bold px-2 py-1 rounded-md shadow-sm z-10 uppercase tracking-tighter">
+            {product.recommendationReason}
+          </div>
+        )}
+
         {hasDiscount && (
           <div className="absolute top-2 right-2 bg-yellow-300 text-brand text-[10px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-0.5">
             <span>{discountPercentage}%</span>
@@ -76,19 +84,33 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
               </div>
             )}
           </div>
-          <div className="text-[10px] text-gray-400 font-medium">
-            {product.soldCount && product.soldCount > 0 ? (
-              <>
-                {product.soldCount >= 1000 
-                  ? `${(product.soldCount / 1000).toFixed(1)}k` 
-                  : product.soldCount} sold
-              </>
-            ) : (
-              "No sales yet"
-            )}
+          
+          <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center gap-1">
+              {product.averageRating && product.averageRating > 0 ? (
+                <>
+                  <div className="flex items-center gap-0.5 text-yellow-500">
+                    <StarIcon className="w-3 h-3 fill-current" />
+                    <span className="text-[11px] font-bold">{product.averageRating.toFixed(1)}</span>
+                  </div>
+                  <span className="text-[10px] text-gray-300">|</span>
+                </>
+              ) : null}
+              <div className="text-[10px] text-gray-400 font-medium">
+                {product.soldCount && product.soldCount > 0 ? (
+                  <>
+                    {product.soldCount >= 1000 
+                      ? `${(product.soldCount / 1000).toFixed(1)}k` 
+                      : product.soldCount} sold
+                  </>
+                ) : (
+                  "0 sold"
+                )}
+              </div>
+            </div>
           </div>
-          </div>
-          </div>
-          </Link>
-          );
-          }
+        </div>
+      </div>
+    </Link>
+  );
+}

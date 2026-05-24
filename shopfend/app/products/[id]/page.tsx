@@ -5,13 +5,17 @@ import { use, useEffect, useState } from "react";
 import {
   isAbortError,
   shopbeApi,
+  BehaviorType,
+  productResponseToListItem,
   type ProductDetail,
+  type ProductListItem,
 } from "@/lib/shopbeApi";
 import Link from "next/link";
 import { formatMoney } from "@/lib/format";
 import { useCart } from "../../components/CartContext";
 import { errorMessage } from "@/lib/errors";
 import Image from "next/image";
+import ProductCard from "../../components/ProductCard";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
@@ -42,6 +46,9 @@ export default function ProductDetailPage({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [similarProducts, setSimilarProducts] = useState<ProductListItem[]>([]);
+  const [boughtTogether, setBoughtTogether] = useState<ProductListItem[]>([]);
+
   useEffect(() => {
     const abort = new AbortController();
     (async () => {
@@ -53,6 +60,22 @@ export default function ProductDetailPage({
           abort.signal
         );
         setProduct(data);
+
+        // Track view
+        shopbeApi.tracking.track({
+          behaviorType: BehaviorType.ProductView,
+          productId: id,
+          categoryId: data.categoryId,
+        }, session?.accessToken).catch(() => {}); // fire and forget
+
+        // Load similar
+        const similar = await shopbeApi.recommendations.similar(id, 5, abort.signal);
+        setSimilarProducts((similar ?? []).map(productResponseToListItem));
+
+        // Load bought together
+        const together = await shopbeApi.recommendations.frequentlyBoughtTogether(id, 5, abort.signal);
+        setBoughtTogether((together ?? []).map(productResponseToListItem));
+
       } catch (e: unknown) {
         if (isAbortError(e)) return;
         setError(errorMessage(e, "Failed to load product"));
@@ -92,6 +115,17 @@ export default function ProductDetailPage({
         { productId: id, productVariantId: primaryVariantId, quantity },
         undefined
       );
+
+      // Track AddToCart
+      shopbeApi.tracking.track({
+        behaviorType: BehaviorType.AddToCart,
+        productId: id,
+        categoryId: product?.categoryId,
+        quantity: quantity,
+        value: (product?.discountPrice ?? product?.price) ? (product!.discountPrice ?? product!.price) * (quantity || 1) : undefined,
+        currency: product?.currency ?? "VND"
+      }, session.accessToken).catch(() => {});
+
       await refreshCart();
       openDrawer();
     } catch (e: unknown) {
@@ -292,6 +326,30 @@ export default function ProductDetailPage({
             </div>
           </div>
         </div>
+      )}
+
+      {boughtTogether.length > 0 && (
+        <section className="mt-12 space-y-4">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            Frequently Bought Together
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {boughtTogether.map(p => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {similarProducts.length > 0 && (
+        <section className="mt-12 space-y-4">
+          <h2 className="text-xl font-bold text-slate-900">Similar Products</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {similarProducts.map(p => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

@@ -88,20 +88,20 @@ export default function Home() {
         </div>
         <div className="grid grid-cols-5 md:grid-cols-10 gap-x-2 gap-y-6 p-6">
           {[
-            { id: "electronics", name: "Electronics", icon: "💻" },
-            { id: "clothing", name: "Men's Clothing", icon: "👕" },
-            { id: "books", name: "Books", icon: "📚" },
-            { id: "beauty", name: "Beauty", icon: "💄" },
-            { id: "sports", name: "Sports", icon: "⚽" },
-            { id: "home", name: "Home & Living", icon: "🏠" },
-            { id: "toys", name: "Toys", icon: "🧸" },
-            { id: "automotive", name: "Automotive", icon: "🚗" },
-            { id: "health", name: "Health", icon: "💊" },
-            { id: "grocery", name: "Grocery", icon: "🛒" },
+            { id: "smartphones,laptops,lighting,electronics", name: "Electronics", icon: "💻" },
+            { id: "mens-shirts,mens-shoes,mens-watches,clothes", name: "Men's Clothing", icon: "👕" },
+            { id: "", name: "Books", icon: "📚" },
+            { id: "skincare,fragrances", name: "Beauty", icon: "💄" },
+            { id: "motorcycle", name: "Sports", icon: "⚽" },
+            { id: "home-decoration,furniture", name: "Home & Living", icon: "🏠" },
+            { id: "motorcycle", name: "Toys", icon: "🧸" },
+            { id: "automotive,motorcycle", name: "Automotive", icon: "🚗" },
+            { id: "skincare", name: "Health", icon: "💊" },
+            { id: "groceries", name: "Grocery", icon: "🛒" },
           ].map((cat) => (
             <Link
-              key={cat.id}
-              href={`/products?category=${cat.id}`}
+              key={cat.name}
+              href={cat.id ? `/products?${cat.id.split(',').map(s => `categorySlugs=${s}`).join('&')}` : "/products"}
               className="flex flex-col items-center justify-start gap-3 hover:-translate-y-1 transition-all duration-300 group"
             >
               <div className="w-16 h-16 rounded-2xl border border-gray-100 flex items-center justify-center text-2xl bg-slate-50 group-hover:bg-orange-50 group-hover:border-brand/20 transition-colors shadow-sm">

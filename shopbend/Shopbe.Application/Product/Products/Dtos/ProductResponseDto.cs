@@ -14,11 +14,14 @@ public record ProductResponseDto(
     string PrimaryImageUrl,
     int TotalStockQuantity,
     int SoldCount,
+    double AverageRating,
+    int RatingCount,
     Guid CategoryId,
     string? CategoryName,
     Guid? BrandId,
     string? BrandName,
     bool IsActive,
     IEnumerable<ProductImageResponseDto> Images,
-    IEnumerable<ProductVariantResponseDto> Variants
+    IEnumerable<ProductVariantResponseDto> Variants,
+    string? RecommendationReason = null
 );

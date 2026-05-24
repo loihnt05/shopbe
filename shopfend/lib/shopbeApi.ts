@@ -21,11 +21,14 @@ export type ProductListItem = {
   primaryImageUrl?: string | null;
   totalStockQuantity?: number | null;
   soldCount?: number | null;
+  averageRating?: number | null;
+  ratingCount?: number | null;
   categoryId: string;
   categoryName?: string | null;
   brandId?: string | null;
   brandName?: string | null;
   isActive: boolean;
+  recommendationReason?: string | null;
   images?: ProductImageDto[];
   variants?: ProductVariantDto[];
 };
@@ -91,6 +94,29 @@ export type SyncStripePaymentIntentResponse = {
   stripePaymentIntentStatus?: string;
   paymentStatus?: string;
   orderStatus?: string;
+};
+
+export enum BehaviorType {
+  Unknown = 0,
+  ProductView = 1,
+  AddToCart = 2,
+  RemoveFromCart = 3,
+  AddToWishlist = 4,
+  RemoveFromWishlist = 5,
+  Purchase = 6,
+  Review = 7,
+  Search = 8,
+}
+
+export type TrackRequestDto = {
+  behaviorType: BehaviorType;
+  productId?: string;
+  categoryId?: string;
+  orderId?: string;
+  quantity?: number;
+  value?: number;
+  currency?: string;
+  metadata?: string;
 };
 
 export type PurchasedProductDto = {
@@ -336,11 +362,14 @@ export function productResponseToListItem(item: unknown): ProductListItem {
     primaryImageUrl: pickStringOrNull("primaryImageUrl") ?? pickStringOrNull("imageUrl"),
     totalStockQuantity: pickNumber("totalStockQuantity"),
     soldCount: pickNumber("soldCount"),
+    averageRating: pickNumber("averageRating"),
+    ratingCount: pickNumber("ratingCount"),
     categoryId: pickString("categoryId") ?? "",
     categoryName: pickStringOrNull("categoryName"),
     brandId: pickStringOrNull("brandId"),
     brandName: pickStringOrNull("brandName"),
     isActive: pickBoolean("isActive"),
+    recommendationReason: pickStringOrNull("recommendationReason"),
     images: mapImages(obj.images),
     variants: mapVariants(obj.variants),
   };
@@ -353,17 +382,29 @@ export type CategoryFacetDto = {
   count: number;
 };
 
+export type BrandFacetDto = {
+  id: string;
+  name: string;
+  slug: string;
+  count: number;
+};
+
 export type ProductSearchResponse = {
   products: ProductListItem[];
   categoryFacets: CategoryFacetDto[];
+  brandFacets: BrandFacetDto[];
   totalCount: number;
 };
 
 export type ProductQueryDto = {
   name?: string;
   categoryIds?: string[];
+  categorySlugs?: string[];
+  brandIds?: string[];
   minBasePrice?: number;
   maxBasePrice?: number;
+  minRating?: number;
+  sortBy?: string;
   pageNumber?: number;
   pageSize?: number;
 };
@@ -376,6 +417,31 @@ export const shopbeApi = {
       requestJson<unknown[]>(`/api/recommendations/me?limit=${limit}`, { accessToken, signal }),
     similar: (productId: string, limit: number, signal?: AbortSignal) =>
       requestJson<unknown[]>(`/api/recommendations/products/${productId}/similar?limit=${limit}`, { signal }),
+    frequentlyBoughtTogether: (productId: string, limit: number, signal?: AbortSignal) =>
+      requestJson<unknown[]>(`/api/recommendations/products/${productId}/frequently-bought-together?limit=${limit}`, { signal }),
+    recentlyViewed: (accessToken: string, limit: number, signal?: AbortSignal) =>
+      requestJson<unknown[]>(`/api/recommendations/me/recently-viewed?limit=${limit}`, { accessToken, signal }),
+  },
+  simulation: {
+    run: (accessToken: string, signal?: AbortSignal) =>
+      requestJson<{
+        message: string;
+        profileCategories: string[];
+        seedProduct: string;
+        boughtWith: string;
+      }>("/api/simulation/run", {
+        accessToken,
+        method: "POST",
+        signal,
+      }),
+  },
+  tracking: {
+    track: (body: TrackRequestDto, accessToken?: string | null, signal?: AbortSignal) =>
+      requestJson<void>("/api/tracking/track", {
+        accessToken,
+        body,
+        signal,
+      }),
   },
   products: {
     list: (filter?: ProductQueryDto, accessToken?: string, signal?: AbortSignal) => {
@@ -384,8 +450,16 @@ export const shopbeApi = {
       if (filter?.categoryIds) {
         filter.categoryIds.forEach((id) => params.append("categoryIds", id));
       }
+      if (filter?.categorySlugs) {
+        filter.categorySlugs.forEach((slug) => params.append("categorySlugs", slug));
+      }
+      if (filter?.brandIds) {
+        filter.brandIds.forEach((id) => params.append("brandIds", id));
+      }
       if (filter?.minBasePrice) params.append("minBasePrice", filter.minBasePrice.toString());
       if (filter?.maxBasePrice) params.append("maxBasePrice", filter.maxBasePrice.toString());
+      if (filter?.minRating) params.append("minRating", filter.minRating.toString());
+      if (filter?.sortBy) params.append("sortBy", filter.sortBy);
       if (filter?.pageNumber) params.append("pageNumber", filter.pageNumber.toString());
       if (filter?.pageSize) params.append("pageSize", filter.pageSize.toString());
 
