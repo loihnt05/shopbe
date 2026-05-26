@@ -332,7 +332,83 @@ internal sealed class ShopbeLargeDataSeeder
         }
 
         await EnsureUsersAsync(db, logger, options, ct);
+        await SeedCouponsAsync(db, logger, ct);
         await EnsureOrdersAsync(db, logger, options, ct);
+    }
+
+    private static async Task SeedCouponsAsync(ShopDbContext db, ILogger logger, CancellationToken ct)
+    {
+        var desiredCoupons = new List<Coupon>
+        {
+            new()
+            {
+                Code = "HELLO2026",
+                Description = "10% off for new year",
+                DiscountType = Shopbe.Domain.Enums.DiscountType.Percentage,
+                Value = 10,
+                MinOrderAmount = 0,
+                MaxDiscountAmount = 1000000,
+                ExpiredAt = DateTime.UtcNow.AddYears(1),
+                UsageLimit = 1000,
+                IsActive = true
+            },
+            new()
+            {
+                Code = "FREESHIP",
+                Description = "Free shipping for orders over 500k",
+                DiscountType = Shopbe.Domain.Enums.DiscountType.FreeShipping,
+                Value = 0,
+                MinOrderAmount = 500000,
+                ExpiredAt = DateTime.UtcNow.AddYears(1),
+                IsActive = true
+            },
+            new()
+            {
+                Code = "SAVE50K",
+                Description = "50k off for orders over 200k",
+                DiscountType = Shopbe.Domain.Enums.DiscountType.FixedAmount,
+                Value = 50000,
+                MinOrderAmount = 200000,
+                ExpiredAt = DateTime.UtcNow.AddYears(1),
+                IsActive = true
+            },
+            new()
+            {
+                Code = "BIGSALE",
+                Description = "50% off! (Max 200k discount)",
+                DiscountType = Shopbe.Domain.Enums.DiscountType.Percentage,
+                Value = 50,
+                MinOrderAmount = 100000,
+                MaxDiscountAmount = 200000,
+                ExpiredAt = DateTime.UtcNow.AddYears(1),
+                IsActive = true
+            }
+        };
+
+        var codes = desiredCoupons.Select(c => c.Code).ToArray();
+        var existingCodes = await db.Coupons
+            .Where(c => codes.Contains(c.Code))
+            .Select(c => c.Code)
+            .ToListAsync(ct);
+
+        var created = 0;
+        foreach (var coupon in desiredCoupons)
+        {
+            if (existingCodes.Contains(coupon.Code)) continue;
+
+            db.Coupons.Add(coupon);
+            created++;
+        }
+
+        if (created > 0)
+        {
+            await db.SaveChangesAsync(ct);
+            logger.LogWarning("Seeded {Count} sample coupons.", created);
+        }
+        else
+        {
+            logger.LogWarning("Coupons: ok ({Count}).", await db.Coupons.CountAsync(ct));
+        }
     }
 
     private static async Task SeedShippingLocationsAsync(ShopDbContext db, ILogger logger, CancellationToken ct)
