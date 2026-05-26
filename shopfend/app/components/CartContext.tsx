@@ -15,6 +15,8 @@ interface CartContextType {
   closeDrawer: () => void;
   updateQuantity: (productVariantId: string, quantity: number) => Promise<void>;
   removeItem: (productVariantId: string) => Promise<void>;
+  applyCoupon: (code: string) => Promise<void>;
+  removeCoupon: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -84,6 +86,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const applyCoupon = async (code: string) => {
+    if (!session?.accessToken) return;
+    try {
+      setLoading(true);
+      const data = await shopbeApi.cart.applyCoupon(session.accessToken, code);
+      setCart(data);
+      setTotalQuantity(data.totalQuantity ?? 0);
+      setDisplayQuantity(data.displayQuantity ?? "");
+    } catch (e) {
+      console.error("Failed to apply coupon", e);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeCoupon = async () => {
+    if (!session?.accessToken) return;
+    try {
+      setLoading(true);
+      const data = await shopbeApi.cart.removeCoupon(session.accessToken);
+      setCart(data);
+      setTotalQuantity(data.totalQuantity ?? 0);
+      setDisplayQuantity(data.displayQuantity ?? "");
+    } catch (e) {
+      console.error("Failed to remove coupon", e);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (status === "authenticated") {
       refreshCart();
@@ -111,6 +145,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         closeDrawer,
         updateQuantity,
         removeItem,
+        applyCoupon,
+        removeCoupon,
       }}
     >
       {children}

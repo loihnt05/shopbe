@@ -242,7 +242,8 @@ export default function CheckoutPage() {
         shippingAddressLine: "123 Demo Street",
         shippingCity: "Demo City",
         shippingDistrict: "Demo District",
-        shippingWard: "Demo Ward"
+        shippingWard: "Demo Ward",
+        couponCode: cart?.couponCode || undefined
       });
       setOrder(created);
 
@@ -439,13 +440,31 @@ export default function CheckoutPage() {
         </div>
 
         <aside className="lg:col-span-5">
-          <div className="sb-card p-5 lg:sticky lg:top-28 space-y-3">
-            <div className="font-semibold">Summary</div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600">Total</span>
-              <span className="text-lg font-bold text-slate-900">
-                {formatMoney(cart?.subtotal ?? null, cart?.currency)}
-              </span>
+          <div className="sb-card p-5 lg:sticky lg:top-28 space-y-4">
+            <div className="font-semibold text-lg">Order Summary</div>
+            
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-600">Subtotal</span>
+                <span className="font-medium">
+                  {formatMoney(cart?.subtotal ?? 0, cart?.currency)}
+                </span>
+              </div>
+
+              {cart && cart.discountAmount > 0 && (
+                <div className="flex items-center justify-between text-green-600 font-medium">
+                  <div className="flex items-center gap-2">
+                    <span>Discount</span>
+                    <span className="text-[10px] bg-green-100 px-1 rounded uppercase tracking-tighter">{cart.couponCode}</span>
+                  </div>
+                  <span>-{formatMoney(cart.discountAmount, cart.currency)}</span>
+                </div>
+              )}
+
+              <div className="pt-2 border-t flex items-center justify-between text-base font-bold text-slate-900">
+                <span>Total</span>
+                <span>{formatMoney(cart?.total ?? 0, cart?.currency)}</span>
+              </div>
             </div>
 
             {order ? (

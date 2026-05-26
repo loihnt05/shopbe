@@ -14,7 +14,9 @@ export default function CartDrawer() {
 
   const items = cart?.items ?? [];
   const totalCount = cart?.totalQuantity ?? 0;
-  const totalAmount = cart?.subtotal ?? 0;
+  const subtotal = cart?.subtotal ?? 0;
+  const discountAmount = cart?.discountAmount ?? 0;
+  const totalAmount = cart?.total ?? subtotal;
   const currency = cart?.currency ?? "USD";
   const isEmpty = items.length === 0;
 
@@ -174,11 +176,29 @@ export default function CartDrawer() {
         {/* Footer */}
         {!isEmpty && (
           <div style={{ padding: "16px 24px 28px", borderTop: "1px solid #1e1e24" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-              <span style={{ fontSize: 13, color: "#666" }}>Total</span>
-              <span style={{ fontSize: 20, fontWeight: 500, color: "#f0f0f0", fontFamily: "var(--font-dm-mono), monospace", letterSpacing: "-0.03em" }}>
-                {formatMoney(totalAmount, currency)}
-              </span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 13, color: "#666" }}>Subtotal</span>
+                <span style={{ fontSize: 13, color: "#888", fontFamily: "var(--font-dm-mono), monospace" }}>
+                  {formatMoney(subtotal, currency)}
+                </span>
+              </div>
+              
+              {discountAmount > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", color: "#4ade80" }}>
+                  <span style={{ fontSize: 13 }}>Discount</span>
+                  <span style={{ fontSize: 13, fontFamily: "var(--font-dm-mono), monospace" }}>
+                    -{formatMoney(discountAmount, currency)}
+                  </span>
+                </div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, paddingTop: 12, borderTop: "1px solid #1a1a20" }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#f0f0f0" }}>Total</span>
+                <span style={{ fontSize: 20, fontWeight: 500, color: "#f0f0f0", fontFamily: "var(--font-dm-mono), monospace", letterSpacing: "-0.03em" }}>
+                  {formatMoney(totalAmount, currency)}
+                </span>
+              </div>
             </div>
             <Link
               href="/checkout"

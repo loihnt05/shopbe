@@ -55,11 +55,17 @@ export type CartItem = {
   lineTotal?: number;
 };
 export type CartDto = {
+  id: string;
   userId?: string;
   items: CartItem[];
-  subtotal?: number;
-  totalQuantity?: number;  totalItems?: number;  displayQuantity?: string;
-  currency?: string;
+  subtotal: number;
+  discountAmount: number;
+  total: number;
+  couponCode?: string | null;
+  totalQuantity: number;
+  totalItems: number;
+  displayQuantity: string;
+  currency: string;
 };
 
 export type CreateOrderResponse = {
@@ -570,6 +576,18 @@ export const shopbeApi = {
       }),
     clear: (accessToken: string, signal?: AbortSignal) =>
       requestJson<CartDto>("/api/cart", {
+        accessToken,
+        method: "DELETE",
+        signal,
+      }),
+    applyCoupon: (accessToken: string, code: string, signal?: AbortSignal) =>
+      requestJson<CartDto>(`/api/cart/coupon?code=${encodeURIComponent(code)}`, {
+        accessToken,
+        method: "POST",
+        signal,
+      }),
+    removeCoupon: (accessToken: string, signal?: AbortSignal) =>
+      requestJson<CartDto>("/api/cart/coupon", {
         accessToken,
         method: "DELETE",
         signal,

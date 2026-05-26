@@ -2,19 +2,45 @@
 
 import Image from "next/image";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import Link from "next/link";
-import { isAbortError, shopbeApi, resolveApiUrl, type CartDto } from "@/lib/shopbeApi";
+import { resolveApiUrl } from "@/lib/shopbeApi";
 import { useCart } from "../components/CartContext";
 import { formatMoney } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
 
 export default function CartPage() {
   const { data: session, status } = useSession();
-  const { cart, loading, updateQuantity, removeItem, refreshCart } = useCart();
+  const { cart, loading, updateQuantity, removeItem, refreshCart, applyCoupon, removeCoupon } = useCart();
   const [error, setError] = useState<string | null>(null);
   const [busyItem, setBusyItem] = useState<string | null>(null);
+  const [couponCode, setCouponCode] = useState("");
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+
+  const handleApplyCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponCode.trim()) return;
+    try {
+      setError(null);
+      setApplyingCoupon(true);
+      await applyCoupon(couponCode);
+      setCouponCode("");
+    } catch (e: unknown) {
+      setError(errorMessage(e, "Failed to apply coupon"));
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = async () => {
+    try {
+      setError(null);
+      await removeCoupon();
+    } catch (e: unknown) {
+      setError(errorMessage(e, "Failed to remove coupon"));
+    }
+  };
 
   const setQty = async (productVariantId: string, quantity: number) => {
     try {
@@ -166,20 +192,69 @@ export default function CartPage() {
           </div>
 
           <aside className="lg:col-span-4">
-            <div className="sb-card p-5 lg:sticky lg:top-28">
+            <div className="sb-card p-5 lg:sticky lg:top-28 space-y-4">
               <div className="font-semibold">Order summary</div>
-              <div className="mt-3 flex items-center justify-between text-sm">
-                <span className="text-slate-600">Items</span>
-                <span className="font-medium">{cart.items.length}</span>
-              </div>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-sm text-slate-600">Total</span>
-                <span className="text-lg font-bold text-slate-900">
-                  {formatMoney(cart.subtotal ?? null, cart.currency)}
-                </span>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-600">Subtotal</span>
+                  <span className="font-medium">
+                    {formatMoney(cart.subtotal, cart.currency)}
+                  </span>
+                </div>
+
+                {cart.discountAmount > 0 && (
+                  <div className="flex items-center justify-between text-green-600 font-medium">
+                    <span>Discount</span>
+                    <span>-{formatMoney(cart.discountAmount, cart.currency)}</span>
+                  </div>
+                )}
+
+                <div className="pt-2 border-t flex items-center justify-between text-base font-bold text-slate-900">
+                  <span>Total</span>
+                  <span>{formatMoney(cart.total, cart.currency)}</span>
+                </div>
               </div>
 
-              <Link href="/checkout" className="sb-btn-primary w-full mt-4">
+              {!cart.couponCode ? (
+                <form onSubmit={handleApplyCoupon} className="space-y-2">
+                  <div className="text-sm font-medium text-slate-700">Have a coupon?</div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter code"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      className="sb-input flex-1 uppercase"
+                      disabled={applyingCoupon}
+                    />
+                    <button
+                      type="submit"
+                      disabled={applyingCoupon || !couponCode.trim()}
+                      className="sb-btn-outline whitespace-nowrap"
+                    >
+                      {applyingCoupon ? "..." : "Apply"}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="bg-green-50 border border-green-200 rounded p-3 space-y-2">
+                  <div className="text-xs font-semibold text-green-700 uppercase tracking-wider">
+                    Coupon Applied
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-green-800">{cart.couponCode}</span>
+                    <button
+                      onClick={handleRemoveCoupon}
+                      className="text-xs text-green-700 hover:text-green-900 underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <Link href="/checkout" className="sb-btn-primary w-full mt-4 block text-center">
                 Checkout
               </Link>
               <div className="text-xs text-slate-500 mt-2">
