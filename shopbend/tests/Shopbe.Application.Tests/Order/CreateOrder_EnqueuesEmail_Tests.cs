@@ -58,7 +58,8 @@ public class CreateOrderEnqueuesEmailTests
 
         uow.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var handler = new CreateOrderHandler(uow.Object);
+        var tracking = new Mock<IBehaviorTrackingService>();
+        var handler = new CreateOrderHandler(uow.Object, tracking.Object);
 
         var cmd = new CreateOrderCommand(userId, new CreateOrderRequestDto
         {

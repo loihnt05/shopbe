@@ -11,6 +11,7 @@ public class OrderRepository(ShopDbContext context) : IOrderRepository
     {
         return await context.Orders
             .AsNoTracking()
+            .Include(o => o.Coupon)
             .Include(o => o.OrderItems)
             .Include(o => o.OrderStatusHistory)
             .AsSplitQuery()
@@ -21,6 +22,7 @@ public class OrderRepository(ShopDbContext context) : IOrderRepository
     {
         return await context.Orders
             .AsNoTracking()
+            .Include(o => o.Coupon)
             .Include(o => o.OrderItems)
             .Include(o => o.OrderStatusHistory)
             .AsSplitQuery()
@@ -30,6 +32,7 @@ public class OrderRepository(ShopDbContext context) : IOrderRepository
     public async Task<Order?> GetTrackedByIdForUserAsync(Guid orderId, Guid userId, CancellationToken cancellationToken = default)
     {
         return await context.Orders
+            .Include(o => o.Coupon)
             .Include(o => o.OrderItems)
             .Include(o => o.OrderStatusHistory)
             .AsSplitQuery()

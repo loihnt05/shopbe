@@ -35,6 +35,7 @@ public static class OrderMapping
             Note = order.Note,
             SubtotalAmount = order.SubtotalAmount,
             DiscountAmount = order.DiscountAmount,
+            CouponCode = order.Coupon?.Code,
             ShippingFee = order.ShippingFee,
             TotalAmount = order.TotalAmount,
             Currency = order.Currency,

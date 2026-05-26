@@ -1,8 +1,10 @@
 using MediatR;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Order.Dtos;
-using Shopbe.Domain.Entities.Order;
 using Shopbe.Domain.Enums;
+using CouponEntity = Shopbe.Domain.Entities.Order.Coupon;
+using OrderEntity = Shopbe.Domain.Entities.Order.Order;
+using Shopbe.Domain.Entities.Order;
 
 namespace Shopbe.Application.Order.Commands.CreateOrder;
 
@@ -87,7 +89,7 @@ public sealed class CreateOrderHandler(IUnitOfWork unitOfWork, IBehaviorTracking
                     "Shipping address is required. Provide UserAddressId, ensure a default address exists, or send shipping fields in request.");
             }
 
-            var order = new Domain.Entities.Order.Order
+            var order = new OrderEntity
             {
                 Id = Guid.NewGuid(),
                 UserId = request.UserId,
@@ -144,13 +146,22 @@ public sealed class CreateOrderHandler(IUnitOfWork unitOfWork, IBehaviorTracking
 
             order.SubtotalAmount = subtotal;
 
-            // Apply coupon (if provided)
+            // Apply coupon (if provided in request OR already in cart)
             var couponCode = request.Request.CouponCode?.Trim();
+            CouponEntity? coupon = null;
             if (!string.IsNullOrWhiteSpace(couponCode))
             {
-                var coupon = await unitOfWork.Coupons.GetByCodeAsync(couponCode!, cancellationToken);
+                coupon = await unitOfWork.Coupons.GetByCodeAsync(couponCode!, cancellationToken);
                 if (coupon is null)
                     throw new KeyNotFoundException("Coupon not found");
+            }
+            else if (cart.Coupon != null)
+            {
+                coupon = cart.Coupon;
+            }
+
+            if (coupon != null)
+            {
                 if (!coupon.IsActive)
                     throw new InvalidOperationException("Coupon is inactive");
                 if (coupon.ExpiredAt <= DateTime.UtcNow)
@@ -182,6 +193,7 @@ public sealed class CreateOrderHandler(IUnitOfWork unitOfWork, IBehaviorTracking
                 discountAmount = Math.Clamp(discountAmount, 0m, subtotal);
 
                 order.DiscountAmount = discountAmount;
+                order.CouponId = coupon.Id;
 
                 // Consume coupon usage atomically (usage_count + coupon_usages)
                 var consumed = await unitOfWork.Coupons.TryConsumeAsync(
@@ -261,6 +273,3 @@ public sealed class CreateOrderHandler(IUnitOfWork unitOfWork, IBehaviorTracking
         }
     }
 }
-
-
-

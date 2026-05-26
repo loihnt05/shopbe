@@ -45,6 +45,7 @@ public class OrderDetailsDto
     public string? Note { get; set; }
     public decimal SubtotalAmount { get; set; }
     public decimal DiscountAmount { get; set; }
+    public string? CouponCode { get; set; }
     public decimal ShippingFee { get; set; }
     public decimal TotalAmount { get; set; }
     public string Currency { get; set; } = "VND";

@@ -10,6 +10,7 @@ public sealed class CartRepository(ShopDbContext context) : ICartRepository
     public async Task<ShoppingCart?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await context.ShoppingCarts
+            .Include(c => c.Coupon)
             .Include(c => c.CartItems)
                 .ThenInclude(i => i.ProductVariant)
                     .ThenInclude(v => v!.Product)

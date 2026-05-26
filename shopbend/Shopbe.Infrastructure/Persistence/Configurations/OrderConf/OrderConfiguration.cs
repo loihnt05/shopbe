@@ -86,5 +86,10 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .WithOne(p => p.Order)
             .HasForeignKey(p => p.OrderId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(o => o.Coupon)
+            .WithMany()
+            .HasForeignKey(o => o.CouponId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

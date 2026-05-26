@@ -28,5 +28,10 @@ public class ShoppingCartConfiguration : IEntityTypeConfiguration<ShoppingCart>
             .WithOne(ci => ci.Cart)
             .HasForeignKey(ci => ci.CartId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(sc => sc.Coupon)
+            .WithMany()
+            .HasForeignKey(sc => sc.CouponId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

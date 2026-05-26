@@ -15,6 +15,7 @@ public class Order : BaseEntity
     public string ShippingWard { get; set; } = string.Empty;
     public decimal SubtotalAmount { get; set; }
     public decimal DiscountAmount { get; set; }
+    public Guid? CouponId { get; set; }
     public decimal ShippingFee { get; set; }
     public decimal TotalAmount { get; set; }
     public string Currency { get; set; } = "VND";

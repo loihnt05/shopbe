@@ -2,7 +2,9 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shopbe.Application.Cart.Commands.AddItem;
+using Shopbe.Application.Cart.Commands.ApplyCoupon;
 using Shopbe.Application.Cart.Commands.ClearCart;
+using Shopbe.Application.Cart.Commands.RemoveCoupon;
 using Shopbe.Application.Cart.Commands.RemoveItem;
 using Shopbe.Application.Cart.Commands.SetItemQuantity;
 using Shopbe.Application.Cart.Dtos;
@@ -68,6 +70,20 @@ public class CartController(IMediator mediator, ICurrentUser currentUser, IUnitO
     {
         var userId = await GetAppUserIdAsync(cancellationToken);
         var result = await mediator.Send(new ClearCartCommand(userId), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("coupon")]
+    public async Task<IActionResult> ApplyCoupon([FromQuery] string code, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new ApplyCouponCommand(code), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpDelete("coupon")]
+    public async Task<IActionResult> RemoveCoupon(CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new RemoveCouponCommand(), cancellationToken);
         return Ok(result);
     }
 }
