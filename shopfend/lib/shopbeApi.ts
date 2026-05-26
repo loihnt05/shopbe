@@ -130,6 +130,24 @@ export type PurchasedProductDto = {
   reviewId?: string | null;
 };
 
+export type ConversationDto = {
+  id: string;
+  status: string;
+  startedAt: string;
+  endedAt?: string | null;
+  lastMessageAt: string;
+  lastMessagePreview?: string | null;
+};
+
+export type ChatMessageDto = {
+  id: string;
+  conversationId: string;
+  sender: string;
+  content: string;
+  metadata?: any | null;
+  createdAt: string;
+};
+
 export type ShopbeApiClientOptions = {
   /** Default timeout used when an endpoint doesn't provide one. */
   defaultTimeoutMs?: number;
@@ -421,6 +439,42 @@ export const shopbeApi = {
       requestJson<unknown[]>(`/api/recommendations/products/${productId}/frequently-bought-together?limit=${limit}`, { signal }),
     recentlyViewed: (accessToken: string, limit: number, signal?: AbortSignal) =>
       requestJson<unknown[]>(`/api/recommendations/me/recently-viewed?limit=${limit}`, { accessToken, signal }),
+  },
+  chat: {
+    getConversations: (accessToken: string, signal?: AbortSignal) =>
+      requestJson<ConversationDto[]>("/api/chat/conversations", { accessToken, signal }),
+    createConversation: (accessToken: string, body: { title?: string }, signal?: AbortSignal) =>
+      requestJson<ConversationDto>("/api/chat/conversations", {
+        accessToken,
+        body,
+        signal,
+      }),
+    getMessages: (
+      accessToken: string,
+      conversationId: string,
+      params?: { after?: string; take?: number },
+      signal?: AbortSignal
+    ) => {
+      const query = new URLSearchParams();
+      if (params?.after) query.append("after", params.after);
+      if (params?.take) query.append("take", params.take.toString());
+      const queryString = query.toString();
+      return requestJson<ChatMessageDto[]>(
+        `/api/chat/conversations/${conversationId}/messages${queryString ? `?${queryString}` : ""}`,
+        { accessToken, signal }
+      );
+    },
+    sendMessage: (
+      accessToken: string,
+      conversationId: string,
+      body: { content: string; metadata?: any },
+      signal?: AbortSignal
+    ) =>
+      requestJson<ChatMessageDto[]>(`/api/chat/conversations/${conversationId}/messages`, {
+        accessToken,
+        body,
+        signal,
+      }),
   },
   simulation: {
     run: (accessToken: string, signal?: AbortSignal) =>

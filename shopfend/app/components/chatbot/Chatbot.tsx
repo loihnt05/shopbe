@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import ChatButton from "./ChatButton";
 import ChatWindow from "./ChatWindow";
+import { useSession } from "next-auth/react";
+import { shopbeApi, ChatMessageDto } from "../../../lib/shopbeApi";
 
 export type Message = {
   id: string;
@@ -12,44 +14,43 @@ export type Message = {
 };
 
 export default function Chatbot() {
+  const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
-  // Load history from localStorage on mount
+  // Load conversation on mount if authenticated
   useEffect(() => {
-    const saved = localStorage.getItem("sb_chat_history");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setMessages(
-          parsed.map((m: any) => ({
-            ...m,
-            timestamp: new Date(m.timestamp),
-          }))
-        );
-      } catch (e) {
-        console.error("Failed to parse chat history", e);
+    if (session?.accessToken) {
+      initChat();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.accessToken]);
+
+  const initChat = async () => {
+    if (!session?.accessToken) return;
+    try {
+      const conversations = await shopbeApi.chat.getConversations(session.accessToken);
+      let activeConv = conversations[0];
+
+      if (!activeConv) {
+        activeConv = await shopbeApi.chat.createConversation(session.accessToken, { title: "Overlay Chat" });
       }
-    } else {
-      // Premium Initial Greeting
-      const initialMessage: Message = {
-        id: "1",
-        text: "### Welcome to Shopbee AI Assistant! ✨\n\nI'm here to help you find the perfect products, track your orders, or answer any questions about our services. \n\n**What can I help you with today?**",
-        sender: "bot",
-        timestamp: new Date(),
-      };
-      setMessages([initialMessage]);
+      setConversationId(activeConv.id);
+      
+      const history = await shopbeApi.chat.getMessages(session.accessToken, activeConv.id, { take: 20 });
+      setMessages(history.map(m => ({
+        id: m.id,
+        text: m.content,
+        sender: m.sender === "user" ? "user" : "bot",
+        timestamp: new Date(m.createdAt)
+      })));
+    } catch (e) {
+      console.error("Failed to init overlay chat", e);
     }
-  }, []);
-
-  // Save history to localStorage
-  useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem("sb_chat_history", JSON.stringify(messages));
-    }
-  }, [messages]);
+  };
 
   const toggleChat = () => {
     setIsOpen(!isOpen);
@@ -69,6 +70,23 @@ export default function Chatbot() {
 
     setMessages((prev) => [...prev, botMessage]);
     
+    // Check if it's JSON recommendation
+    if (fullText.trim().startsWith("{")) {
+        try {
+            const data = JSON.parse(fullText);
+            if (data.products) {
+                const summary = `${data.recommendation_reason}\n\nTop picks:\n${data.products.map((p: any) => `- ${p.name} (${p.price})`).join("\n")}\n\n[Open full chat for details](/chat)`;
+                fullText = summary;
+            }
+        } catch(e) { 
+            // Handle truncated JSON in overlay too
+            const reasonMatch = fullText.match(/"recommendation_reason":\s*"([^"]+)"/);
+            if (reasonMatch && reasonMatch[1]) {
+                fullText = `${reasonMatch[1]}\n\n(Recommendations are being prepared, please check the full chat for the complete list.)\n\n[Open full chat](/chat)`;
+            }
+        }
+    }
+
     const words = fullText.split(" ");
     let currentText = "";
     
@@ -77,12 +95,23 @@ export default function Chatbot() {
       setMessages((prev) => 
         prev.map(m => m.id === botMsgId ? { ...m, text: currentText } : m)
       );
-      // Faster for long text, slower for short text to feel natural
-      await new Promise(r => setTimeout(r, Math.random() * 30 + 10));
+      await new Promise(r => setTimeout(r, Math.random() * 20 + 5));
     }
   };
 
   const handleSendMessage = async (text: string) => {
+    if (!session?.accessToken || !conversationId) {
+        // Fallback or ask to login
+        const loginMsg: Message = {
+            id: Date.now().toString(),
+            text: "Please sign in to chat with our AI assistant!",
+            sender: "bot",
+            timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, loginMsg]);
+        return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text,
@@ -94,29 +123,23 @@ export default function Chatbot() {
     setIsTyping(true);
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          message: text,
-          history: messages.slice(-10).map(m => ({ role: m.sender, content: m.text }))
-        }),
+      const results = await shopbeApi.chat.sendMessage(session.accessToken, conversationId, {
+        content: text
       });
 
-      if (!response.ok) throw new Error("Failed to get response");
-
-      const data = await response.json();
+      const assistantMsg = results.find(m => m.sender === "assistant");
       setIsTyping(false);
       
-      // Use streaming simulation for better feel
-      await simulateStreaming(data.response);
+      if (assistantMsg) {
+        await simulateStreaming(assistantMsg.content);
+      }
 
     } catch (error) {
       console.error("Chat error:", error);
       setIsTyping(false);
       const errorMessage: Message = {
         id: (Date.now() + 2).toString(),
-        text: "I'm sorry, I'm having trouble connecting right now. Please try again later.",
+        text: "I'm sorry, I'm having trouble connecting to the recommendation engine.",
         sender: "bot",
         timestamp: new Date(),
       };

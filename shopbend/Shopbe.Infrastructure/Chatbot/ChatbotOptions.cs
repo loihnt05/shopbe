@@ -19,6 +19,6 @@ public sealed class ChatbotOptions
     /// </summary>
     public string SystemPrompt { get; set; } = "You are a helpful shopping assistant.";
 
-    public int MaxOutputTokens { get; set; } = 400;
+    public int MaxOutputTokens { get; set; } = 1500;
 }
 
