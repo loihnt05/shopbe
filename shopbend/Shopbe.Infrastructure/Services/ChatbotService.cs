@@ -2,10 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
+using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Common.Interfaces.IChat;
 using Shopbe.Infrastructure.Chatbot;
 using Shopbe.Infrastructure.Persistence;
 using DomainChatMessage = Shopbe.Domain.Entities.Chatbot.ChatMessage;
+using System.Text.Json;
 
 namespace Shopbe.Infrastructure.Services;
 
@@ -13,12 +15,20 @@ public sealed class ChatbotService : IChatbotService
 {
     private readonly ShopDbContext _db;
     private readonly ChatbotOptions _options;
+    private readonly IRecommendationService _recommendations;
+    private readonly ICurrentUser _currentUser;
     private readonly ChatClient _chat;
 
-    public ChatbotService(ShopDbContext db, IOptions<ChatbotOptions> options)
+    public ChatbotService(
+        ShopDbContext db, 
+        IOptions<ChatbotOptions> options,
+        IRecommendationService recommendations,
+        ICurrentUser currentUser)
     {
         _db = db;
         _options = options.Value;
+        _recommendations = recommendations;
+        _currentUser = currentUser;
 
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
             throw new InvalidOperationException("Missing Chatbot:ApiKey configuration.");
