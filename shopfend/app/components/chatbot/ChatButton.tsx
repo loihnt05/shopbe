@@ -1,6 +1,7 @@
 "use client";
 
-import { MessageCircle, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { MessageCircle, X, Sparkles } from "lucide-react";
 
 interface ChatButtonProps {
   onClick: () => void;
@@ -10,35 +11,49 @@ interface ChatButtonProps {
 
 export default function ChatButton({ onClick, isOpen, unreadCount }: ChatButtonProps) {
   return (
-    <button
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
       onClick={onClick}
       className={`
-        relative group flex items-center justify-center w-14 h-14 
-        rounded-full shadow-lg transition-all duration-300 active:scale-90
+        relative group flex items-center justify-center w-16 h-16 
+        rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.15)] transition-all duration-300
         ${isOpen 
-          ? "bg-white text-gray-800 rotate-90" 
-          : "bg-brand text-white hover:bg-brand-hover hover:-translate-y-1"
+          ? "bg-white text-slate-900 border border-slate-200" 
+          : "bg-slate-900 text-white hover:bg-slate-800"
         }
       `}
     >
+      <div className="absolute inset-0 rounded-full bg-slate-900 opacity-0 group-hover:opacity-10 transition-opacity blur-xl"></div>
+      
       {isOpen ? (
-        <X size={28} className="animate-in fade-in zoom-in duration-300" />
+        <X size={28} />
       ) : (
-        <MessageCircle size={28} className="animate-in fade-in zoom-in duration-300" />
+        <div className="relative">
+          <MessageCircle size={28} />
+          <motion.div 
+            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute -top-1 -right-1"
+          >
+            <Sparkles size={14} className="text-yellow-400 fill-yellow-400" />
+          </motion.div>
+        </div>
       )}
 
       {!isOpen && unreadCount > 0 && (
-        <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white animate-bounce">
+        <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-brand text-[10px] font-bold text-white shadow-lg ring-2 ring-white">
           {unreadCount > 9 ? "9+" : unreadCount}
         </span>
       )}
       
-      {/* Tooltip */}
+      {/* Premium Tooltip */}
       {!isOpen && (
-        <span className="absolute right-full mr-4 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-          Need help? Chat with us!
-        </span>
+        <div className="absolute right-full mr-6 px-4 py-2 bg-slate-900 text-white text-[13px] font-medium rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 pointer-events-none whitespace-nowrap">
+          How can I help you today?
+          <div className="absolute top-1/2 -right-1 -translate-y-1/2 border-[6px] border-transparent border-l-slate-900"></div>
+        </div>
       )}
-    </button>
+    </motion.button>
   );
 }

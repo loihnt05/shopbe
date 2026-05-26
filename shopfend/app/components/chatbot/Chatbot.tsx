@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import ChatButton from "./ChatButton";
 import ChatWindow from "./ChatWindow";
 
@@ -33,10 +33,10 @@ export default function Chatbot() {
         console.error("Failed to parse chat history", e);
       }
     } else {
-      // Initial greeting
+      // Premium Initial Greeting
       const initialMessage: Message = {
         id: "1",
-        text: "Hi there! 👋 How can I help you today?",
+        text: "### Welcome to Shopbee AI Assistant! ✨\n\nI'm here to help you find the perfect products, track your orders, or answer any questions about our services. \n\n**What can I help you with today?**",
         sender: "bot",
         timestamp: new Date(),
       };
@@ -55,6 +55,30 @@ export default function Chatbot() {
     setIsOpen(!isOpen);
     if (!isOpen) {
       setUnreadCount(0);
+    }
+  };
+
+  const simulateStreaming = async (fullText: string) => {
+    const botMsgId = (Date.now() + 1).toString();
+    const botMessage: Message = {
+      id: botMsgId,
+      text: "",
+      sender: "bot",
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, botMessage]);
+    
+    const words = fullText.split(" ");
+    let currentText = "";
+    
+    for (let i = 0; i < words.length; i++) {
+      currentText += (i === 0 ? "" : " ") + words[i];
+      setMessages((prev) => 
+        prev.map(m => m.id === botMsgId ? { ...m, text: currentText } : m)
+      );
+      // Faster for long text, slower for short text to feel natural
+      await new Promise(r => setTimeout(r, Math.random() * 30 + 10));
     }
   };
 
@@ -82,19 +106,16 @@ export default function Chatbot() {
       if (!response.ok) throw new Error("Failed to get response");
 
       const data = await response.json();
+      setIsTyping(false);
       
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: data.response,
-        sender: "bot",
-        timestamp: new Date(),
-      };
-      
-      setMessages((prev) => [...prev, botMessage]);
+      // Use streaming simulation for better feel
+      await simulateStreaming(data.response);
+
     } catch (error) {
       console.error("Chat error:", error);
+      setIsTyping(false);
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: (Date.now() + 2).toString(),
         text: "I'm sorry, I'm having trouble connecting right now. Please try again later.",
         sender: "bot",
         timestamp: new Date(),

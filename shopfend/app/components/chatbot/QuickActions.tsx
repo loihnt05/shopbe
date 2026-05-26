@@ -1,6 +1,7 @@
 "use client";
 
-import { Sparkles, Package, MessageSquareText } from "lucide-react";
+import { motion } from "framer-motion";
+import { Sparkles, Package, MessageSquareText, Lightbulb, ShoppingBag } from "lucide-react";
 
 interface QuickActionsProps {
   onAction: (text: string) => void;
@@ -8,29 +9,27 @@ interface QuickActionsProps {
 
 export default function QuickActions({ onAction }: QuickActionsProps) {
   const actions = [
-    { label: "Recommend products", icon: <Sparkles size={14} /> },
-    { label: "Track order", icon: <Package size={14} /> },
-    { label: "Contact support", icon: <MessageSquareText size={14} /> },
+    { label: "Recommended for me", icon: <Sparkles size={14} />, color: "text-amber-500" },
+    { label: "Order Status", icon: <Package size={14} />, color: "text-blue-500" },
+    { label: "Latest Deals", icon: <ShoppingBag size={14} />, color: "text-green-500" },
+    { label: "How to return?", icon: <Lightbulb size={14} />, color: "text-purple-500" },
   ];
 
   return (
-    <div className="flex flex-col gap-2 pt-2 pb-4 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
-      <div className="flex items-center gap-2 pl-1 mb-1">
-        <div className="w-8 h-[1px] bg-gray-200"></div>
-        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">Suggested Actions</p>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {actions.map((action) => (
-          <button
-            key={action.label}
-            onClick={() => onAction(action.label)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white/60 backdrop-blur-sm border border-gray-100/50 rounded-full text-[11px] font-medium text-gray-600 hover:border-brand/40 hover:text-brand hover:bg-brand/5 hover:shadow-md transition-all active:scale-95"
-          >
-            <span className="text-brand/70">{action.icon}</span>
-            {action.label}
-          </button>
-        ))}
-      </div>
+    <div className="flex gap-2 py-1 px-1">
+      {actions.map((action, idx) => (
+        <motion.button
+          key={action.label}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: idx * 0.1 }}
+          onClick={() => onAction(action.label)}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-[13px] font-medium text-slate-600 hover:border-slate-400 hover:shadow-md transition-all whitespace-nowrap active:scale-95"
+        >
+          <span className={action.color}>{action.icon}</span>
+          {action.label}
+        </motion.button>
+      ))}
     </div>
   );
 }
