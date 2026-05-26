@@ -68,6 +68,18 @@ export type CartDto = {
   currency: string;
 };
 
+export type CouponResponseDto = {
+  id: string;
+  code: string;
+  description?: string;
+  discountType: string;
+  value: number;
+  minOrderAmount: number;
+  maxDiscountAmount?: number;
+  expiredAt: string;
+  isActive: boolean;
+};
+
 export type CreateOrderResponse = {
   id: string;
   status?: string;
@@ -341,8 +353,8 @@ export function productResponseToListItem(item: unknown): ProductListItem {
     return typeof v === "number" ? v : undefined;
   };
 
-  const pickBoolean = (k: string): boolean => {
-    const v = obj[k];
+  const pickBoolean = (k: boolean): boolean => {
+    const v = obj[k as any];
     return typeof v === "boolean" ? v : false;
   };
 
@@ -392,7 +404,7 @@ export function productResponseToListItem(item: unknown): ProductListItem {
     categoryName: pickStringOrNull("categoryName"),
     brandId: pickStringOrNull("brandId"),
     brandName: pickStringOrNull("brandName"),
-    isActive: pickBoolean("isActive"),
+    isActive: pickBoolean("isActive" as any),
     recommendationReason: pickStringOrNull("recommendationReason"),
     images: mapImages(obj.images),
     variants: mapVariants(obj.variants),
@@ -538,6 +550,10 @@ export const shopbeApi = {
       const ids = excludeIds?.join(",") ?? "";
       return requestJson<unknown[]>(`/api/products/discover?limit=${limit}&excludeIds=${ids}`, { signal });
     },
+  },
+  coupons: {
+    list: (signal?: AbortSignal) =>
+      requestJson<CouponResponseDto[]>("/api/coupons", { signal }),
   },
   cart: {
     getMyCart: (accessToken: string, signal?: AbortSignal) =>

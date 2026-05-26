@@ -1,14 +1,26 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "./CartContext";
 import { formatMoney } from "@/lib/format";
-import { resolveApiUrl } from "@/lib/shopbeApi";
+import { resolveApiUrl, shopbeApi, type CouponResponseDto } from "@/lib/shopbeApi";
 
 export default function CartDrawer() {
-  const { cart, isDrawerOpen, closeDrawer, updateQuantity, removeItem } = useCart();
+  const { cart, isDrawerOpen, closeDrawer, updateQuantity, removeItem, applyCoupon, removeCoupon } = useCart();
+  const [coupons, setCoupons] = useState<CouponResponseDto[]>([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(false);
+
+  useEffect(() => {
+    if (isDrawerOpen && !loadingCoupons) {
+      setLoadingCoupons(true);
+      shopbeApi.coupons.list()
+        .then(setCoupons)
+        .catch(err => console.error("Failed to fetch coupons", err))
+        .finally(() => setLoadingCoupons(false));
+    }
+  }, [isDrawerOpen]);
 
   if (!isDrawerOpen) return null;
 
@@ -19,6 +31,19 @@ export default function CartDrawer() {
   const totalAmount = cart?.total ?? subtotal;
   const currency = cart?.currency ?? "USD";
   const isEmpty = items.length === 0;
+
+  const handleCouponChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const code = e.target.value;
+    if (!code) {
+      await removeCoupon();
+    } else {
+      try {
+        await applyCoupon(code);
+      } catch (err) {
+        alert("Could not apply coupon. Check conditions.");
+      }
+    }
+  };
 
   return (
     <div
@@ -172,6 +197,38 @@ export default function CartDrawer() {
             ))
           )}
         </div>
+
+        {/* Coupons */}
+        {!isEmpty && (
+          <div style={{ padding: "12px 24px", borderTop: "1px solid #1e1e24", background: "#15151a" }}>
+            <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.05em" }}>
+              Available Vouchers
+            </div>
+            <select
+              value={cart?.couponCode ?? ""}
+              onChange={handleCouponChange}
+              disabled={loadingCoupons}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 8,
+                background: "#1a1a20",
+                border: "1px solid #2a2a30",
+                color: "#e0e0e0",
+                fontSize: 13,
+                cursor: "pointer",
+                outline: "none"
+              }}
+            >
+              <option value="">Select a coupon...</option>
+              {coupons.filter(c => c.isActive).map(c => (
+                <option key={c.id} value={c.code}>
+                  {c.code} - {c.description ?? `${c.value}${c.discountType === 'Percentage' ? '%' : ''} off`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Footer */}
         {!isEmpty && (
