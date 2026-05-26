@@ -162,7 +162,7 @@ export type ChatMessageDto = {
   conversationId: string;
   sender: string;
   content: string;
-  metadata?: any | null;
+  metadata?: Record<string, unknown> | null;
   createdAt: string;
 };
 
@@ -353,8 +353,8 @@ export function productResponseToListItem(item: unknown): ProductListItem {
     return typeof v === "number" ? v : undefined;
   };
 
-  const pickBoolean = (k: boolean): boolean => {
-    const v = obj[k as any];
+  const pickBoolean = (k: string): boolean => {
+    const v = obj[k];
     return typeof v === "boolean" ? v : false;
   };
 
@@ -404,7 +404,7 @@ export function productResponseToListItem(item: unknown): ProductListItem {
     categoryName: pickStringOrNull("categoryName"),
     brandId: pickStringOrNull("brandId"),
     brandName: pickStringOrNull("brandName"),
-    isActive: pickBoolean("isActive" as any),
+    isActive: pickBoolean("isActive"),
     recommendationReason: pickStringOrNull("recommendationReason"),
     images: mapImages(obj.images),
     variants: mapVariants(obj.variants),
@@ -485,7 +485,7 @@ export const shopbeApi = {
     sendMessage: (
       accessToken: string,
       conversationId: string,
-      body: { content: string; metadata?: any },
+      body: { content: string; metadata?: Record<string, unknown> },
       signal?: AbortSignal
     ) =>
       requestJson<ChatMessageDto[]>(`/api/chat/conversations/${conversationId}/messages`, {
@@ -548,7 +548,7 @@ export const shopbeApi = {
       }),
     discover: (limit: number, excludeIds?: string[], signal?: AbortSignal) => {
       const ids = excludeIds?.join(",") ?? "";
-      return requestJson<unknown[]>(`/api/products/discover?limit=${limit}&excludeIds=${ids}`, { signal });
+      return requestJson<ProductListItem[]>(`/api/products/discover?limit=${limit}&excludeIds=${ids}`, { signal });
     },
   },
   coupons: {

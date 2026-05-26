@@ -10,15 +10,12 @@ import { resolveApiUrl, shopbeApi, type CouponResponseDto } from "@/lib/shopbeAp
 export default function CartDrawer() {
   const { cart, isDrawerOpen, closeDrawer, updateQuantity, removeItem, applyCoupon, removeCoupon } = useCart();
   const [coupons, setCoupons] = useState<CouponResponseDto[]>([]);
-  const [loadingCoupons, setLoadingCoupons] = useState(false);
 
   useEffect(() => {
-    if (isDrawerOpen && !loadingCoupons) {
-      setLoadingCoupons(true);
+    if (isDrawerOpen) {
       shopbeApi.coupons.list()
         .then(setCoupons)
-        .catch(err => console.error("Failed to fetch coupons", err))
-        .finally(() => setLoadingCoupons(false));
+        .catch(() => {});
     }
   }, [isDrawerOpen]);
 
@@ -39,7 +36,7 @@ export default function CartDrawer() {
     } else {
       try {
         await applyCoupon(code);
-      } catch (err) {
+      } catch {
         alert("Could not apply coupon. Check conditions.");
       }
     }
@@ -207,7 +204,6 @@ export default function CartDrawer() {
             <select
               value={cart?.couponCode ?? ""}
               onChange={handleCouponChange}
-              disabled={loadingCoupons}
               style={{
                 width: "100%",
                 padding: "10px 12px",

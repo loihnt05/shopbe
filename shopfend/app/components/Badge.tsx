@@ -8,10 +8,14 @@ export function Badge({ count }: { count: number }) {
 
   useEffect(() => {
     if (count !== prev.current) {
-      setPop(true);
-      const t = setTimeout(() => setPop(false), 300);
       prev.current = count;
-      return () => clearTimeout(t);
+      // Use a timeout or requestAnimationFrame to defer state update
+      const frame = requestAnimationFrame(() => setPop(true));
+      const t = setTimeout(() => setPop(false), 300);
+      return () => {
+        cancelAnimationFrame(frame);
+        clearTimeout(t);
+      };
     }
   }, [count]);
 

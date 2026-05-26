@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode, useRef } from "react";
+import React, { createContext, useContext, useEffect, useState, ReactNode, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { shopbeApi, type CartDto, isAbortError } from "@/lib/shopbeApi";
 
@@ -37,7 +37,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return abortRef.current.signal;
   };
 
-  const refreshCart = async () => {
+  const refreshCart = useCallback(async () => {
     if (!session?.accessToken) {
       setCart(null);
       setTotalQuantity(0);
@@ -56,7 +56,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.accessToken]);
 
   const updateQuantity = async (productVariantId: string, quantity: number) => {
     if (!session?.accessToken) return;
@@ -127,9 +127,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setDisplayQuantity("");
     }
     return () => abortRef.current?.abort();
-  }, [session?.accessToken, status]);
+  }, [session?.accessToken, status, refreshCart]);
 
-  const openDrawer = () => setIsDrawerOpen(true);
+  const openDrawer = () => {
+    setIsDrawerOpen(true);
+    refreshCart();
+  };
   const closeDrawer = () => setIsDrawerOpen(false);
 
   return (
