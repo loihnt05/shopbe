@@ -1,6 +1,7 @@
 using MediatR;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Order.Dtos;
+using Shopbe.Application.Shipping.Dtos;
 using Shopbe.Domain.Enums;
 using CouponEntity = Shopbe.Domain.Entities.Order.Coupon;
 using OrderEntity = Shopbe.Domain.Entities.Order.Order;
@@ -8,7 +9,11 @@ using Shopbe.Domain.Entities.Order;
 
 namespace Shopbe.Application.Order.Commands.CreateOrder;
 
-public sealed class CreateOrderHandler(IUnitOfWork unitOfWork, IBehaviorTrackingService tracking) : IRequestHandler<CreateOrderCommand, OrderDetailsDto>
+public sealed class CreateOrderHandler(
+    IUnitOfWork unitOfWork, 
+    IBehaviorTrackingService tracking,
+    IShippingCalculationService shippingCalculationService) 
+    : IRequestHandler<CreateOrderCommand, OrderDetailsDto>
 {
     public async Task<OrderDetailsDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
@@ -208,6 +213,19 @@ public sealed class CreateOrderHandler(IUnitOfWork unitOfWork, IBehaviorTracking
 
                 order.Coupon = coupon;
             }
+
+            // Calculate live shipping fee securely on backend
+            var shippingCalculation = await shippingCalculationService.CalculateAsync(
+                new ShippingCalculationRequestDto(
+                    order.ShippingCity,
+                    order.ShippingDistrict,
+                    order.ShippingWard,
+                    subtotal,
+                    0, // Weight not available in cart currently
+                    0  // Distance not available in cart currently
+                ), cancellationToken);
+
+            order.ShippingFee = shippingCalculation.ShippingFee;
 
             order.TotalAmount = subtotal - order.DiscountAmount + order.ShippingFee;
 

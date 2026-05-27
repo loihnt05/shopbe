@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Shopbe.Application.Shipping.Commands.AddDistrictToZone;
 using Shopbe.Application.Shipping.Commands.CreateShippingZone;
 using Shopbe.Application.Shipping.Commands.RemoveDistrictFromZone;
+using Shopbe.Application.Shipping.Queries.CalculateShipping;
 using Shopbe.Application.Shipping.Queries.GetShippingZoneById;
 using Shopbe.Application.Shipping.Queries.GetShippingZones;
 using Shopbe.Application.Shipping.Queries.ResolveZoneByAddress;
@@ -39,6 +40,14 @@ public sealed class ShippingZonesController(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(new ResolveZoneByAddressQuery(city, district), cancellationToken);
         return result is null ? NotFound() : Ok(result);
+    }
+
+    [HttpPost("calculate")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Calculate([FromBody] CalculateShippingQuery request, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(request, cancellationToken);
+        return Ok(result);
     }
 
     // Admin endpoints

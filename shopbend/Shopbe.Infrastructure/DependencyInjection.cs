@@ -45,6 +45,7 @@ public static class DependencyInjection
 
         services.AddScoped<IRecommendationService, RecommendationService>();
         services.AddScoped<IBehaviorTrackingService, BehaviorTrackingService>();
+        services.AddScoped<IShippingCalculationService, ShippingCalculationService>();
         
         services.AddDbContext<ShopDbContext>(options =>
             options.UseNpgsql(connectionString)

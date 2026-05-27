@@ -7,12 +7,14 @@ import { useRouter } from "next/navigation";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useCart } from "../components/CartContext";
+import { locations } from "@/lib/locations";
 import {
   isAbortError,
   shopbeApi,
   type CartDto,
   type CreateOrderResponse,
   type CreateStripePaymentIntentResponse,
+  type ShippingCalculationResponseDto,
 } from "@/lib/shopbeApi";
 import { formatMoney } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
@@ -145,6 +147,25 @@ export default function CheckoutPage() {
   );
   const [stripeKeyWarning, setStripeKeyWarning] = useState<string | null>(null);
 
+  // Address State
+  const [receiverName, setReceiverName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [province, setProvince] = useState("");
+  const [district, setDistrict] = useState("");
+  const [ward, setWard] = useState("");
+  const [addressLine, setAddressLine] = useState("");
+
+  const [shippingResult, setShippingResult] = useState<ShippingCalculationResponseDto | null>(null);
+  const [calculatingShipping, setCalculatingShipping] = useState(false);
+  const shipAbortRef = useRef<AbortController | null>(null);
+
+  // Set default receiver name when session is available
+  useEffect(() => {
+    if (session?.user?.name && !receiverName) {
+      setReceiverName(session.user.name);
+    }
+  }, [session, receiverName]);
+
   // If the env publishable key isn't set, fetch it from backend config.
   // Also warn when env key differs from backend key (common cause of PaymentElement loaderror).
   useEffect(() => {
@@ -219,10 +240,49 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
+  // Shipping Calculation Effect
+  useEffect(() => {
+    if (!province || !district || !cart) {
+      setShippingResult(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setCalculatingShipping(true);
+        shipAbortRef.current?.abort();
+        shipAbortRef.current = new AbortController();
+
+        const res = await shopbeApi.shipping.calculate({
+          city: province,
+          district: district,
+          ward: ward || undefined,
+          subtotal: cart.subtotal
+        }, shipAbortRef.current.signal);
+
+        setShippingResult(res);
+      } catch (e: unknown) {
+        if (isAbortError(e)) return;
+        console.error("Shipping calculation failed", e);
+      } finally {
+        setCalculatingShipping(false);
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      shipAbortRef.current?.abort();
+    };
+  }, [province, district, ward, cart?.subtotal]);
+
   const doCheckout = async () => {
     if (!session?.accessToken) return;
     if (!cart || cart.items.length === 0) {
       setError("Cart is empty.");
+      return;
+    }
+    if (!province || !district || !ward || !addressLine || !receiverName || !phone) {
+      setError("Please complete all shipping information.");
       return;
     }
 
@@ -232,17 +292,14 @@ export default function CheckoutPage() {
     setPaymentIntent(null);
 
     try {
-      // Create order using default address if user has one.
-      // If the user has no saved address, backend requires shipping fields.
-      // For a basic test flow, start with default behavior.
       const created = await shopbeApi.orders.create(session.accessToken, {
-        useDefaultAddressIfAvailable: true,
-        shippingReceiverName: session.user?.name || "Demo User",
-        shippingPhone: "0123456789",
-        shippingAddressLine: "123 Demo Street",
-        shippingCity: "Demo City",
-        shippingDistrict: "Demo District",
-        shippingWard: "Demo Ward",
+        useDefaultAddressIfAvailable: false,
+        shippingReceiverName: receiverName,
+        shippingPhone: phone,
+        shippingAddressLine: addressLine,
+        shippingCity: province,
+        shippingDistrict: district,
+        shippingWard: ward,
         couponCode: cart?.couponCode || undefined
       });
       setOrder(created);
@@ -263,6 +320,21 @@ export default function CheckoutPage() {
       setCreating(false);
     }
   };
+
+  const availableDistricts = locations.provinces.find(p => p.name === province)?.districts || [];
+  const availableWards = availableDistricts.find(d => d.name === district)?.wards || [];
+
+  const provinceOptions = locations.provinces.map(p => (
+    <option key={p.name} value={p.name}>{p.name}</option>
+  ));
+
+  const districtOptions = availableDistricts.map(d => (
+    <option key={d.name} value={d.name}>{d.name}</option>
+  ));
+
+  const wardOptions = availableWards.map(w => (
+    <option key={w} value={w}>{w}</option>
+  ));
 
   const markPaidDev = async () => {
     if (!session?.accessToken) return;
@@ -311,7 +383,7 @@ export default function CheckoutPage() {
         <div>
           <h1 className="text-2xl font-semibold">Checkout</h1>
           <div className="text-sm text-slate-600">
-            Test flow: create order → create Stripe PaymentIntent
+            Select your location and pay securely.
           </div>
         </div>
         <Link href="/cart" className="sb-btn-outline">
@@ -333,6 +405,82 @@ export default function CheckoutPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-7 space-y-4">
+          {/* Shipping Address */}
+          <div className="sb-card p-5 space-y-4">
+            <h2 className="font-semibold text-lg">Shipping Address</h2>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Receiver Name</label>
+                <input 
+                  type="text" 
+                  value={receiverName} 
+                  onChange={e => setReceiverName(e.target.value)}
+                  className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
+                  placeholder="Full name"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Phone Number</label>
+                <input 
+                  type="text" 
+                  value={phone} 
+                  onChange={e => setPhone(e.target.value)}
+                  className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
+                  placeholder="0123 456 789"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Province</label>
+                <select 
+                  value={province} 
+                  onChange={e => { setProvince(e.target.value); setDistrict(""); setWard(""); }}
+                  className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
+                >
+                  <option value="">Select Province</option>
+                  {provinceOptions}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">District</label>
+                <select 
+                  value={district} 
+                  onChange={e => { setDistrict(e.target.value); setWard(""); }}
+                  disabled={!province}
+                  className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none disabled:bg-slate-50"
+                >
+                  <option value="">Select District</option>
+                  {districtOptions}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Ward</label>
+                <select 
+                  value={ward} 
+                  onChange={e => setWard(e.target.value)}
+                  disabled={!district}
+                  className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none disabled:bg-slate-50"
+                >
+                  <option value="">Select Ward</option>
+                  {wardOptions}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Detailed Address</label>
+              <input 
+                type="text" 
+                value={addressLine} 
+                onChange={e => setAddressLine(e.target.value)}
+                className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
+                placeholder="Street name, Building, House number..."
+              />
+            </div>
+          </div>
           <div className="sb-card p-5">
             <div className="flex items-center justify-between">
               <div>
@@ -377,15 +525,15 @@ export default function CheckoutPage() {
           <div className="sb-card p-5">
             <div className="font-semibold">Payment</div>
             <div className="text-sm text-slate-600 mt-1">
-              Create an order, then confirm payment with Stripe.
+              Confirm your shipping details above before paying.
             </div>
 
             <button
-              disabled={creating}
+              disabled={creating || !province || !district || !ward || !addressLine || !receiverName || !phone}
               onClick={doCheckout}
               className="sb-btn-primary w-full mt-4 disabled:opacity-60"
             >
-              {creating ? "Creating…" : "Create order + Stripe PaymentIntent"}
+              {creating ? "Creating Order…" : "Confirm Order & Pay"}
             </button>
 
             {paymentIntent ? (
@@ -461,18 +609,39 @@ export default function CheckoutPage() {
                 </div>
               )}
 
+              <div className="flex items-center justify-between">
+                <span className="text-slate-600">Shipping</span>
+                <span className="font-medium">
+                  {calculatingShipping ? (
+                    <span className="text-xs animate-pulse opacity-50 italic">Calculating...</span>
+                  ) : shippingResult ? (
+                    shippingResult.shippingFee === 0 ? "FREE" : formatMoney(shippingResult.shippingFee, cart?.currency)
+                  ) : (
+                    <span className="text-xs opacity-50 italic">Select location</span>
+                  )}
+                </span>
+              </div>
+
+              {shippingResult?.estimatedDeliveryDate && (
+                <div className="text-[11px] text-slate-500 italic text-right">
+                  Estimated delivery by {new Date(shippingResult.estimatedDeliveryDate).toLocaleDateString()}
+                </div>
+              )}
+
               <div className="pt-2 border-t flex items-center justify-between text-base font-bold text-slate-900">
                 <span>Total</span>
-                <span>{formatMoney(cart?.total ?? 0, cart?.currency)}</span>
+                <span>{formatMoney((cart?.subtotal ?? 0) - (cart?.discountAmount ?? 0) + (shippingResult?.shippingFee ?? 0), cart?.currency)}</span>
               </div>
             </div>
 
             {order ? (
               <div className="rounded-sm border border-black/10 p-3 bg-slate-50">
-                <div className="text-sm font-medium">Order created</div>
-                <div className="text-xs text-slate-600 mt-1">
-                  <span className="opacity-70">OrderId:</span>{" "}
-                  <span className="font-mono break-all">{order.id}</span>
+                <div className="text-sm font-medium text-green-700 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                  Order created
+                </div>
+                <div className="text-[10px] text-slate-500 mt-1 font-mono">
+                  {order.id}
                 </div>
               </div>
             ) : null}

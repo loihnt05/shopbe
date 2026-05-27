@@ -80,6 +80,22 @@ export type CouponResponseDto = {
   isActive: boolean;
 };
 
+export type ShippingCalculationRequestDto = {
+  city: string;
+  district: string;
+  ward?: string;
+  subtotal: number;
+  totalWeight?: number;
+  distanceKm?: number;
+};
+
+export type ShippingCalculationResponseDto = {
+  shippingFee: number;
+  zoneName?: string;
+  estimatedDeliveryDate: string;
+  currency: string;
+};
+
 export type CreateOrderResponse = {
   id: string;
   status?: string;
@@ -554,6 +570,14 @@ export const shopbeApi = {
   coupons: {
     list: (signal?: AbortSignal) =>
       requestJson<CouponResponseDto[]>("/api/coupons", { signal }),
+  },
+  shipping: {
+    calculate: (body: ShippingCalculationRequestDto, signal?: AbortSignal) =>
+      requestJson<ShippingCalculationResponseDto>("/api/shipping-zones/calculate", {
+        method: "POST",
+        body,
+        signal,
+      }),
   },
   cart: {
     getMyCart: (accessToken: string, signal?: AbortSignal) =>

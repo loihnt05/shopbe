@@ -2,6 +2,7 @@ using Moq;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Order.Commands.CreateOrder;
 using Shopbe.Application.Order.Dtos;
+using Shopbe.Application.Shipping.Dtos;
 using Shopbe.Domain.Entities.ShoppingCart;
 
 namespace Shopbe.Application.Tests.Order;
@@ -59,7 +60,11 @@ public class CreateOrderEnqueuesEmailTests
         uow.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var tracking = new Mock<IBehaviorTrackingService>();
-        var handler = new CreateOrderHandler(uow.Object, tracking.Object);
+        var shipCalc = new Mock<IShippingCalculationService>();
+        shipCalc.Setup(x => x.CalculateAsync(It.IsAny<ShippingCalculationRequestDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ShippingCalculationResponseDto(10000, "Zone", DateTime.UtcNow.AddDays(1)));
+
+        var handler = new CreateOrderHandler(uow.Object, tracking.Object, shipCalc.Object);
 
         var cmd = new CreateOrderCommand(userId, new CreateOrderRequestDto
         {
