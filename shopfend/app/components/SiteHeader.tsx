@@ -115,6 +115,7 @@ export default function SiteHeader() {
               <Link className="hover:text-white transition-colors" href="/recommendations">Recommendations</Link>
               <Link className="hover:text-white transition-colors" href="/chat">Chat</Link>
               <Link className="hover:text-white transition-colors" href="/purchases">My Purchases</Link>
+              <Link className="hover:text-white transition-colors" href="/cart">Cart</Link>
             </nav>
           </div>
 

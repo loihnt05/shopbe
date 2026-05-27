@@ -67,25 +67,48 @@ public static class ShippingDataSeeder
             ("HCMC Inner", "Hồ Chí Minh", "Quận 11"),
             ("HCMC Inner", "Hồ Chí Minh", "Quận Phú Nhuận"),
             ("HCMC Inner", "Hồ Chí Minh", "Quận Bình Thạnh"),
+            ("HCMC Inner", "Hồ Chí Minh", "Quận Tân Bình"),
+            ("HCMC Inner", "Hồ Chí Minh", "Quận Gò Vấp"),
             
             // HCMC Suburbs
             ("HCMC Suburbs", "Hồ Chí Minh", "Quận 7"),
             ("HCMC Suburbs", "Hồ Chí Minh", "Quận 8"),
             ("HCMC Suburbs", "Hồ Chí Minh", "Quận 12"),
+            ("HCMC Suburbs", "Hồ Chí Minh", "Quận Bình Tân"),
+            ("HCMC Suburbs", "Hồ Chí Minh", "Thành phố Thủ Đức"),
             ("HCMC Suburbs", "Hồ Chí Minh", "Huyện Nhà Bè"),
             ("HCMC Suburbs", "Hồ Chí Minh", "Huyện Hóc Môn"),
             ("HCMC Suburbs", "Hồ Chí Minh", "Huyện Bình Chánh"),
+            ("HCMC Suburbs", "Hồ Chí Minh", "Huyện Củ Chi"),
+            ("HCMC Suburbs", "Hồ Chí Minh", "Huyện Cần Giờ"),
             
-            // National Inner
+            // National Inner (Major Cities)
             ("National Inner", "Hà Nội", "Quận Ba Đình"),
             ("National Inner", "Hà Nội", "Quận Hoàn Kiếm"),
             ("National Inner", "Hà Nội", "Quận Tây Hồ"),
+            ("National Inner", "Hà Nội", "Quận Cầu Giấy"),
+            ("National Inner", "Hà Nội", "Quận Đống Đa"),
+            ("National Inner", "Hà Nội", "Quận Hai Bà Trưng"),
             ("National Inner", "Đà Nẵng", "Quận Hải Châu"),
             ("National Inner", "Đà Nẵng", "Quận Thanh Khê"),
+            ("National Inner", "Đà Nẵng", "Quận Sơn Trà"),
+            ("National Inner", "Cần Thơ", "Quận Ninh Kiều"),
+            ("National Inner", "Cần Thơ", "Quận Bình Thủy"),
+            ("National Inner", "Hải Phòng", "Quận Hồng Bàng"),
+            ("National Inner", "Hải Phòng", "Quận Ngô Quyền"),
             
-            // National Remote
+            // National Remote (Provinces and Remote areas)
+            ("National Remote", "Lâm Đồng", "Thành phố Đà Lạt"),
             ("National Remote", "Lâm Đồng", "Huyện Lạc Dương"),
-            ("National Remote", "Hà Giang", "Huyện Đồng Văn")
+            ("National Remote", "Hà Giang", "Huyện Đồng Văn"),
+            ("National Remote", "Hà Giang", "Huyện Mèo Vạc"),
+            ("National Remote", "Lào Cai", "Thành phố Sa Pa"),
+            ("National Remote", "Cao Bằng", "Huyện Trùng Khánh"),
+            ("National Remote", "Kiên Giang", "Thành phố Phú Quốc"),
+            ("National Remote", "Bình Thuận", "Huyện Đảo Phú Quý"),
+            ("National Remote", "Quảng Nam", "Huyện Nam Trà My"),
+            ("National Remote", "Kon Tum", "Huyện Tu Mơ Rông"),
+            ("National Remote", "Đắk Lắk", "Huyện Lắk")
         };
 
         var createdMappings = 0;

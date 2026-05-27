@@ -199,19 +199,6 @@ public sealed class CreateOrderHandler(
 
                 order.DiscountAmount = discountAmount;
                 order.CouponId = coupon.Id;
-
-                // Consume coupon usage atomically (usage_count + coupon_usages)
-                var consumed = await unitOfWork.Coupons.TryConsumeAsync(
-                    coupon.Id,
-                    request.UserId,
-                    order.Id,
-                    DateTime.UtcNow,
-                    cancellationToken);
-
-                if (!consumed)
-                    throw new InvalidOperationException("Coupon usage limit exceeded");
-
-                order.Coupon = coupon;
             }
 
             // Calculate live shipping fee securely on backend
@@ -239,7 +226,24 @@ public sealed class CreateOrderHandler(
                 Note = "Order created"
             });
 
+            // Add the order to the DbContext FIRST.
+            // This prevents EF Core from creating a stub entity when TryConsumeAsync adds CouponUsage with this OrderId.
             await unitOfWork.Orders.AddAsync(order, cancellationToken);
+
+            // Now consume the coupon usage if applicable
+            if (coupon != null)
+            {
+                // Consume coupon usage atomically (usage_count + coupon_usages)
+                var consumed = await unitOfWork.Coupons.TryConsumeAsync(
+                    coupon.Id,
+                    request.UserId,
+                    order.Id,
+                    DateTime.UtcNow,
+                    cancellationToken);
+
+                if (!consumed)
+                    throw new InvalidOperationException("Coupon usage limit exceeded");
+            }
 
             // Track purchase behavior for each item
             foreach (var item in order.OrderItems)
@@ -282,7 +286,11 @@ public sealed class CreateOrderHandler(
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             await unitOfWork.CommitTransactionAsync();
-            return order.ToDetailsDto();
+            
+            var details = order.ToDetailsDto();
+            if (coupon != null) details.CouponCode = coupon.Code;
+            
+            return details;
         }
         catch
         {

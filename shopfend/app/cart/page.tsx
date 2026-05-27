@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
 import Link from "next/link";
-import { resolveApiUrl } from "@/lib/shopbeApi";
+import { resolveApiUrl, shopbeApi, type CouponResponseDto } from "@/lib/shopbeApi";
 import { useCart } from "../components/CartContext";
 import { formatMoney } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
@@ -15,17 +15,21 @@ export default function CartPage() {
   const { cart, loading, updateQuantity, removeItem, refreshCart, applyCoupon, removeCoupon } = useCart();
   const [error, setError] = useState<string | null>(null);
   const [busyItem, setBusyItem] = useState<string | null>(null);
-  const [couponCode, setCouponCode] = useState("");
+  const [coupons, setCoupons] = useState<CouponResponseDto[]>([]);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
 
-  const handleApplyCoupon = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!couponCode.trim()) return;
+  useEffect(() => {
+    shopbeApi.coupons.list()
+      .then(setCoupons)
+      .catch(() => {});
+  }, []);
+
+  const handleApplyCoupon = async (code: string) => {
+    if (!code) return;
     try {
       setError(null);
       setApplyingCoupon(true);
-      await applyCoupon(couponCode);
-      setCouponCode("");
+      await applyCoupon(code);
     } catch (e: unknown) {
       setError(errorMessage(e, "Failed to apply coupon"));
     } finally {
@@ -217,26 +221,33 @@ export default function CartPage() {
               </div>
 
               {!cart.couponCode ? (
-                <form onSubmit={handleApplyCoupon} className="space-y-2">
-                  <div className="text-sm font-medium text-slate-700">Have a coupon?</div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Enter code"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      className="sb-input flex-1 uppercase"
-                      disabled={applyingCoupon}
-                    />
-                    <button
-                      type="submit"
-                      disabled={applyingCoupon || !couponCode.trim()}
-                      className="sb-btn-outline whitespace-nowrap"
-                    >
-                      {applyingCoupon ? "..." : "Apply"}
-                    </button>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-slate-700">Available Coupons</div>
+                  <select
+                    className="sb-input w-full"
+                    onChange={(e) => handleApplyCoupon(e.target.value)}
+                    disabled={applyingCoupon || loading}
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Choose a coupon...</option>
+                    {coupons.filter(c => c.isActive).map(c => {
+                      const isDisabled = cart.subtotal < c.minOrderAmount;
+                      return (
+                        <option 
+                          key={c.id} 
+                          value={c.code} 
+                          disabled={isDisabled}
+                        >
+                          {c.code} - {c.description || `${c.value}${c.discountType === 'Percentage' ? '%' : ''} off`}
+                          {isDisabled ? ` (Min. ${formatMoney(c.minOrderAmount, cart.currency)} required)` : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <div className="text-[10px] text-slate-400">
+                    Coupons are automatically validated against your subtotal.
                   </div>
-                </form>
+                </div>
               ) : (
                 <div className="bg-green-50 border border-green-200 rounded p-3 space-y-2">
                   <div className="text-xs font-semibold text-green-700 uppercase tracking-wider">

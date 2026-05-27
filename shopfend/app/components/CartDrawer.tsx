@@ -217,11 +217,19 @@ export default function CartDrawer() {
               }}
             >
               <option value="">Select a coupon...</option>
-              {coupons.filter(c => c.isActive).map(c => (
-                <option key={c.id} value={c.code}>
-                  {c.code} - {c.description ?? `${c.value}${c.discountType === 'Percentage' ? '%' : ''} off`}
-                </option>
-              ))}
+              {coupons.filter(c => c.isActive).map(c => {
+                const isDisabled = subtotal < c.minOrderAmount;
+                return (
+                  <option 
+                    key={c.id} 
+                    value={c.code}
+                    disabled={isDisabled}
+                  >
+                    {c.code} - {c.description ?? `${c.value}${c.discountType === 'Percentage' ? '%' : ''} off`}
+                    {isDisabled ? ` (Min. ${formatMoney(c.minOrderAmount, currency)})` : ''}
+                  </option>
+                );
+              })}
             </select>
           </div>
         )}
@@ -253,28 +261,52 @@ export default function CartDrawer() {
                 </span>
               </div>
             </div>
-            <Link
-              href="/checkout"
-              onClick={closeDrawer}
-              style={{
-                display: "block",
-                textAlign: "center",
-                width: "100%",
-                padding: "14px",
-                borderRadius: 10,
-                background: "#e5e5e5",
-                border: "none",
-                color: "#0e0e11",
-                fontSize: 14,
-                fontWeight: 700,
-                cursor: "pointer",
-                letterSpacing: "-0.01em",
-                fontFamily: "var(--font-dm-sans), sans-serif",
-                textDecoration: "none"
-              }}
-            >
-              Checkout →
-            </Link>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <Link
+                href="/cart"
+                onClick={closeDrawer}
+                style={{
+                  display: "block",
+                  textAlign: "center",
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: 10,
+                  background: "transparent",
+                  border: "1px solid #2a2a30",
+                  color: "#e0e0e0",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  letterSpacing: "-0.01em",
+                  fontFamily: "var(--font-dm-sans), sans-serif",
+                  textDecoration: "none"
+                }}
+              >
+                View Full Cart
+              </Link>
+              <Link
+                href="/checkout"
+                onClick={closeDrawer}
+                style={{
+                  display: "block",
+                  textAlign: "center",
+                  width: "100%",
+                  padding: "14px",
+                  borderRadius: 10,
+                  background: "#e5e5e5",
+                  border: "none",
+                  color: "#0e0e11",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  letterSpacing: "-0.01em",
+                  fontFamily: "var(--font-dm-sans), sans-serif",
+                  textDecoration: "none"
+                }}
+              >
+                Checkout →
+              </Link>
+            </div>
           </div>
         )}
       </div>
