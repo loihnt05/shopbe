@@ -543,7 +543,7 @@ function ProductsPageInner() {
               </div>
               <p className="text-gray-900 font-bold text-lg">No matches found</p>
               <p className="text-gray-500 mt-1 mb-6">
-                Try adjusting your filters or search terms to find what you're looking for.
+                Try adjusting your filters or search terms to find what you&apos;re looking for.
               </p>
               <button 
                 onClick={clearFilters}

@@ -75,7 +75,7 @@ export default function Chatbot() {
         try {
             const data = JSON.parse(fullText);
             if (data.products) {
-                const summary = `${data.recommendation_reason}\n\nTop picks:\n${data.products.map((p: any) => `- ${p.name} (${p.price})`).join("\n")}\n\n[Open full chat for details](/chat)`;
+                const summary = `${data.recommendation_reason}\n\nTop picks:\n${data.products.map((p: { name: string; price: string }) => `- ${p.name} (${p.price})`).join("\n")}\n\n[Open full chat for details](/chat)`;
                 fullText = summary;
             }
         } catch(e) { 

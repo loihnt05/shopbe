@@ -189,7 +189,7 @@ export default function CheckoutPage() {
       setSavedAddresses(saved);
 
       // Extract unique recent addresses from orders that aren't already in savedAddresses
-      const uniqueRecent: any[] = [];
+      const uniqueRecent: RecentAddress[] = [];
       const seen = new Set(saved.map(a => `${a.city}|${a.district}|${a.ward}|${a.addressLine}|${a.receiverName}`));
 
       recent.items.forEach(order => {
@@ -198,12 +198,12 @@ export default function CheckoutPage() {
           seen.add(key);
           uniqueRecent.push({
             id: `recent-${order.id}`,
-            receiverName: order.shippingReceiverName,
-            phone: order.shippingPhone,
-            city: order.shippingCity,
-            district: order.shippingDistrict,
-            ward: order.shippingWard,
-            addressLine: order.shippingAddressLine,
+            receiverName: order.shippingReceiverName || "",
+            phone: order.shippingPhone || "",
+            city: order.shippingCity || "",
+            district: order.shippingDistrict || "",
+            ward: order.shippingWard || "",
+            addressLine: order.shippingAddressLine || "",
             isRecent: true
           });
         }
@@ -232,12 +232,12 @@ export default function CheckoutPage() {
     if (selectedAddressId !== "new") {
       const addr = [...savedAddresses, ...recentAddresses].find(a => a.id === selectedAddressId);
       if (addr) {
-        setReceiverName(addr.receiverName);
-        setPhone(addr.phone);
-        setProvince(addr.city);
-        setDistrict(addr.district);
-        setWard(addr.ward);
-        setAddressLine(addr.addressLine);
+        setReceiverName(addr.receiverName || "");
+        setPhone(addr.phone || "");
+        setProvince(addr.city || "");
+        setDistrict(addr.district || "");
+        setWard(addr.ward || "");
+        setAddressLine(addr.addressLine || "");
       }
     } else {
       // Clear fields for new address if they were from a saved address
@@ -250,7 +250,7 @@ export default function CheckoutPage() {
       setAddressLine("");
       setSaveAddress(false);
     }
-  }, [selectedAddressId, savedAddresses, session?.user?.name]);
+  }, [selectedAddressId, savedAddresses, recentAddresses, session?.user?.name]);
 
   // Set default receiver name when session is available and on new address
   useEffect(() => {
