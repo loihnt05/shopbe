@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession, signIn } from "next-auth/react";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
@@ -138,17 +138,6 @@ function StripePaymentForm(props: {
   );
 }
 
-type RecentAddress = {
-  id: string;
-  receiverName: string;
-  phone: string;
-  city: string;
-  district: string;
-  ward: string;
-  addressLine: string;
-  isRecent: boolean;
-};
-
 export default function CheckoutPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -161,8 +150,8 @@ export default function CheckoutPage() {
 
   // Address State
   const [savedAddresses, setSavedAddresses] = useState<UserAddressResponseDto[]>([]);
-  const [recentAddresses, setRecentAddresses] = useState<RecentAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("new");
+  const [showAddressModal, setShowAddressModal] = useState(false);
   const [saveAddress, setSaveAddress] = useState(false);
   const [receiverName, setReceiverName] = useState("");
   const [phone, setPhone] = useState("");
@@ -176,61 +165,33 @@ export default function CheckoutPage() {
   const [loadingAddresses, setLoadingAddresses] = useState(false);
   const shipAbortRef = useRef<AbortController | null>(null);
 
-  // Load saved and recent addresses
-  const loadAddresses = async () => {
+  // Load saved addresses
+  const loadAddresses = useCallback(async () => {
     if (!session?.accessToken) return;
     try {
       setLoadingAddresses(true);
-      const [saved, recent] = await Promise.all([
-        shopbeApi.userAddresses.getMyAddresses(session.accessToken),
-        shopbeApi.orders.getMyOrders(session.accessToken, { pageSize: 10 })
-      ]);
-
+      const saved = await shopbeApi.userAddresses.getMyAddresses(session.accessToken);
       setSavedAddresses(saved);
-
-      // Extract unique recent addresses from orders that aren't already in savedAddresses
-      const uniqueRecent: RecentAddress[] = [];
-      const seen = new Set(saved.map(a => `${a.city}|${a.district}|${a.ward}|${a.addressLine}|${a.receiverName}`));
-
-      recent.items.forEach(order => {
-        const key = `${order.shippingCity}|${order.shippingDistrict}|${order.shippingWard}|${order.shippingAddressLine}|${order.shippingReceiverName}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          uniqueRecent.push({
-            id: `recent-${order.id}`,
-            receiverName: order.shippingReceiverName || "",
-            phone: order.shippingPhone || "",
-            city: order.shippingCity || "",
-            district: order.shippingDistrict || "",
-            ward: order.shippingWard || "",
-            addressLine: order.shippingAddressLine || "",
-            isRecent: true
-          });
-        }
-      });
-      setRecentAddresses(uniqueRecent);
 
       if (saved.length > 0) {
         const defaultAddr = saved.find(a => a.isDefault) || saved[0];
         setSelectedAddressId(defaultAddr.id);
-      } else if (uniqueRecent.length > 0) {
-        setSelectedAddressId(uniqueRecent[0].id);
       }
     } catch (e) {
       console.error("Failed to load addresses", e);
     } finally {
       setLoadingAddresses(false);
     }
-  };
+  }, [session?.accessToken]);
 
   useEffect(() => {
     if (status === "authenticated") loadAddresses();
-  }, [status, session?.accessToken]);
+  }, [status, loadAddresses]);
 
   // When selected address changes, update the form fields if it's a saved address
   useEffect(() => {
     if (selectedAddressId !== "new") {
-      const addr = [...savedAddresses, ...recentAddresses].find(a => a.id === selectedAddressId);
+      const addr = savedAddresses.find(a => a.id === selectedAddressId);
       if (addr) {
         setReceiverName(addr.receiverName || "");
         setPhone(addr.phone || "");
@@ -250,7 +211,7 @@ export default function CheckoutPage() {
       setAddressLine("");
       setSaveAddress(false);
     }
-  }, [selectedAddressId, savedAddresses, recentAddresses, session?.user?.name]);
+  }, [selectedAddressId, savedAddresses, session?.user?.name]);
 
   // Set default receiver name when session is available and on new address
   useEffect(() => {
@@ -309,7 +270,7 @@ export default function CheckoutPage() {
     return abortRef.current.signal;
   };
 
-  const loadCart = async () => {
+  const loadCart = useCallback(async () => {
     if (!session?.accessToken) return;
     try {
       setLoadingCart(true);
@@ -325,13 +286,12 @@ export default function CheckoutPage() {
     } finally {
       setLoadingCart(false);
     }
-  };
+  }, [session?.accessToken]);
 
   useEffect(() => {
     if (status === "authenticated") loadCart();
     return () => abortRef.current?.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
+  }, [status, loadCart]);
 
   // Shipping Calculation Effect
   useEffect(() => {
@@ -366,7 +326,7 @@ export default function CheckoutPage() {
       clearTimeout(timer);
       shipAbortRef.current?.abort();
     };
-  }, [province, district, ward, cart?.subtotal]);
+  }, [province, district, ward, cart]);
 
   const doCheckout = async () => {
     if (!session?.accessToken) return;
@@ -521,77 +481,48 @@ export default function CheckoutPage() {
         <div className="lg:col-span-7 space-y-4">
           {/* Shipping Address */}
           <div className="sb-card p-5 space-y-4">
-            <h2 className="font-semibold text-lg">Shipping Address</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-lg">Shipping Address</h2>
+              {savedAddresses.length > 0 && (
+                <button 
+                  type="button"
+                  onClick={() => setShowAddressModal(true)}
+                  className="text-xs font-bold text-[var(--brand)] hover:text-[var(--brand-hover)] bg-[var(--brand)]/5 px-2 py-1 rounded"
+                >
+                  {selectedAddressId === 'new' ? 'CHOOSE SAVED' : 'CHANGE ADDRESS'}
+                </button>
+              )}
+            </div>
             
-            {(savedAddresses.length > 0 || recentAddresses.length > 0) && (
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Select Saved or Recent Address</label>
-                <div className="grid grid-cols-1 gap-2">
-                  {savedAddresses.map(addr => (
-                    <label 
-                      key={addr.id} 
-                      className={`flex items-start p-3 border rounded-md cursor-pointer transition-colors ${selectedAddressId === addr.id ? 'border-[var(--brand)] bg-[var(--brand)]/5' : 'hover:bg-slate-50'}`}
-                    >
-                      <input 
-                        type="radio" 
-                        name="selectedAddressId" 
-                        value={addr.id} 
-                        checked={selectedAddressId === addr.id}
-                        onChange={() => setSelectedAddressId(addr.id)}
-                        className="mt-1 mr-3 accent-[var(--brand)]"
-                      />
-                      <div className="text-sm">
-                        <div className="font-medium">
-                          {addr.receiverName} 
-                          {addr.isDefault && <span className="text-[10px] bg-slate-200 px-1 rounded ml-1">DEFAULT</span>}
-                          <span className="text-[10px] bg-blue-100 text-blue-700 px-1 rounded ml-1 uppercase">SAVED</span>
-                        </div>
-                        <div className="text-slate-600">{addr.phone}</div>
-                        <div className="text-slate-500 text-xs">{addr.addressLine}, {addr.ward}, {addr.district}, {addr.city}</div>
+            {selectedAddressId !== 'new' && (
+              <div className="p-3 border border-[var(--brand)] rounded-md bg-[var(--brand)]/5">
+                {(() => {
+                  const addr = savedAddresses.find(a => a.id === selectedAddressId);
+                  if (!addr) return null;
+                  return (
+                    <div className="text-sm">
+                      <div className="font-medium">
+                        {addr.receiverName} 
+                        {addr.isDefault && <span className="text-[10px] bg-slate-200 px-1 rounded ml-1">DEFAULT</span>}
+                        <span className="text-[10px] bg-blue-100 text-blue-700 px-1 rounded ml-1 uppercase">SAVED</span>
                       </div>
-                    </label>
-                  ))}
-                  {recentAddresses.map(addr => (
-                    <label 
-                      key={addr.id} 
-                      className={`flex items-start p-3 border rounded-md cursor-pointer transition-colors ${selectedAddressId === addr.id ? 'border-[var(--brand)] bg-[var(--brand)]/5' : 'hover:bg-slate-50'}`}
-                    >
-                      <input 
-                        type="radio" 
-                        name="selectedAddressId" 
-                        value={addr.id} 
-                        checked={selectedAddressId === addr.id}
-                        onChange={() => setSelectedAddressId(addr.id)}
-                        className="mt-1 mr-3 accent-[var(--brand)]"
-                      />
-                      <div className="text-sm">
-                        <div className="font-medium">
-                          {addr.receiverName}
-                          <span className="text-[10px] bg-orange-100 text-orange-700 px-1 rounded ml-1 uppercase">RECENT</span>
-                        </div>
-                        <div className="text-slate-600">{addr.phone}</div>
-                        <div className="text-slate-500 text-xs">{addr.addressLine}, {addr.ward}, {addr.district}, {addr.city}</div>
-                      </div>
-                    </label>
-                  ))}
-                  <label 
-                    className={`flex items-center p-3 border rounded-md cursor-pointer transition-colors ${selectedAddressId === 'new' ? 'border-[var(--brand)] bg-[var(--brand)]/5' : 'hover:bg-slate-50'}`}
-                  >
-                    <input 
-                      type="radio" 
-                      name="selectedAddressId" 
-                      value="new" 
-                      checked={selectedAddressId === 'new'}
-                      onChange={() => setSelectedAddressId('new')}
-                      className="mr-3 accent-[var(--brand)]"
-                    />
-                    <div className="text-sm font-medium">Use a new address</div>
-                  </label>
-                </div>
+                      <div className="text-slate-600">{addr.phone}</div>
+                      <div className="text-slate-500 text-xs">{addr.addressLine}, {addr.ward}, {addr.district}, {addr.city}</div>
+                      <button 
+                        type="button" 
+                        onClick={() => setSelectedAddressId('new')}
+                        className="mt-2 text-xs text-slate-500 hover:text-slate-800 underline font-medium"
+                      >
+                        Use a different (new) address
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
-            <div className={`space-y-4 transition-opacity ${selectedAddressId !== 'new' ? 'opacity-50 pointer-events-none' : ''}`}>
+            <div className={`space-y-4 ${selectedAddressId !== 'new' ? 'hidden' : ''}`}>
+              <div className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">New Shipping Address</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Receiver Name</label>
@@ -601,7 +532,6 @@ export default function CheckoutPage() {
                     onChange={e => setReceiverName(e.target.value)}
                     className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
                     placeholder="Full name"
-                    readOnly={selectedAddressId !== 'new'}
                   />
                 </div>
                 <div className="space-y-1">
@@ -612,7 +542,6 @@ export default function CheckoutPage() {
                     onChange={e => setPhone(e.target.value)}
                     className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
                     placeholder="0123 456 789"
-                    readOnly={selectedAddressId !== 'new'}
                   />
                 </div>
               </div>
@@ -624,7 +553,6 @@ export default function CheckoutPage() {
                     value={province} 
                     onChange={e => { setProvince(e.target.value); setDistrict(""); setWard(""); }}
                     className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
-                    disabled={selectedAddressId !== 'new'}
                   >
                     <option value="">Select Province</option>
                     {provinceOptions}
@@ -635,7 +563,7 @@ export default function CheckoutPage() {
                   <select 
                     value={district} 
                     onChange={e => { setDistrict(e.target.value); setWard(""); }}
-                    disabled={!province || selectedAddressId !== 'new'}
+                    disabled={!province}
                     className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none disabled:bg-slate-50"
                   >
                     <option value="">Select District</option>
@@ -647,7 +575,7 @@ export default function CheckoutPage() {
                   <select 
                     value={ward} 
                     onChange={e => setWard(e.target.value)}
-                    disabled={!district || selectedAddressId !== 'new'}
+                    disabled={!district}
                     className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none disabled:bg-slate-50"
                   >
                     <option value="">Select Ward</option>
@@ -664,21 +592,18 @@ export default function CheckoutPage() {
                   onChange={e => setAddressLine(e.target.value)}
                   className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
                   placeholder="Street name, Building, House number..."
-                  readOnly={selectedAddressId !== 'new'}
                 />
               </div>
 
-              {selectedAddressId === 'new' && (
-                <label className="flex items-center text-sm cursor-pointer select-none">
-                  <input 
-                    type="checkbox" 
-                    checked={saveAddress}
-                    onChange={e => setSaveAddress(e.target.checked)}
-                    className="mr-2 accent-[var(--brand)]"
-                  />
-                  Save this address for future use
-                </label>
-              )}
+              <label className="flex items-center text-sm cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  checked={saveAddress}
+                  onChange={e => setSaveAddress(e.target.checked)}
+                  className="mr-2 accent-[var(--brand)]"
+                />
+                Save this address for future use
+              </label>
             </div>
           </div>
           <div className="sb-card p-5">
@@ -884,6 +809,70 @@ export default function CheckoutPage() {
         backend (user profile endpoints) or extend this page to submit shipping
         fields.
       </div>
+
+      {/* Address Selection Modal */}
+      {showAddressModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-200">
+            <div className="p-4 border-b flex items-center justify-between bg-slate-50">
+              <h3 className="font-bold text-lg text-slate-800">Select Saved Address</h3>
+              <button 
+                onClick={() => setShowAddressModal(false)} 
+                className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+              >
+                <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="overflow-y-auto p-4 space-y-3 bg-white">
+              {loadingAddresses ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                  <div className="w-8 h-8 border-4 border-slate-200 border-t-[var(--brand)] rounded-full animate-spin"></div>
+                  <div className="text-sm text-slate-500 font-medium">Loading your addresses...</div>
+                </div>
+              ) : savedAddresses.length > 0 ? (
+                savedAddresses.map(addr => (
+                  <div 
+                    key={addr.id}
+                    onClick={() => { setSelectedAddressId(addr.id); setShowAddressModal(false); }}
+                    className={`p-4 border-2 rounded-xl cursor-pointer transition-all hover:border-[var(--brand)] hover:shadow-md ${
+                      selectedAddressId === addr.id 
+                        ? 'border-[var(--brand)] bg-[var(--brand)]/5 ring-1 ring-[var(--brand)]/20' 
+                        : 'border-slate-100 bg-slate-50/50'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <div className="font-bold text-slate-900">{addr.receiverName}</div>
+                      {addr.isDefault && (
+                        <span className="text-[10px] font-bold bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full uppercase tracking-tight">Default</span>
+                      )}
+                    </div>
+                    <div className="text-sm text-slate-600 font-medium mb-1">{addr.phone}</div>
+                    <div className="text-xs text-slate-500 leading-relaxed">
+                      {addr.addressLine}, {addr.ward}, {addr.district}, {addr.city}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  No saved addresses found.
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t bg-slate-50">
+              <button 
+                onClick={() => { setSelectedAddressId('new'); setShowAddressModal(false); }}
+                className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-sm font-bold text-slate-500 hover:border-[var(--brand)] hover:text-[var(--brand)] hover:bg-white transition-all"
+              >
+                + ADD NEW ADDRESS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

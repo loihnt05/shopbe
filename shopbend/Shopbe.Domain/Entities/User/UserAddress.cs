@@ -9,6 +9,8 @@ public class UserAddress : BaseEntity
     public string City { get; set; } = string.Empty;
     public string District { get; set; } = string.Empty;
     public string Ward { get; set; } = string.Empty;
+    public string? Label { get; set; } // Home, Office, Other
+    public string? Note { get; set; }
     public bool IsDefault { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
     

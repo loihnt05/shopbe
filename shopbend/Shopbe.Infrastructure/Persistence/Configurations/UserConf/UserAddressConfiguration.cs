@@ -41,6 +41,12 @@ public class UserAddressConfiguration : IEntityTypeConfiguration<UserAddress>
             .IsRequired()
             .HasMaxLength(100);
 
+        builder.Property(ua => ua.Label)
+            .HasMaxLength(50);
+
+        builder.Property(ua => ua.Note)
+            .HasMaxLength(500);
+
         builder.Property(ua => ua.DeletedAt)
             .IsRequired(false);
 
