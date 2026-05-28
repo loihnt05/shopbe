@@ -218,7 +218,7 @@ export default function CartDrawer() {
             >
               <option value="">Select a coupon...</option>
               {coupons.filter(c => c.isActive).map(c => {
-                const isDisabled = subtotal < c.minOrderAmount;
+                const isDisabled = subtotal < c.minOrderAmount || c.count <= 0;
                 return (
                   <option 
                     key={c.id} 
@@ -226,7 +226,8 @@ export default function CartDrawer() {
                     disabled={isDisabled}
                   >
                     {c.code} - {c.description ?? `${c.value}${c.discountType === 'Percentage' ? '%' : ''} off`}
-                    {isDisabled ? ` (Min. ${formatMoney(c.minOrderAmount, currency)})` : ''}
+                    {c.count <= 0 ? ' (Exhausted)' : ` (${c.count} left)`}
+                    {subtotal < c.minOrderAmount ? ` (Min. ${formatMoney(c.minOrderAmount, currency)})` : ''}
                   </option>
                 );
               })}

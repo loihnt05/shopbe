@@ -15,6 +15,7 @@ import {
   type CreateOrderResponse,
   type CreateStripePaymentIntentResponse,
   type ShippingCalculationResponseDto,
+  type UserAddressResponseDto,
 } from "@/lib/shopbeApi";
 import { formatMoney } from "@/lib/format";
 import { errorMessage } from "@/lib/errors";
@@ -137,6 +138,17 @@ function StripePaymentForm(props: {
   );
 }
 
+type RecentAddress = {
+  id: string;
+  receiverName: string;
+  phone: string;
+  city: string;
+  district: string;
+  ward: string;
+  addressLine: string;
+  isRecent: boolean;
+};
+
 export default function CheckoutPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -148,6 +160,10 @@ export default function CheckoutPage() {
   const [stripeKeyWarning, setStripeKeyWarning] = useState<string | null>(null);
 
   // Address State
+  const [savedAddresses, setSavedAddresses] = useState<UserAddressResponseDto[]>([]);
+  const [recentAddresses, setRecentAddresses] = useState<RecentAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("new");
+  const [saveAddress, setSaveAddress] = useState(false);
   const [receiverName, setReceiverName] = useState("");
   const [phone, setPhone] = useState("");
   const [province, setProvince] = useState("");
@@ -157,14 +173,91 @@ export default function CheckoutPage() {
 
   const [shippingResult, setShippingResult] = useState<ShippingCalculationResponseDto | null>(null);
   const [calculatingShipping, setCalculatingShipping] = useState(false);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
   const shipAbortRef = useRef<AbortController | null>(null);
 
-  // Set default receiver name when session is available
+  // Load saved and recent addresses
+  const loadAddresses = async () => {
+    if (!session?.accessToken) return;
+    try {
+      setLoadingAddresses(true);
+      const [saved, recent] = await Promise.all([
+        shopbeApi.userAddresses.getMyAddresses(session.accessToken),
+        shopbeApi.orders.getMyOrders(session.accessToken, { pageSize: 10 })
+      ]);
+
+      setSavedAddresses(saved);
+
+      // Extract unique recent addresses from orders that aren't already in savedAddresses
+      const uniqueRecent: any[] = [];
+      const seen = new Set(saved.map(a => `${a.city}|${a.district}|${a.ward}|${a.addressLine}|${a.receiverName}`));
+
+      recent.items.forEach(order => {
+        const key = `${order.shippingCity}|${order.shippingDistrict}|${order.shippingWard}|${order.shippingAddressLine}|${order.shippingReceiverName}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          uniqueRecent.push({
+            id: `recent-${order.id}`,
+            receiverName: order.shippingReceiverName,
+            phone: order.shippingPhone,
+            city: order.shippingCity,
+            district: order.shippingDistrict,
+            ward: order.shippingWard,
+            addressLine: order.shippingAddressLine,
+            isRecent: true
+          });
+        }
+      });
+      setRecentAddresses(uniqueRecent);
+
+      if (saved.length > 0) {
+        const defaultAddr = saved.find(a => a.isDefault) || saved[0];
+        setSelectedAddressId(defaultAddr.id);
+      } else if (uniqueRecent.length > 0) {
+        setSelectedAddressId(uniqueRecent[0].id);
+      }
+    } catch (e) {
+      console.error("Failed to load addresses", e);
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
+
   useEffect(() => {
-    if (session?.user?.name && !receiverName) {
+    if (status === "authenticated") loadAddresses();
+  }, [status, session?.accessToken]);
+
+  // When selected address changes, update the form fields if it's a saved address
+  useEffect(() => {
+    if (selectedAddressId !== "new") {
+      const addr = [...savedAddresses, ...recentAddresses].find(a => a.id === selectedAddressId);
+      if (addr) {
+        setReceiverName(addr.receiverName);
+        setPhone(addr.phone);
+        setProvince(addr.city);
+        setDistrict(addr.district);
+        setWard(addr.ward);
+        setAddressLine(addr.addressLine);
+      }
+    } else {
+      // Clear fields for new address if they were from a saved address
+      // but only if we weren't already on "new"
+      setReceiverName(session?.user?.name || "");
+      setPhone("");
+      setProvince("");
+      setDistrict("");
+      setWard("");
+      setAddressLine("");
+      setSaveAddress(false);
+    }
+  }, [selectedAddressId, savedAddresses, session?.user?.name]);
+
+  // Set default receiver name when session is available and on new address
+  useEffect(() => {
+    if (session?.user?.name && !receiverName && selectedAddressId === "new") {
       setReceiverName(session.user.name);
     }
-  }, [session, receiverName]);
+  }, [session, receiverName, selectedAddressId]);
 
   // If the env publishable key isn't set, fetch it from backend config.
   // Also warn when env key differs from backend key (common cause of PaymentElement loaderror).
@@ -292,7 +385,28 @@ export default function CheckoutPage() {
     setPaymentIntent(null);
 
     try {
+      let finalUserAddressId = selectedAddressId !== "new" ? selectedAddressId : undefined;
+
+      // If it's a new address and user wants to save it
+      if (selectedAddressId === "new" && saveAddress) {
+        try {
+          const newAddr = await shopbeApi.userAddresses.create(session.accessToken, {
+            receiverName,
+            phone,
+            addressLine,
+            city: province,
+            district,
+            ward,
+            isDefault: savedAddresses.length === 0
+          });
+          finalUserAddressId = newAddr.id;
+        } catch (e) {
+          console.error("Failed to save address, continuing with checkout", e);
+        }
+      }
+
       const created = await shopbeApi.orders.create(session.accessToken, {
+        userAddressId: finalUserAddressId,
         useDefaultAddressIfAvailable: false,
         shippingReceiverName: receiverName,
         shippingPhone: phone,
@@ -409,76 +523,162 @@ export default function CheckoutPage() {
           <div className="sb-card p-5 space-y-4">
             <h2 className="font-semibold text-lg">Shipping Address</h2>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {(savedAddresses.length > 0 || recentAddresses.length > 0) && (
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Select Saved or Recent Address</label>
+                <div className="grid grid-cols-1 gap-2">
+                  {savedAddresses.map(addr => (
+                    <label 
+                      key={addr.id} 
+                      className={`flex items-start p-3 border rounded-md cursor-pointer transition-colors ${selectedAddressId === addr.id ? 'border-[var(--brand)] bg-[var(--brand)]/5' : 'hover:bg-slate-50'}`}
+                    >
+                      <input 
+                        type="radio" 
+                        name="selectedAddressId" 
+                        value={addr.id} 
+                        checked={selectedAddressId === addr.id}
+                        onChange={() => setSelectedAddressId(addr.id)}
+                        className="mt-1 mr-3 accent-[var(--brand)]"
+                      />
+                      <div className="text-sm">
+                        <div className="font-medium">
+                          {addr.receiverName} 
+                          {addr.isDefault && <span className="text-[10px] bg-slate-200 px-1 rounded ml-1">DEFAULT</span>}
+                          <span className="text-[10px] bg-blue-100 text-blue-700 px-1 rounded ml-1 uppercase">SAVED</span>
+                        </div>
+                        <div className="text-slate-600">{addr.phone}</div>
+                        <div className="text-slate-500 text-xs">{addr.addressLine}, {addr.ward}, {addr.district}, {addr.city}</div>
+                      </div>
+                    </label>
+                  ))}
+                  {recentAddresses.map(addr => (
+                    <label 
+                      key={addr.id} 
+                      className={`flex items-start p-3 border rounded-md cursor-pointer transition-colors ${selectedAddressId === addr.id ? 'border-[var(--brand)] bg-[var(--brand)]/5' : 'hover:bg-slate-50'}`}
+                    >
+                      <input 
+                        type="radio" 
+                        name="selectedAddressId" 
+                        value={addr.id} 
+                        checked={selectedAddressId === addr.id}
+                        onChange={() => setSelectedAddressId(addr.id)}
+                        className="mt-1 mr-3 accent-[var(--brand)]"
+                      />
+                      <div className="text-sm">
+                        <div className="font-medium">
+                          {addr.receiverName}
+                          <span className="text-[10px] bg-orange-100 text-orange-700 px-1 rounded ml-1 uppercase">RECENT</span>
+                        </div>
+                        <div className="text-slate-600">{addr.phone}</div>
+                        <div className="text-slate-500 text-xs">{addr.addressLine}, {addr.ward}, {addr.district}, {addr.city}</div>
+                      </div>
+                    </label>
+                  ))}
+                  <label 
+                    className={`flex items-center p-3 border rounded-md cursor-pointer transition-colors ${selectedAddressId === 'new' ? 'border-[var(--brand)] bg-[var(--brand)]/5' : 'hover:bg-slate-50'}`}
+                  >
+                    <input 
+                      type="radio" 
+                      name="selectedAddressId" 
+                      value="new" 
+                      checked={selectedAddressId === 'new'}
+                      onChange={() => setSelectedAddressId('new')}
+                      className="mr-3 accent-[var(--brand)]"
+                    />
+                    <div className="text-sm font-medium">Use a new address</div>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            <div className={`space-y-4 transition-opacity ${selectedAddressId !== 'new' ? 'opacity-50 pointer-events-none' : ''}`}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Receiver Name</label>
+                  <input 
+                    type="text" 
+                    value={receiverName} 
+                    onChange={e => setReceiverName(e.target.value)}
+                    className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
+                    placeholder="Full name"
+                    readOnly={selectedAddressId !== 'new'}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Phone Number</label>
+                  <input 
+                    type="text" 
+                    value={phone} 
+                    onChange={e => setPhone(e.target.value)}
+                    className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
+                    placeholder="0123 456 789"
+                    readOnly={selectedAddressId !== 'new'}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Province</label>
+                  <select 
+                    value={province} 
+                    onChange={e => { setProvince(e.target.value); setDistrict(""); setWard(""); }}
+                    className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
+                    disabled={selectedAddressId !== 'new'}
+                  >
+                    <option value="">Select Province</option>
+                    {provinceOptions}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">District</label>
+                  <select 
+                    value={district} 
+                    onChange={e => { setDistrict(e.target.value); setWard(""); }}
+                    disabled={!province || selectedAddressId !== 'new'}
+                    className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none disabled:bg-slate-50"
+                  >
+                    <option value="">Select District</option>
+                    {districtOptions}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Ward</label>
+                  <select 
+                    value={ward} 
+                    onChange={e => setWard(e.target.value)}
+                    disabled={!district || selectedAddressId !== 'new'}
+                    className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none disabled:bg-slate-50"
+                  >
+                    <option value="">Select Ward</option>
+                    {wardOptions}
+                  </select>
+                </div>
+              </div>
+
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Receiver Name</label>
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Detailed Address</label>
                 <input 
                   type="text" 
-                  value={receiverName} 
-                  onChange={e => setReceiverName(e.target.value)}
+                  value={addressLine} 
+                  onChange={e => setAddressLine(e.target.value)}
                   className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
-                  placeholder="Full name"
+                  placeholder="Street name, Building, House number..."
+                  readOnly={selectedAddressId !== 'new'}
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Phone Number</label>
-                <input 
-                  type="text" 
-                  value={phone} 
-                  onChange={e => setPhone(e.target.value)}
-                  className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
-                  placeholder="0123 456 789"
-                />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Province</label>
-                <select 
-                  value={province} 
-                  onChange={e => { setProvince(e.target.value); setDistrict(""); setWard(""); }}
-                  className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
-                >
-                  <option value="">Select Province</option>
-                  {provinceOptions}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">District</label>
-                <select 
-                  value={district} 
-                  onChange={e => { setDistrict(e.target.value); setWard(""); }}
-                  disabled={!province}
-                  className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none disabled:bg-slate-50"
-                >
-                  <option value="">Select District</option>
-                  {districtOptions}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Ward</label>
-                <select 
-                  value={ward} 
-                  onChange={e => setWard(e.target.value)}
-                  disabled={!district}
-                  className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none disabled:bg-slate-50"
-                >
-                  <option value="">Select Ward</option>
-                  {wardOptions}
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Detailed Address</label>
-              <input 
-                type="text" 
-                value={addressLine} 
-                onChange={e => setAddressLine(e.target.value)}
-                className="w-full p-2 border rounded-md focus:ring-1 focus:ring-[var(--brand)] outline-none"
-                placeholder="Street name, Building, House number..."
-              />
+              {selectedAddressId === 'new' && (
+                <label className="flex items-center text-sm cursor-pointer select-none">
+                  <input 
+                    type="checkbox" 
+                    checked={saveAddress}
+                    onChange={e => setSaveAddress(e.target.checked)}
+                    className="mr-2 accent-[var(--brand)]"
+                  />
+                  Save this address for future use
+                </label>
+              )}
             </div>
           </div>
           <div className="sb-card p-5">

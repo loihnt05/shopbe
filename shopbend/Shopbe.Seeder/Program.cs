@@ -349,7 +349,7 @@ internal sealed class ShopbeLargeDataSeeder
                 MinOrderAmount = 0,
                 MaxDiscountAmount = 1000000,
                 ExpiredAt = DateTime.UtcNow.AddYears(1),
-                UsageLimit = 1000,
+                Count = 1000,
                 IsActive = true
             },
             new()
@@ -360,6 +360,7 @@ internal sealed class ShopbeLargeDataSeeder
                 Value = 0,
                 MinOrderAmount = 500000,
                 ExpiredAt = DateTime.UtcNow.AddYears(1),
+                Count = 999999,
                 IsActive = true
             },
             new()
@@ -370,6 +371,7 @@ internal sealed class ShopbeLargeDataSeeder
                 Value = 50000,
                 MinOrderAmount = 200000,
                 ExpiredAt = DateTime.UtcNow.AddYears(1),
+                Count = 999999,
                 IsActive = true
             },
             new()
@@ -381,6 +383,51 @@ internal sealed class ShopbeLargeDataSeeder
                 MinOrderAmount = 100000,
                 MaxDiscountAmount = 200000,
                 ExpiredAt = DateTime.UtcNow.AddYears(1),
+                Count = 500,
+                IsActive = true
+            },
+            new()
+            {
+                Code = "FLASH20",
+                Description = "Limited time 20% off!",
+                DiscountType = Shopbe.Domain.Enums.DiscountType.Percentage,
+                Value = 20,
+                MinOrderAmount = 0,
+                ExpiredAt = DateTime.UtcNow.AddDays(7),
+                Count = 10,
+                IsActive = true
+            },
+            new()
+            {
+                Code = "WELCOME100",
+                Description = "100k off for big spenders (Min 1M)",
+                DiscountType = Shopbe.Domain.Enums.DiscountType.FixedAmount,
+                Value = 100000,
+                MinOrderAmount = 1000000,
+                ExpiredAt = DateTime.UtcNow.AddYears(1),
+                Count = 50,
+                IsActive = true
+            },
+            new()
+            {
+                Code = "EXHAUSTED",
+                Description = "This coupon is all gone",
+                DiscountType = Shopbe.Domain.Enums.DiscountType.Percentage,
+                Value = 99,
+                MinOrderAmount = 0,
+                ExpiredAt = DateTime.UtcNow.AddYears(1),
+                Count = 0,
+                IsActive = true
+            },
+            new()
+            {
+                Code = "EXPIRED",
+                Description = "This coupon ended yesterday",
+                DiscountType = Shopbe.Domain.Enums.DiscountType.Percentage,
+                Value = 50,
+                MinOrderAmount = 0,
+                ExpiredAt = DateTime.UtcNow.AddDays(-1),
+                Count = 100,
                 IsActive = true
             }
         };

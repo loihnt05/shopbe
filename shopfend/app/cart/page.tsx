@@ -231,7 +231,7 @@ export default function CartPage() {
                   >
                     <option value="" disabled>Choose a coupon...</option>
                     {coupons.filter(c => c.isActive).map(c => {
-                      const isDisabled = cart.subtotal < c.minOrderAmount;
+                      const isDisabled = cart.subtotal < c.minOrderAmount || c.count <= 0;
                       return (
                         <option 
                           key={c.id} 
@@ -239,7 +239,8 @@ export default function CartPage() {
                           disabled={isDisabled}
                         >
                           {c.code} - {c.description || `${c.value}${c.discountType === 'Percentage' ? '%' : ''} off`}
-                          {isDisabled ? ` (Min. ${formatMoney(c.minOrderAmount, cart.currency)} required)` : ''}
+                          {c.count <= 0 ? ' (Exhausted)' : ` (${c.count} left)`}
+                          {cart.subtotal < c.minOrderAmount ? ` (Min. ${formatMoney(c.minOrderAmount, cart.currency)} required)` : ''}
                         </option>
                       );
                     })}

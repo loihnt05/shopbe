@@ -77,6 +77,8 @@ export type CouponResponseDto = {
   minOrderAmount: number;
   maxDiscountAmount?: number;
   expiredAt: string;
+  count: number;
+  usageCount: number;
   isActive: boolean;
 };
 
@@ -461,6 +463,63 @@ export type ProductQueryDto = {
   pageSize?: number;
 };
 
+export function couponResponseToDto(item: unknown): CouponResponseDto {
+  const obj = asRecord(item) ?? {};
+
+  const pickString = (k: string): string | undefined => {
+    const v = obj[k] ?? obj[k.charAt(0).toUpperCase() + k.slice(1)];
+    return typeof v === "string" ? v : undefined;
+  };
+
+  const pickNumber = (k: string): number | undefined => {
+    const v = obj[k] ?? obj[k.charAt(0).toUpperCase() + k.slice(1)];
+    return typeof v === "number" ? v : undefined;
+  };
+
+  const pickBoolean = (k: string): boolean => {
+    const v = obj[k] ?? obj[k.charAt(0).toUpperCase() + k.slice(1)];
+    return typeof v === "boolean" ? v : false;
+  };
+
+  return {
+    id: pickString("id") ?? "",
+    code: pickString("code") ?? "",
+    description: pickString("description"),
+    discountType: pickString("discountType") ?? "",
+    value: pickNumber("value") ?? 0,
+    minOrderAmount: pickNumber("minOrderAmount") ?? 0,
+    maxDiscountAmount: pickNumber("maxDiscountAmount"),
+    expiredAt: pickString("expiredAt") ?? "",
+    count: pickNumber("count") ?? 0,
+    usageCount: pickNumber("usageCount") ?? 0,
+    isActive: pickBoolean("isActive"),
+  };
+}
+
+export type UserAddressResponseDto = {
+  id: string;
+  userId: string;
+  receiverName: string;
+  phone: string;
+  addressLine: string;
+  city: string;
+  district: string;
+  ward: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UserAddressRequestDto = {
+  receiverName: string;
+  phone: string;
+  addressLine: string;
+  city: string;
+  district: string;
+  ward: string;
+  isDefault: boolean;
+};
+
 export const shopbeApi = {
   recommendations: {
     topSelling: (limit: number, signal?: AbortSignal) =>
@@ -568,12 +627,28 @@ export const shopbeApi = {
     },
   },
   coupons: {
-    list: (signal?: AbortSignal) =>
-      requestJson<CouponResponseDto[]>("/api/coupons", { signal }),
+    list: async (signal?: AbortSignal) => {
+      const data = await requestJson<unknown[]>("/api/coupons", { signal });
+      return data.map(couponResponseToDto);
+    },
   },
   shipping: {
     calculate: (body: ShippingCalculationRequestDto, signal?: AbortSignal) =>
       requestJson<ShippingCalculationResponseDto>("/api/shipping-zones/calculate", {
+        method: "POST",
+        body,
+        signal,
+      }),
+  },
+  userAddresses: {
+    getMyAddresses: (accessToken: string, signal?: AbortSignal) =>
+      requestJson<UserAddressResponseDto[]>("/api/user-addresses/me", {
+        accessToken,
+        signal,
+      }),
+    create: (accessToken: string, body: UserAddressRequestDto, signal?: AbortSignal) =>
+      requestJson<UserAddressResponseDto>("/api/user-addresses", {
+        accessToken,
         method: "POST",
         body,
         signal,
@@ -637,6 +712,7 @@ export const shopbeApi = {
     create: (
       accessToken: string,
       body: {
+        userAddressId?: string;
         useDefaultAddressIfAvailable?: boolean;
         shippingReceiverName?: string;
         shippingPhone?: string;
@@ -655,6 +731,34 @@ export const shopbeApi = {
         body,
         signal,
       }),
+
+    getMyOrders: (
+      accessToken: string,
+      params?: { page?: number; pageSize?: number },
+      signal?: AbortSignal
+    ) => {
+      const query = new URLSearchParams();
+      if (params?.page) query.append("page", params.page.toString());
+      if (params?.pageSize) query.append("pageSize", params.pageSize.toString());
+      const queryString = query.toString();
+      return requestJson<{
+        items: Array<{
+          id: string;
+          createdAt: string;
+          status: string;
+          totalAmount: number;
+          shippingReceiverName: string;
+          shippingPhone: string;
+          shippingAddressLine: string;
+          shippingCity: string;
+          shippingDistrict: string;
+          shippingWard: string;
+        }>;
+      }>(`/api/orders${queryString ? `?${queryString}` : ""}`, {
+        accessToken,
+        signal,
+      });
+    },
 
     purchasedProducts: (
       accessToken: string,

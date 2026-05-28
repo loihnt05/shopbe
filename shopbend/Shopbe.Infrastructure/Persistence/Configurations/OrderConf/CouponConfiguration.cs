@@ -42,7 +42,8 @@ public class CouponConfiguration : IEntityTypeConfiguration<Coupon>
         builder.Property(c => c.ExpiredAt)
             .IsRequired();
 
-        builder.Property(c => c.UsageLimit);
+        builder.Property(c => c.Count)
+            .IsRequired();
 
         builder.Property(c => c.UsageCount)
             .IsRequired();

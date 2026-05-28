@@ -32,7 +32,7 @@ public class UpdateCouponHandler(IUnitOfWork unitOfWork, IMapper mapper) : IRequ
         existing.MinOrderAmount = r.MinOrderAmount;
         existing.MaxDiscountAmount = r.MaxDiscountAmount;
         existing.ExpiredAt = r.ExpiredAt;
-        existing.UsageLimit = r.UsageLimit;
+        existing.Count = r.Count;
         existing.IsActive = r.IsActive;
         existing.UpdatedAt = DateTime.UtcNow;
 
@@ -55,8 +55,8 @@ public class UpdateCouponHandler(IUnitOfWork unitOfWork, IMapper mapper) : IRequ
         if (r.MaxDiscountAmount.HasValue && r.MaxDiscountAmount.Value < 0)
             throw new ArgumentException("MaxDiscountAmount must be >= 0.");
 
-        if (r.UsageLimit.HasValue && r.UsageLimit.Value <= 0)
-            throw new ArgumentException("UsageLimit must be greater than 0 when specified.");
+        if (r.Count <= 0)
+            throw new ArgumentException("Count must be greater than 0.");
 
         if (r.DiscountType == DiscountType.Percentage)
         {

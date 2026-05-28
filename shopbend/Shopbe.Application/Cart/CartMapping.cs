@@ -34,7 +34,7 @@ public static class CartMapping
         var displayQty = totalQty > 99 ? "99+" : totalQty.ToString();
 
         decimal discountAmount = 0;
-        if (cart.Coupon != null && cart.Coupon.IsActive && cart.Coupon.ExpiredAt > DateTime.UtcNow && subtotal >= cart.Coupon.MinOrderAmount)
+        if (cart.Coupon != null && cart.Coupon.IsActive && cart.Coupon.Count > 0 && cart.Coupon.ExpiredAt > DateTime.UtcNow && subtotal >= cart.Coupon.MinOrderAmount)
         {
             if (cart.Coupon.DiscountType == Shopbe.Domain.Enums.DiscountType.Percentage)
             {

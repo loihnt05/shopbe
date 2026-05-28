@@ -76,14 +76,15 @@ public sealed class CouponRepository(ShopDbContext context) : ICouponRepository
     public async Task<bool> TryConsumeAsync(Guid couponId, Guid userId, Guid orderId, DateTime usedAtUtc,
         CancellationToken cancellationToken = default)
     {
-        // 1) Atomically increment UsageCount only if within limit.
+        // 1) Atomically decrement Count and increment UsageCount only if Count > 0.
         //    This prevents concurrent oversubscription.
         var affected = await context.Database.ExecuteSqlInterpolatedAsync($$"""
                                                                             UPDATE "Coupons"
-                                                                            SET "UsageCount" = "UsageCount" + 1,
+                                                                            SET "Count" = "Count" - 1,
+                                                                                "UsageCount" = "UsageCount" + 1,
                                                                                 "UpdatedAt" = CURRENT_TIMESTAMP
                                                                             WHERE "Id" = {{couponId}}
-                                                                              AND ("UsageLimit" IS NULL OR "UsageCount" < "UsageLimit");
+                                                                              AND "Count" > 0;
                                                                             """, cancellationToken);
 
         if (affected == 0)

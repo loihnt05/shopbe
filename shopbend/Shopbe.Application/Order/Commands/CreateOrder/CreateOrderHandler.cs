@@ -171,6 +171,8 @@ public sealed class CreateOrderHandler(
                     throw new InvalidOperationException("Coupon is inactive");
                 if (coupon.ExpiredAt <= DateTime.UtcNow)
                     throw new InvalidOperationException("Coupon is expired");
+                if (coupon.Count <= 0)
+                    throw new InvalidOperationException("Coupon usage limit reached.");
                 if (subtotal < coupon.MinOrderAmount)
                     throw new InvalidOperationException($"Order subtotal must be at least {coupon.MinOrderAmount} to use this coupon");
 

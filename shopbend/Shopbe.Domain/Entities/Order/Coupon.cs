@@ -11,7 +11,7 @@ public class Coupon : BaseEntity
     public decimal MinOrderAmount { get; set; }
     public decimal? MaxDiscountAmount { get; set; }
     public DateTime ExpiredAt { get; set; }
-    public int? UsageLimit { get; set; }
+    public int Count { get; set; }
     public int UsageCount { get; set; }
     public bool IsActive { get; set; }
 

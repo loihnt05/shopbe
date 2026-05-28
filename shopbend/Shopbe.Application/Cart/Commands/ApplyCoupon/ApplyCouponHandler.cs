@@ -35,7 +35,7 @@ public class ApplyCouponHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser
             throw new InvalidOperationException("Coupon has expired.");
         }
 
-        if (coupon.UsageLimit.HasValue && coupon.UsageCount >= coupon.UsageLimit.Value)
+        if (coupon.Count <= 0)
         {
             throw new InvalidOperationException("Coupon usage limit reached.");
         }

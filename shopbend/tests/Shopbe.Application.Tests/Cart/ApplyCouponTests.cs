@@ -52,7 +52,8 @@ public class ApplyCouponTests
             ExpiredAt = DateTime.UtcNow.AddDays(1),
             MinOrderAmount = 100,
             DiscountType = DiscountType.FixedAmount,
-            Value = 10
+            Value = 10,
+            Count = 10
         };
         var cart = new ShoppingCart
         {
@@ -93,5 +94,34 @@ public class ApplyCouponTests
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => _handler.Handle(new ApplyCouponCommand(couponCode), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Handle_ShouldThrow_WhenCouponCountIsZero()
+    {
+        // Arrange
+        var keycloakId = "user-123";
+        var userId = Guid.NewGuid();
+        var couponCode = "EXHAUSTED";
+        var coupon = new CouponEntity
+        {
+            Id = Guid.NewGuid(),
+            Code = couponCode,
+            IsActive = true,
+            ExpiredAt = DateTime.UtcNow.AddDays(1),
+            MinOrderAmount = 100,
+            DiscountType = DiscountType.FixedAmount,
+            Value = 10,
+            Count = 0
+        };
+
+        _currentUser.SetupGet(c => c.KeycloakId).Returns(keycloakId);
+        _userRepository.Setup(r => r.GetUserByKeycloakIdAsync(keycloakId)).ReturnsAsync(new Shopbe.Domain.Entities.User.User { Id = userId, FullName = "Test User" });
+        _cartRepository.Setup(r => r.GetOrCreateByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(new ShoppingCart { UserId = userId });
+        _couponRepository.Setup(r => r.GetByCodeAsync(couponCode, It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _handler.Handle(new ApplyCouponCommand(couponCode), CancellationToken.None));
+        Assert.Equal("Coupon usage limit reached.", ex.Message);
     }
 }

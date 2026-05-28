@@ -10,6 +10,6 @@ public record CouponRequestDto(
 	decimal MinOrderAmount,
 	decimal? MaxDiscountAmount,
 	DateTime ExpiredAt,
-	int? UsageLimit,
+	int Count,
 	bool IsActive
 );

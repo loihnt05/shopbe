@@ -34,7 +34,7 @@ public class CreateCouponHandler(IUnitOfWork unitOfWork, IMapper mapper) : IRequ
             MinOrderAmount = r.MinOrderAmount,
             MaxDiscountAmount = r.MaxDiscountAmount,
             ExpiredAt = r.ExpiredAt,
-            UsageLimit = r.UsageLimit,
+            Count = r.Count,
             UsageCount = 0,
             IsActive = r.IsActive,
             CreatedAt = now,
@@ -58,8 +58,8 @@ public class CreateCouponHandler(IUnitOfWork unitOfWork, IMapper mapper) : IRequ
         if (r.MaxDiscountAmount.HasValue && r.MaxDiscountAmount.Value < 0)
             throw new ArgumentException("MaxDiscountAmount must be >= 0.");
 
-        if (r.UsageLimit.HasValue && r.UsageLimit.Value <= 0)
-            throw new ArgumentException("UsageLimit must be greater than 0 when specified.");
+        if (r.Count <= 0)
+            throw new ArgumentException("Count must be greater than 0.");
 
         if (r.DiscountType == DiscountType.Percentage)
         {

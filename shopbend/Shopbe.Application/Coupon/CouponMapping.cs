@@ -15,7 +15,7 @@ public static class CouponMapping
             coupon.MinOrderAmount,
             coupon.MaxDiscountAmount,
             coupon.ExpiredAt,
-            coupon.UsageLimit,
+            coupon.Count,
             coupon.UsageCount,
             coupon.IsActive,
             coupon.CreatedAt,

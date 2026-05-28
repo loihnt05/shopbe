@@ -11,7 +11,7 @@ public record CouponResponseDto(
 	decimal MinOrderAmount,
 	decimal? MaxDiscountAmount,
 	DateTime ExpiredAt,
-	int? UsageLimit,
+	int Count,
 	int UsageCount,
 	bool IsActive,
 	DateTime CreatedAt,

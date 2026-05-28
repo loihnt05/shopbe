@@ -1,11 +1,11 @@
-using AutoMapper;
 using MediatR;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Coupon.Dtos;
+using Shopbe.Application.Coupon;
 
 namespace Shopbe.Application.Coupon.Queries.GetAllCoupons;
 
-public class GetAllCouponsHandler(IUnitOfWork unitOfWork, IMapper mapper)
+public class GetAllCouponsHandler(IUnitOfWork unitOfWork)
     : IRequestHandler<GetAllCouponsQuery, IEnumerable<CouponResponseDto>>
 {
     public async Task<IEnumerable<CouponResponseDto>> Handle(GetAllCouponsQuery request, CancellationToken cancellationToken)
@@ -45,7 +45,7 @@ public class GetAllCouponsHandler(IUnitOfWork unitOfWork, IMapper mapper)
             query = query.Take(request.Filter.Take.Value);
         }
 
-        return query.Select(c => mapper.Map<CouponResponseDto>(c));
+        return query.ToList().Select(c => c.ToDto());
     }
 }
 
