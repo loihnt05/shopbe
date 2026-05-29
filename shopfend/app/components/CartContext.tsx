@@ -13,6 +13,7 @@ interface CartContextType {
   refreshCart: () => Promise<void>;
   openDrawer: () => void;
   closeDrawer: () => void;
+  addItem: (productId: string, productVariantId: string, quantity: number) => Promise<void>;
   updateQuantity: (productVariantId: string, quantity: number) => Promise<void>;
   removeItem: (productVariantId: string) => Promise<void>;
   applyCoupon: (code: string) => Promise<void>;
@@ -135,6 +136,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
   const closeDrawer = () => setIsDrawerOpen(false);
 
+  const addItem = async (productId: string, productVariantId: string, quantity: number) => {
+    if (!session?.accessToken) return;
+    try {
+      setLoading(true);
+      const data = await shopbeApi.cart.addItem(session.accessToken, {
+        productId,
+        productVariantId,
+        quantity,
+      });
+      setCart(data);
+      setTotalQuantity(data.totalQuantity ?? 0);
+      setDisplayQuantity(data.displayQuantity ?? "");
+      openDrawer();
+    } catch (e) {
+      console.error("Failed to add item to cart", e);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -146,6 +168,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         refreshCart,
         openDrawer,
         closeDrawer,
+        addItem,
         updateQuantity,
         removeItem,
         applyCoupon,

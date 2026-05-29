@@ -19,6 +19,7 @@ public class ProductVariantRepository(ShopDbContext context) : IProductVariantRe
         return await context.ProductVariants
             .Include(pv => pv.ProductVariantAttributes)
             .ThenInclude(pva => pva.AttributeValue)
+            .ThenInclude(av => av.Attribute)
             .FirstOrDefaultAsync(pv => pv.Id == productVariantId && pv.DeletedAt == null);
     }
 

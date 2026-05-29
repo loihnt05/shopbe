@@ -8,5 +8,11 @@ public interface IWishlistItemRepository
     Task CreateWishListItemAsync(WishlistItem wishlistItem);
     Task UpdateWishListItemAsync(WishlistItem wishlistItem);
     Task DeleteWishListItemAsync(Guid id);
-    Task<IEnumerable<WishlistItem?>> GetWishlistItemByUserIdAsync(Guid userId);
+    Task DeleteBulkAsync(Guid userId, IEnumerable<Guid> productIds);
+    Task<IEnumerable<WishlistItem?>> GetWishlistItemByUserIdAsync(
+        Guid userId,
+        string? sortBy = null,
+        bool? inStockOnly = null,
+        int pageNumber = 1,
+        int pageSize = 20);
 }

@@ -9,7 +9,7 @@ public class GetProductByIdHandler(IUnitOfWork unitOfWork, ICacheService cache)
 {
     public async Task<ProductResponseDto?> Handle(GetProductByIdQuery request, CancellationToken cancellationToken)
     {
-        var cacheKey = $"products:id:{request.Id}";
+        var cacheKey = $"products:id:v2:{request.Id}";
 
         // 1) Try cache
         var cached = await cache.GetAsync<ProductResponseDto>(cacheKey);

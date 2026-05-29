@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, Package, MessageSquareText, Lightbulb, ShoppingBag } from "lucide-react";
+import { Sparkles, Package, Lightbulb, ShoppingBag } from "lucide-react";
 
 interface QuickActionsProps {
   onAction: (text: string) => void;

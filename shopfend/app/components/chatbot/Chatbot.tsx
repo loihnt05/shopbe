@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import ChatButton from "./ChatButton";
 import ChatWindow from "./ChatWindow";
 import { useSession } from "next-auth/react";
-import { shopbeApi, ChatMessageDto } from "../../../lib/shopbeApi";
+import { shopbeApi } from "../../../lib/shopbeApi";
 
 export type Message = {
   id: string;
@@ -78,7 +78,7 @@ export default function Chatbot() {
                 const summary = `${data.recommendation_reason}\n\nTop picks:\n${data.products.map((p: { name: string; price: string }) => `- ${p.name} (${p.price})`).join("\n")}\n\n[Open full chat for details](/chat)`;
                 fullText = summary;
             }
-        } catch(e) { 
+        } catch { 
             // Handle truncated JSON in overlay too
             const reasonMatch = fullText.match(/"recommendation_reason":\s*"([^"]+)"/);
             if (reasonMatch && reasonMatch[1]) {

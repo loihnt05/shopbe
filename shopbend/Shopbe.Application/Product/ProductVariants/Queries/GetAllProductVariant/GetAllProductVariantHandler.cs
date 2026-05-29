@@ -41,7 +41,7 @@ public class GetAllProductVariantHandler(IUnitOfWork unitOfWork)
                 "VND",
                 v.StockQuantity,
                 v.IsActive,
-                Array.Empty<string>())
+                Array.Empty<ProductVariantAttributeResponseDto>())
             )
             .ToList();
     }

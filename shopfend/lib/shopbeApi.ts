@@ -33,6 +33,11 @@ export type ProductListItem = {
   variants?: ProductVariantDto[];
 };
 
+export type ProductVariantAttributeDto = {
+  name: string;
+  value: string;
+};
+
 export type ProductVariantDto = {
   id: string;
   productId: string;
@@ -41,7 +46,7 @@ export type ProductVariantDto = {
   currency: string;
   stockQuantity?: number | null;
   isActive: boolean;
-  attributeValues?: string[];
+  attributes?: ProductVariantAttributeDto[];
 };
 
 export type ProductDetail = ProductListItem;
@@ -400,13 +405,18 @@ export function productResponseToListItem(item: unknown): ProductListItem {
         currency: (r.currency as string) ?? "VND",
         stockQuantity: (r.stockQuantity as number) ?? 0,
         isActive: (r.isActive as boolean) ?? true,
-        attributeValues: Array.isArray(r.attributeValues) ? (r.attributeValues as string[]) : [],
+        attributes: Array.isArray(r.attributes) 
+          ? (r.attributes as unknown[]).map(a => ({
+              name: (asRecord(a)?.name as string) ?? "Attribute",
+              value: (asRecord(a)?.value as string) ?? ""
+            }))
+          : [],
       };
     });
   };
 
   return {
-    id: pickString("id") ?? "",
+    id: pickString("productId") ?? pickString("id") ?? "",
     name: pickString("name") ?? "",
     slug: pickString("slug") ?? "",
     description: pickStringOrNull("description"),
@@ -828,22 +838,38 @@ export const shopbeApi = {
       ),
   },
   wishlist: {
-    get: async () => {
-      const res = await fetch(`${API_BASE_URL}/wishlist`, {
-        headers: {
-          Authorization: `Bearer ${await getAuthToken()}`,
-        },
+    get: async (accessToken: string, params?: { sortBy?: string; inStockOnly?: boolean; pageNumber?: number; pageSize?: number }, signal?: AbortSignal) => {
+      const query = new URLSearchParams();
+      if (params?.sortBy) query.append("sortBy", params.sortBy);
+      if (params?.inStockOnly !== undefined) query.append("inStockOnly", params.inStockOnly.toString());
+      if (params?.pageNumber) query.append("pageNumber", params.pageNumber.toString());
+      if (params?.pageSize) query.append("pageSize", params.pageSize.toString());
+      
+      const queryString = query.toString();
+      return requestJson<unknown[]>(`/api/wishlist${queryString ? `?${queryString}` : ""}`, {
+        accessToken,
+        signal,
       });
-      if (!res.ok) {
-        throw new Error("Failed to fetch wishlist");
-      }
-      return res.json();
     },
+    add: (accessToken: string, productId: string, signal?: AbortSignal) =>
+      requestJson<unknown>("/api/wishlist/items", {
+        accessToken,
+        method: "POST",
+        body: { productId },
+        signal,
+      }),
+    remove: (accessToken: string, productId: string, signal?: AbortSignal) =>
+      requestJson<boolean>(`/api/wishlist/items/${productId}`, {
+        accessToken,
+        method: "DELETE",
+        signal,
+      }),
+    bulkRemove: (accessToken: string, productIds: string[], signal?: AbortSignal) =>
+      requestJson<boolean>("/api/wishlist/items/bulk", {
+        accessToken,
+        method: "DELETE",
+        body: productIds,
+        signal,
+      }),
   },
 };
-
-async function getAuthToken() {
-  // This is a placeholder. You need to implement a way to get the
-  // authentication token, for example, from next-auth session.
-  return "your-auth-token";
-}

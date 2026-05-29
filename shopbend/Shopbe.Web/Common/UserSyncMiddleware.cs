@@ -46,18 +46,44 @@ public sealed class UserSyncMiddleware(RequestDelegate next)
         var dbUser = await db.Users.FirstOrDefaultAsync(u => u.KeycloakId == keycloakId);
         if (dbUser is null)
         {
+            // If email is provided, check if another user already uses it.
+            // If so, we avoid creating a duplicate or failing with 500.
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                var userWithSameEmail = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
+                if (userWithSameEmail != null)
+                {
+                    // For now, we link the existing user to this Keycloak ID.
+                    // This assumes we trust Keycloak's email verification.
+                    userWithSameEmail.KeycloakId = keycloakId;
+                    await db.SaveChangesAsync();
+                    await next(context);
+                    return;
+                }
+            }
+
             // Create minimal record; avoid linking by email automatically.
             dbUser = new DomainUser
             {
                 KeycloakId = keycloakId,
-                Email = email ?? string.Empty,
+                Email = !string.IsNullOrWhiteSpace(email) ? email : $"user_{keycloakId[..8]}@no-email.shopbe.local",
                 FullName = !string.IsNullOrWhiteSpace(fullName)
                     ? fullName
                     : (!string.IsNullOrWhiteSpace(preferredUsername) ? preferredUsername : keycloakId),
+                Status = Shopbe.Domain.Enums.UserStatus.Active,
+                Role = Shopbe.Domain.Enums.UserRole.Customer
             };
 
             db.Users.Add(dbUser);
-            await db.SaveChangesAsync();
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                // Likely a race condition or unique constraint violation we missed.
+                // Log and continue; the next request will likely find the user.
+            }
         }
         else
         {

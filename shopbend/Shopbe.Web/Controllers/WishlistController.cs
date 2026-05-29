@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.Wishlist.Commands.AddWishlistItem;
+using Shopbe.Application.Wishlist.Commands.BulkRemoveWishlistItems;
 using Shopbe.Application.Wishlist.Commands.RemoveWishlistItem;
 using Shopbe.Application.Wishlist.Dtos;
 using Shopbe.Application.Wishlist.Queries.GetMyWishlist;
@@ -29,10 +30,10 @@ public sealed class WishlistController(IMediator mediator, ICurrentUser currentU
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetMyWishlist(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetMyWishlist([FromQuery] WishlistQueryDto query, CancellationToken cancellationToken)
     {
         var userId = await GetAppUserIdAsync();
-        var result = await mediator.Send(new GetMyWishlistQuery(userId), cancellationToken);
+        var result = await mediator.Send(new GetMyWishlistQuery(userId, query), cancellationToken);
         return Ok(result);
     }
 
@@ -57,6 +58,14 @@ public sealed class WishlistController(IMediator mediator, ICurrentUser currentU
     {
         var userId = await GetAppUserIdAsync();
         var result = await mediator.Send(new RemoveWishlistItemCommand(userId, productId), cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpDelete("items/bulk")]
+    public async Task<IActionResult> BulkRemoveItems([FromBody] IEnumerable<Guid> productIds, CancellationToken cancellationToken)
+    {
+        var userId = await GetAppUserIdAsync();
+        var result = await mediator.Send(new BulkRemoveWishlistItemsCommand(userId, productIds), cancellationToken);
         return Ok(result);
     }
 }

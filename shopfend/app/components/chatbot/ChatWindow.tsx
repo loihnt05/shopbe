@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { X, Send, Bot, User, Minus, Maximize2, Settings, Paperclip, Mic, ChevronDown, Smile, MoreHorizontal } from "lucide-react";
+import { X, Send, Bot, Maximize2, Settings, Paperclip, Mic, ChevronDown, Smile } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Message } from "./Chatbot";
 import ChatMessage from "./ChatMessage";

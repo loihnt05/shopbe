@@ -17,10 +17,12 @@ public class GetProductVariantByIdHandler(IUnitOfWork unitOfWork)
             throw new KeyNotFoundException($"Variant with id '{request.Id}' was not found.");
         }
 
-        var attributeValues = variant.ProductVariantAttributes
-            .Select(pva => pva.AttributeValue?.Value ?? string.Empty)
-            .Where(v => !string.IsNullOrEmpty(v))
-            .Distinct()
+        var attributes = variant.ProductVariantAttributes
+            .Select(pva => new ProductVariantAttributeResponseDto(
+                pva.AttributeValue?.Attribute?.Name ?? "Attribute",
+                pva.AttributeValue?.Value ?? string.Empty
+            ))
+            .Where(a => !string.IsNullOrEmpty(a.Value))
             .ToList();
 
         return new ProductVariantResponseDto(
@@ -31,7 +33,7 @@ public class GetProductVariantByIdHandler(IUnitOfWork unitOfWork)
             "VND",
             variant.StockQuantity,
             variant.IsActive,
-            attributeValues
+            attributes
         );
     }
 }

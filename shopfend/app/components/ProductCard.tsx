@@ -1,6 +1,8 @@
+import { useSession, signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import type { ProductListItem } from "@/lib/shopbeApi";
+import { shopbeApi, type ProductListItem } from "@/lib/shopbeApi";
 import { formatMoney } from "@/lib/format";
 import { StarIcon } from "./icons";
 
@@ -20,6 +22,48 @@ function resolveImageSrc(value?: string | null): string | undefined {
 }
 
 export default function ProductCard({ product }: { product: ProductListItem }) {
+  const { data: session } = useSession();
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (session?.accessToken) {
+      // Small optimization: we could fetch the whole wishlist once in a context,
+      // but for now let's keep it simple.
+      shopbeApi.wishlist.get(session.accessToken).then((items: any) => {
+        setIsWishlisted(items.some((i: any) => i.productId === product.id));
+      }).catch(() => {});
+    }
+  }, [session?.accessToken, product.id]);
+
+  const toggleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!session) {
+      signIn("keycloak");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const token = session?.accessToken;
+      if (!token) return;
+
+      if (isWishlisted) {
+        await shopbeApi.wishlist.remove(token, product.id);
+        setIsWishlisted(false);
+      } else {
+        await shopbeApi.wishlist.add(token, product.id);
+        setIsWishlisted(true);
+      }
+    } catch (error) {
+      console.error("Failed to toggle wishlist", error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const hasDiscount = product.discountPrice != null && product.price != null && product.discountPrice < product.price;
   const displayPrice = hasDiscount ? product.discountPrice : product.price;
   const originalPrice = hasDiscount ? product.price : null;
@@ -61,6 +105,21 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
             <span className="uppercase text-[8px] opacity-80">Off</span>
           </div>
         )}
+
+        <button
+          onClick={toggleWishlist}
+          disabled={busy}
+          className={`absolute bottom-2 right-2 p-1.5 rounded-full shadow-sm transition-all active:scale-90 ${
+            isWishlisted 
+            ? 'bg-brand text-white' 
+            : 'bg-white/80 backdrop-blur-sm text-gray-400 hover:text-brand'
+          }`}
+          title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+        >
+          <svg className={`w-4 h-4 ${isWishlisted ? 'fill-current' : 'fill-none'}`} stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </button>
       </div>
 
       <div className="p-3 flex flex-col flex-1">

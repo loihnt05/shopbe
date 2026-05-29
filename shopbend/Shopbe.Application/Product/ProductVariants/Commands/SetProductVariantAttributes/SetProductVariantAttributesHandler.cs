@@ -51,12 +51,16 @@ public class SetProductVariantAttributesHandler(IUnitOfWork unitOfWork)
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var finalAttributeValues = new List<string>();
-        foreach (var id in attributeValueIds)
-        {
-            var av = await unitOfWork.AttributeValue.GetValueByIdAsync(id);
-            if (av != null) finalAttributeValues.Add(av.Value);
-        }
+        // Reload to get full navigation properties for response
+        var updatedVariant = await unitOfWork.ProductVariant.GetProductVariantByIdWithAttributesAsync(variant.Id);
+
+        var attributes = updatedVariant?.ProductVariantAttributes
+            .Select(pva => new ProductVariantAttributeResponseDto(
+                pva.AttributeValue?.Attribute?.Name ?? "Attribute",
+                pva.AttributeValue?.Value ?? string.Empty
+            ))
+            .Where(a => !string.IsNullOrEmpty(a.Value))
+            .ToList() ?? new List<ProductVariantAttributeResponseDto>();
 
         return new ProductVariantResponseDto(
             variant.Id,
@@ -66,7 +70,7 @@ public class SetProductVariantAttributesHandler(IUnitOfWork unitOfWork)
             "VND",
             variant.StockQuantity,
             variant.IsActive,
-            finalAttributeValues);
+            attributes);
     }
 }
 

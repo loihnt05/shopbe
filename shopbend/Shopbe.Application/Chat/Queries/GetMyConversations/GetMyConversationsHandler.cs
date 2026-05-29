@@ -15,15 +15,19 @@ public sealed class GetMyConversationsHandler(IUnitOfWork unitOfWork)
         foreach (var c in conversations)
         {
             var last = await unitOfWork.ChatMessages.GetLastMessageAsync(c.Id, cancellationToken);
+            string? preview = null;
+            if (last?.Content != null)
+            {
+                preview = last.Content.Length <= 120 ? last.Content : last.Content.Substring(0, 120);
+            }
+
             dtos.Add(new ConversationDto(
                 c.Id,
-                c.Status,
+                c.Status ?? "active",
                 c.StartedAt,
                 c.EndedAt,
                 last?.CreatedAt ?? c.StartedAt,
-                last?.Content is null
-                    ? null
-                    : (last.Content.Length <= 120 ? last.Content : last.Content[..120])
+                preview
             ));
         }
 

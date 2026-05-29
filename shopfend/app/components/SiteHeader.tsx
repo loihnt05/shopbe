@@ -112,6 +112,7 @@ export default function SiteHeader() {
             </form>
             <nav className="flex items-center gap-4 text-[12px] text-white/80 overflow-hidden whitespace-nowrap">
               <Link className="hover:text-white transition-colors" href="/products">All Products</Link>
+              <Link className="hover:text-white transition-colors" href="/wishlist">Wishlist</Link>
               <Link className="hover:text-white transition-colors" href="/recommendations">Recommendations</Link>
               <Link className="hover:text-white transition-colors" href="/chat">Chat</Link>
               <Link className="hover:text-white transition-colors" href="/purchases">My Purchases</Link>

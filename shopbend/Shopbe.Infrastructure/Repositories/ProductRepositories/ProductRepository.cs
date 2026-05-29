@@ -17,6 +17,7 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
                     .ThenInclude(pva => pva.AttributeValue)
+                        .ThenInclude(av => av.Attribute)
             .FirstOrDefaultAsync(p => p.Id == productId);
     }
     public async Task<IEnumerable<Product>> GetAllProductsAsync()
@@ -29,6 +30,7 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
                     .ThenInclude(pva => pva.AttributeValue)
+                        .ThenInclude(av => av.Attribute)
             .ToListAsync();
     }
 
@@ -105,7 +107,8 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             .Include(p => p.Reviews)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
-                    .ThenInclude(pva => pva.AttributeValue);
+                    .ThenInclude(pva => pva.AttributeValue)
+                        .ThenInclude(av => av.Attribute);
 
         query = sortBy?.ToLower() switch
         {

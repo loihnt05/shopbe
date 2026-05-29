@@ -12,8 +12,8 @@ public sealed class AddWishlistItemHandler(IUnitOfWork unitOfWork)
         CancellationToken cancellationToken)
     {
         // idempotent add (avoid duplicates)
-        var existing = (await unitOfWork.WishlistItems.GetWishlistItemByUserIdAsync(request.UserId))
-            .FirstOrDefault(i => i is not null && i.ProductId == request.Request.ProductId);
+        var items = await unitOfWork.WishlistItems.GetWishlistItemByUserIdAsync(request.UserId);
+        var existing = items.FirstOrDefault(i => i is not null && i.ProductId == request.Request.ProductId);
 
         if (existing is not null)
             return existing.ToDto();
@@ -26,6 +26,11 @@ public sealed class AddWishlistItemHandler(IUnitOfWork unitOfWork)
         };
 
         await unitOfWork.WishlistItems.CreateWishListItemAsync(item);
+        
+        // Load product for the response
+        var product = await unitOfWork.Product.GetProductByIdAsync(request.Request.ProductId);
+        item.Product = product;
+        
         return item.ToDto();
     }
 }

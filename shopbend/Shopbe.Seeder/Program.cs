@@ -318,6 +318,7 @@ internal sealed class ShopbeLargeDataSeeder
         Bogus.Randomizer.Seed = new Random(options.RandomSeed);
 
         await SeedShippingLocationsAsync(db, logger, ct);
+        await SeedAttributesAsync(db, logger, ct);
 
         if (options.UseDummy)
         {
@@ -333,7 +334,121 @@ internal sealed class ShopbeLargeDataSeeder
 
         await EnsureUsersAsync(db, logger, options, ct);
         await SeedCouponsAsync(db, logger, ct);
+        
+        await AssignRandomAttributesToVariantsAsync(db, logger, ct);
+        
         await EnsureOrdersAsync(db, logger, options, ct);
+    }
+
+    private static async Task SeedAttributesAsync(ShopDbContext db, ILogger logger, CancellationToken ct)
+    {
+        var attributes = new Dictionary<string, string[]>
+        {
+            { "Color", new[] { "Red", "Blue", "Green", "Black", "White", "Silver", "Gold", "Pink", "Purple", "Yellow", "Orange", "Grey", "Brown" } },
+            { "Size", new[] { "S", "M", "L", "XL", "XXL", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45" } },
+            { "Material", new[] { "Cotton", "Silk", "Leather", "Denim", "Polyester", "Nylon", "Wool", "Plastic", "Metal", "Wood", "Glass" } },
+            { "Storage", new[] { "64GB", "128GB", "256GB", "512GB", "1TB" } },
+            { "RAM", new[] { "4GB", "8GB", "16GB", "32GB" } }
+        };
+
+        var createdAttr = 0;
+        var createdVals = 0;
+
+        foreach (var attrPair in attributes)
+        {
+            var attrName = attrPair.Key;
+            var values = attrPair.Value;
+
+            var existingAttr = await db.ProductAttributes
+                .Include(a => a.AttributeValues)
+                .FirstOrDefaultAsync(a => a.Name == attrName, ct);
+
+            if (existingAttr == null)
+            {
+                existingAttr = new ProductAttribute { Name = attrName };
+                db.ProductAttributes.Add(existingAttr);
+                createdAttr++;
+            }
+
+            foreach (var val in values)
+            {
+                if (existingAttr.AttributeValues.All(v => v.Value != val))
+                {
+                    db.AttributeValues.Add(new AttributeValue
+                    {
+                        AttributeId = existingAttr.Id,
+                        Value = val
+                    });
+                    createdVals++;
+                }
+            }
+        }
+
+        if (createdAttr > 0 || createdVals > 0)
+        {
+            await db.SaveChangesAsync(ct);
+            logger.LogWarning("Seeded {AttrCount} attributes and {ValCount} attribute values.", createdAttr, createdVals);
+        }
+        else
+        {
+            logger.LogWarning("Attributes: ok ({Count}).", await db.ProductAttributes.CountAsync(ct));
+        }
+    }
+
+    private static async Task AssignRandomAttributesToVariantsAsync(ShopDbContext db, ILogger logger, CancellationToken ct)
+    {
+        // Only assign if we have variants and no assignments yet
+        if (await db.ProductVariantAttributes.AnyAsync(ct))
+        {
+            logger.LogWarning("Variant Attributes: ok ({Count}).", await db.ProductVariantAttributes.CountAsync(ct));
+            return;
+        }
+
+        var variants = await db.ProductVariants.ToListAsync(ct);
+        if (variants.Count == 0) return;
+
+        var colors = await db.AttributeValues
+            .Where(v => v.Attribute!.Name == "Color")
+            .ToListAsync(ct);
+        var sizes = await db.AttributeValues
+            .Where(v => v.Attribute!.Name == "Size")
+            .ToListAsync(ct);
+        var materials = await db.AttributeValues
+            .Where(v => v.Attribute!.Name == "Material")
+            .ToListAsync(ct);
+
+        var random = new Random();
+        var assignments = 0;
+
+        foreach (var variant in variants)
+        {
+            var possibleValues = new List<AttributeValue>();
+            
+            var roll = random.Next(100);
+            if (roll < 40) possibleValues.Add(colors[random.Next(colors.Count)]);
+            
+            roll = random.Next(100);
+            if (roll < 30) possibleValues.Add(sizes[random.Next(sizes.Count)]);
+
+            roll = random.Next(100);
+            if (roll < 20) possibleValues.Add(materials[random.Next(materials.Count)]);
+
+            foreach (var val in possibleValues)
+            {
+                db.ProductVariantAttributes.Add(new ProductVariantAttribute
+                {
+                    VariantId = variant.Id,
+                    AttributeValueId = val.Id
+                });
+                assignments++;
+            }
+        }
+
+        if (assignments > 0)
+        {
+            await db.SaveChangesAsync(ct);
+            logger.LogWarning("Randomly assigned {Count} attributes to product variants.", assignments);
+        }
     }
 
     private static async Task SeedCouponsAsync(ShopDbContext db, ILogger logger, CancellationToken ct)

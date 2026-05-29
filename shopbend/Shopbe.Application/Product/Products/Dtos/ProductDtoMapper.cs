@@ -33,9 +33,18 @@ public static class ProductDtoMapper
                 v.StockQuantity,
                 v.IsActive,
                 v.ProductVariantAttributes
-                    .Select(a => a.AttributeValue?.Value ?? string.Empty)
-                    .Where(v => !string.IsNullOrEmpty(v))
-                    .Distinct()
+                    .Select(a => {
+                        var attrName = a.AttributeValue?.Attribute?.Name;
+                        var attrValue = a.AttributeValue?.Value;
+                        
+                        // Fallback logic if navigation properties are missing but IDs are present
+                        if (string.IsNullOrEmpty(attrName)) {
+                            attrName = "Option";
+                        }
+                        
+                        return new ProductVariantAttributeResponseDto(attrName, attrValue ?? string.Empty);
+                    })
+                    .Where(a => !string.IsNullOrEmpty(a.Value))
                     .ToList()
             ))
             .ToList();
@@ -103,7 +112,7 @@ public static class ProductDtoMapper
             "USD",
             dp.Stock,
             true,
-            new List<string>() // Fake attributes
+            new List<ProductVariantAttributeResponseDto>() // Fake attributes
         );
 
         return new ProductResponseDto(

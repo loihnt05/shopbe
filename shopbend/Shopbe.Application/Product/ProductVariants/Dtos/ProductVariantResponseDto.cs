@@ -1,5 +1,10 @@
 namespace Shopbe.Application.Product.ProductVariants.Dtos;
 
+public record ProductVariantAttributeResponseDto(
+    string Name,
+    string Value
+);
+
 public record ProductVariantResponseDto(
     Guid Id,
     Guid ProductId,
@@ -8,5 +13,5 @@ public record ProductVariantResponseDto(
     string Currency,
     int StockQuantity,
     bool IsActive,
-    IReadOnlyCollection<string> AttributeValues
+    IReadOnlyCollection<ProductVariantAttributeResponseDto> Attributes
 );
