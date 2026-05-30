@@ -46,6 +46,14 @@
   .sb-label {
     @apply text-xs font-bold text-gray-500 uppercase tracking-wider mb-1;
   }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 @keyframes slideIn {
