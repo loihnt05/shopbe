@@ -20,6 +20,10 @@ public class UpdateUserHandler(IUnitOfWork unitOfWork, IMapper mapper) : IReques
         user.FullName = request.Request.FullName;
         user.AvatarUrl = request.Request.AvatarUrl;
         user.PhoneNumber = request.Request.PhoneNumber;
+        user.Gender = request.Request.Gender;
+        user.Birthday = request.Request.Birthday;
+        user.Language = request.Request.Language;
+        user.Country = request.Request.Country;
 
         await unitOfWork.Users.UpdateUserAsync(user);
         return mapper.Map<UserResponseDto>(user);

@@ -22,4 +22,15 @@ public record UserRequestDto
     [Phone]
     [StringLength(20)]
     public string? PhoneNumber { get; set; }
+
+    [StringLength(20)]
+    public string? Gender { get; set; }
+
+    public DateTime? Birthday { get; set; }
+
+    [StringLength(50)]
+    public string? Language { get; set; }
+
+    [StringLength(100)]
+    public string? Country { get; set; }
 }

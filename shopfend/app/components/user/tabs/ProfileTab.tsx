@@ -1,21 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Save, X, Globe, Phone, Mail, User, Calendar, Languages } from "lucide-react";
+import { Save, X, Globe, Phone, Mail, User, Calendar, Languages, Loader2 } from "lucide-react";
+import { shopbeApi, UserRequestDto } from "@/lib/shopbeApi";
+import { toast } from "react-hot-toast";
 
 export default function ProfileTab() {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    fullName: session?.user?.name || "",
-    email: session?.user?.email || "",
-    phone: "+84 912 345 678",
+  const [fetching, setFetching] = useState(true);
+  const [formData, setFormData] = useState<UserRequestDto>({
+    fullName: "",
+    email: "",
+    phoneNumber: "",
     gender: "male",
-    birthday: "1995-05-20",
+    birthday: "",
     language: "English (US)",
     country: "Vietnam",
+    avatarUrl: "",
   });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!session?.accessToken) return;
+
+      try {
+        setFetching(true);
+        const profile = await shopbeApi.users.getMe(session.accessToken);
+        if (profile) {
+          setFormData({
+            fullName: profile.fullName || session.user?.name || "",
+            email: profile.email || session.user?.email || "",
+            phoneNumber: profile.phoneNumber || "",
+            gender: profile.gender || "male",
+            birthday: profile.birthday ? new Date(profile.birthday).toISOString().split('T')[0] : "",
+            language: profile.language || "English (US)",
+            country: profile.country || "Vietnam",
+            avatarUrl: profile.avatarUrl || session.user?.image || "",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+        // Fallback to session data if API fails
+        setFormData(prev => ({
+          ...prev,
+          fullName: session.user?.name || "",
+          email: session.user?.email || "",
+          avatarUrl: session.user?.image || "",
+        }));
+      } finally {
+        setFetching(false);
+      }
+    };
+
+    fetchProfile();
+  }, [session]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -24,12 +64,31 @@ export default function ProfileTab() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!session?.accessToken) {
+      toast.error("You must be logged in to save changes.");
+      return;
+    }
+
     setLoading(true);
-    // Simulate API call
-    await new Promise(r => setTimeout(r, 1500));
-    setLoading(false);
-    alert("Profile updated successfully (Simulated)");
+    try {
+      await shopbeApi.users.sync(session.accessToken, formData);
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      toast.error("Failed to update profile. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (fetching) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <Loader2 className="w-10 h-10 text-brand animate-spin" />
+        <p className="text-slate-500 font-medium">Loading your profile...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 md:p-10 space-y-10">
@@ -43,7 +102,7 @@ export default function ProfileTab() {
             <X size={18} />
             Cancel
           </button>
-          <button 
+          <button
             onClick={handleSave}
             disabled={loading}
             className="flex items-center gap-2 px-8 py-2.5 rounded-xl bg-brand text-white text-sm font-bold shadow-lg shadow-brand/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
@@ -98,8 +157,8 @@ export default function ProfileTab() {
           </div>
           <input
             type="text"
-            name="phone"
-            value={formData.phone}
+            name="phoneNumber"
+            value={formData.phoneNumber || ""}
             onChange={handleChange}
             className="peer w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand/20 focus:ring-4 focus:ring-brand/5 transition-all text-slate-900 font-bold placeholder-transparent"
             placeholder="Phone Number"
@@ -176,13 +235,13 @@ export default function ProfileTab() {
 
         {/* Mobile Action Buttons */}
         <div className="md:hidden flex flex-col gap-3 mt-4">
-          <button 
+          <button
             type="submit"
             className="w-full py-4 rounded-2xl bg-brand text-white font-bold shadow-lg shadow-brand/20 active:scale-95 transition-all"
           >
             Save Changes
           </button>
-          <button 
+          <button
             type="button"
             className="w-full py-4 rounded-2xl bg-slate-50 text-slate-600 font-bold active:scale-95 transition-all"
           >

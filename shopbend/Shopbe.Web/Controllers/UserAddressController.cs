@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.User.UserAddresses.Commands.CreateUserAddress;
+using Shopbe.Application.User.UserAddresses.Commands.DeleteUserAddress;
 using Shopbe.Application.User.UserAddresses.Commands.UpdateUserAddress;
 using Shopbe.Application.User.UserAddresses.Dtos;
 using Shopbe.Application.User.UserAddresses.Queries.GetAllUserAddresses;
@@ -32,6 +33,14 @@ public class UserAddressController(IMediator mediator, ICurrentUser currentUser,
     {
         var result = await mediator.Send(new UpdateUserAddressCommand(id, request), cancellationToken);
         return Ok(result);
+    }
+
+    [Authorize]
+    [HttpDelete("{id:guid}")]
+    public async Task<ActionResult> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        await mediator.Send(new DeleteUserAddressCommand(id), cancellationToken);
+        return NoContent();
     }
 
     [Authorize]

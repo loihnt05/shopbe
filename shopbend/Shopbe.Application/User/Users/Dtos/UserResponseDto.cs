@@ -12,6 +12,11 @@ public record UserResponseDto
     public string? AvatarUrl { get; set; }
     public string? PhoneNumber { get; set; }
 
+    public string? Gender { get; set; }
+    public DateTime? Birthday { get; set; }
+    public string? Language { get; set; }
+    public string? Country { get; set; }
+
     public UserRole? Role { get; set; }
     public UserStatus? Status { get; set; }
     public DateTime? DeletedAt { get; set; }

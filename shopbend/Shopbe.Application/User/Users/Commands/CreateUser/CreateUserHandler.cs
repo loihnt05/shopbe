@@ -42,6 +42,10 @@ public class CreateUserHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser,
             existingByKeycloak.FullName = fullName;
             existingByKeycloak.AvatarUrl = request.Request.AvatarUrl;
             existingByKeycloak.PhoneNumber = request.Request.PhoneNumber;
+            existingByKeycloak.Gender = request.Request.Gender;
+            existingByKeycloak.Birthday = request.Request.Birthday;
+            existingByKeycloak.Language = request.Request.Language;
+            existingByKeycloak.Country = request.Request.Country;
 
             await unitOfWork.Users.UpdateUserAsync(existingByKeycloak);
             return mapper.Map<UserResponseDto>(existingByKeycloak);
@@ -61,7 +65,11 @@ public class CreateUserHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser,
             Email = email,
             FullName = fullName,
             AvatarUrl = request.Request.AvatarUrl,
-            PhoneNumber = request.Request.PhoneNumber
+            PhoneNumber = request.Request.PhoneNumber,
+            Gender = request.Request.Gender,
+            Birthday = request.Request.Birthday,
+            Language = request.Request.Language,
+            Country = request.Request.Country
             // Role/Status default values are configured at the persistence layer.
         };
 

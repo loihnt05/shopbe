@@ -30,11 +30,11 @@ export default function OrdersTab() {
   }, [session?.accessToken]);
 
   const stats = [
-    { label: "Pending", count: 2, icon: Clock, color: "text-amber-500", bg: "bg-amber-50" },
-    { label: "Processing", count: 1, icon: RefreshCcw, color: "text-blue-500", bg: "bg-blue-50" },
-    { label: "Shipping", count: 3, icon: Truck, color: "text-indigo-500", bg: "bg-indigo-50" },
-    { label: "Delivered", count: 45, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50" },
-    { label: "Cancelled", count: 0, icon: XCircle, color: "text-rose-500", bg: "bg-rose-50" },
+    { label: "Pending", count: orders.filter(o => o.status === 'Pending').length, icon: Clock, color: "text-amber-500", bg: "bg-amber-50" },
+    { label: "Processing", count: orders.filter(o => o.status === 'Confirmed' || o.status === 'Processing').length, icon: RefreshCcw, color: "text-blue-500", bg: "bg-blue-50" },
+    { label: "Shipping", count: orders.filter(o => o.status === 'Shipped').length, icon: Truck, color: "text-indigo-500", bg: "bg-indigo-50" },
+    { label: "Delivered", count: orders.filter(o => o.status === 'Delivered').length, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50" },
+    { label: "Cancelled", count: orders.filter(o => o.status === 'Cancelled').length, icon: XCircle, color: "text-rose-500", bg: "bg-rose-50" },
   ];
 
   return (

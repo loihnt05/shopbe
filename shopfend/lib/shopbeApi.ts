@@ -530,7 +530,64 @@ export type UserAddressRequestDto = {
   isDefault: boolean;
 };
 
+export type UserResponseDto = {
+  id: string;
+  keycloakId: string;
+  email: string;
+  fullName: string;
+  avatarUrl?: string | null;
+  phoneNumber?: string | null;
+  gender?: string | null;
+  birthday?: string | null;
+  language?: string | null;
+  country?: string | null;
+  role?: number;
+  status?: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UserRequestDto = {
+  fullName: string;
+  email: string;
+  avatarUrl?: string | null;
+  phoneNumber?: string | null;
+  gender?: string | null;
+  birthday?: string | null;
+  language?: string | null;
+  country?: string | null;
+};
+
 export const shopbeApi = {
+  users: {
+    getMe: (accessToken: string, signal?: AbortSignal) =>
+      requestJson<UserResponseDto>("/api/users/by-keycloak", { accessToken, signal }),
+    sync: (accessToken: string, body: UserRequestDto, signal?: AbortSignal) =>
+      requestJson<UserResponseDto>("/api/users/sync", {
+        accessToken,
+        method: "POST",
+        body,
+        signal,
+      }),
+    uploadAvatar: async (accessToken: string, file: File) => {
+      const formData = new FormData();
+      formData.append("files", file);
+
+      const res = await fetch(`${API_BASE_URL}/api/reviews/images`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`
+        },
+        body: formData
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      // data is wrapped in { data: [...] } if ApiResponseEnvelopeFilter is active
+      const images = data.data || data;
+      return images[0].url;
+    }
+  },
   recommendations: {
     topSelling: (limit: number, signal?: AbortSignal) =>
       requestJson<unknown[]>(`/api/recommendations/top-selling?limit=${limit}`, { signal }),
@@ -636,6 +693,13 @@ export const shopbeApi = {
       return requestJson<ProductListItem[]>(`/api/products/discover?limit=${limit}&excludeIds=${ids}`, { signal });
     },
   },
+  reviews: {
+    getMyReviewableProducts: (accessToken: string, onlyNotReviewed = false, signal?: AbortSignal) =>
+      requestJson<any[]>(`/api/reviews/me/reviewable-products?onlyNotReviewed=${onlyNotReviewed}`, {
+        accessToken,
+        signal,
+      }),
+  },
   coupons: {
     list: async (signal?: AbortSignal) => {
       const data = await requestJson<unknown[]>("/api/coupons", { signal });
@@ -661,6 +725,19 @@ export const shopbeApi = {
         accessToken,
         method: "POST",
         body,
+        signal,
+      }),
+    update: (accessToken: string, id: string, body: UserAddressRequestDto, signal?: AbortSignal) =>
+      requestJson<UserAddressResponseDto>(`/api/user-addresses/${id}`, {
+        accessToken,
+        method: "PUT",
+        body,
+        signal,
+      }),
+    delete: (accessToken: string, id: string, signal?: AbortSignal) =>
+      requestJson<void>(`/api/user-addresses/${id}`, {
+        accessToken,
+        method: "DELETE",
         signal,
       }),
   },
