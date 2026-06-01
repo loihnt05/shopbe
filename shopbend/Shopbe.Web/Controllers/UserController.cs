@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Shopbe.Application.Common.Interfaces;
 using Shopbe.Application.User.Users.Commands.CreateUser;
 using Shopbe.Application.User.Users.Dtos;
 using Shopbe.Application.User.Users.Queries.GetAllUsers;
@@ -12,7 +13,7 @@ namespace Shopbe.Web.Controllers;
 
 [ApiController]
 [Route("api/users")]
-public class UserController(IMediator mediator) : ControllerBase
+public class UserController(IMediator mediator, ICurrentUser currentUser) : ControllerBase
 {
     /// <summary>
     /// Sync the currently authenticated Keycloak user into the application database.
@@ -52,8 +53,14 @@ public class UserController(IMediator mediator) : ControllerBase
 
     [Authorize]
     [HttpGet("by-keycloak")]
-    public async Task<ActionResult<UserResponseDto>> GetByKeycloakId([FromQuery] string keycloakId, CancellationToken cancellationToken)
+    public async Task<ActionResult<UserResponseDto>> GetByKeycloakId([FromQuery] string? keycloakId, CancellationToken cancellationToken)
     {
+        keycloakId = string.IsNullOrWhiteSpace(keycloakId) ? currentUser.KeycloakId : keycloakId;
+        if (string.IsNullOrWhiteSpace(keycloakId))
+        {
+            return Unauthorized("Missing user identity.");
+        }
+
         var result = await mediator.Send(new GetUserByKeycloakQuery(new UserQueryDto { KeycloakId = keycloakId }), cancellationToken);
         return Ok(result);
     }
