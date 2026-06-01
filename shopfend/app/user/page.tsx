@@ -73,31 +73,30 @@ export default function UserProfilePage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Premium Header */}
-      <UserHeader session={session} />
+    <div className="w-full px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1200px] space-y-8">
+        <UserHeader session={session} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Sticky Sidebar */}
-        <aside className="lg:col-span-3 sticky top-24">
-          <UserSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        </aside>
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8">
+          <aside className="w-full min-w-0">
+            <UserSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+          </aside>
 
-        {/* Dynamic Content Section */}
-        <main className="lg:col-span-9">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden min-h-[600px]"
-            >
-              {renderTabContent()}
-            </motion.div>
-          </AnimatePresence>
-        </main>
+          <main className="w-full min-w-0 flex-1">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="w-full min-w-0 box-border rounded-3xl border border-gray-100 bg-white shadow-sm overflow-visible min-h-[600px]"
+              >
+                {renderTabContent()}
+              </motion.div>
+            </AnimatePresence>
+          </main>
+        </div>
       </div>
     </div>
   );

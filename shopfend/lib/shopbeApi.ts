@@ -238,6 +238,40 @@ function isLikelyNetworkError(err: unknown): boolean {
   );
 }
 
+function getJwtSubject(accessToken: string): string | undefined {
+  try {
+    const payload = accessToken.split(".")[1];
+    if (!payload) return undefined;
+
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(
+      normalized.length + ((4 - (normalized.length % 4)) % 4),
+      "="
+    );
+    const decoded =
+      typeof window === "undefined"
+        ? Buffer.from(padded, "base64").toString("utf8")
+        : atob(padded);
+    const claims = asRecord(JSON.parse(decoded));
+    const sub = claims?.sub;
+
+    return typeof sub === "string" && sub.trim() ? sub : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function withQuery(path: string, query: Record<string, string | undefined>) {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(query)) {
+    if (value) params.set(key, value);
+  }
+
+  const queryString = params.toString();
+  return queryString ? `${path}?${queryString}` : path;
+}
+
 async function fetchWithTimeout(
   url: string,
   init: RequestInit,
@@ -563,7 +597,12 @@ export type UserRequestDto = {
 export const shopbeApi = {
   users: {
     getMe: (accessToken: string, signal?: AbortSignal) =>
-      requestJson<UserResponseDto>("/api/users/by-keycloak", { accessToken, signal }),
+      requestJson<UserResponseDto>(
+        withQuery("/api/users/by-keycloak", {
+          keycloakId: getJwtSubject(accessToken),
+        }),
+        { accessToken, signal }
+      ),
     sync: (accessToken: string, body: UserRequestDto, signal?: AbortSignal) =>
       requestJson<UserResponseDto>("/api/users/sync", {
         accessToken,

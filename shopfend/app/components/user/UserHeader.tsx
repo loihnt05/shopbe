@@ -2,11 +2,16 @@
 
 import type { Session } from "next-auth";
 import Image from "next/image";
-import { Camera, ShieldCheck, ShoppingBag, Heart, Star, Ticket, Loader2 } from "lucide-react";
+import { Camera, Crown, Heart, Loader2, ShoppingBag, Star, Ticket } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
-import { shopbeApi } from "@/lib/shopbeApi";
+import { shopbeApi, User, PagedResult, Wishlist, Review } from "@/lib/shopbeApi";
 import { toast } from "@/lib/toast";
+
+interface OrdersResponse {
+  totalItems?: number;
+  items?: any[];
+}
 
 export default function UserHeader({ session }: { session: Session }) {
   const [statsData, setStatsData] = useState({
@@ -16,27 +21,27 @@ export default function UserHeader({ session }: { session: Session }) {
     coupons: "0",
   });
   const [loadingStats, setLoadingStats] = useState(true);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<User | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!session?.accessToken) return;
 
     try {
       setLoadingStats(true);
       const [profileRes, ordersRes, wishlistRes, reviewsRes, couponsRes] = await Promise.all([
         shopbeApi.users.getMe(session.accessToken),
-        shopbeApi.orders.getMyOrders(session.accessToken, { pageSize: 1 }),
-        shopbeApi.wishlist.get(session.accessToken, { pageSize: 1 }),
-        shopbeApi.reviews.getMyReviewableProducts(session.accessToken, false),
-        shopbeApi.coupons.list(),
+        shopbeApi.orders.getMyOrders(session.accessToken, { pageSize: 1 }) as Promise<PagedResult<any>>,
+        shopbeApi.wishlist.get(session.accessToken, { pageSize: 1 }) as Promise<Wishlist[]>,
+        shopbeApi.reviews.getMyReviewableProducts(session.accessToken, false) as Promise<Review[]>,
+        shopbeApi.coupons.list() as Promise<any[]>,
       ]);
 
       setUserProfile(profileRes);
       setStatsData({
-        orders: (ordersRes as any).totalItems?.toString() || (ordersRes as any).items?.length.toString() || "0",
-        wishlist: (wishlistRes as any).length?.toString() || "0",
+        orders: ordersRes.totalItems?.toString() || "0",
+        wishlist: wishlistRes.length?.toString() || "0",
         reviews: reviewsRes.length?.toString() || "0",
         coupons: couponsRes.length.toString(),
       });
@@ -45,11 +50,11 @@ export default function UserHeader({ session }: { session: Session }) {
     } finally {
       setLoadingStats(false);
     }
-  };
+  }, [session]);
 
   useEffect(() => {
     fetchData();
-  }, [session]);
+  }, [fetchData]);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -63,15 +68,8 @@ export default function UserHeader({ session }: { session: Session }) {
       setUploading(true);
       const avatarUrl = await shopbeApi.users.uploadAvatar(session.accessToken, file);
 
-      // Sync the new avatar URL to user profile
       const updatedProfile = await shopbeApi.users.sync(session.accessToken, {
-        fullName: userProfile.fullName,
-        email: userProfile.email,
-        phoneNumber: userProfile.phoneNumber,
-        gender: userProfile.gender,
-        birthday: userProfile.birthday,
-        language: userProfile.language,
-        country: userProfile.country,
+        ...userProfile,
         avatarUrl: avatarUrl
       });
 
@@ -86,47 +84,44 @@ export default function UserHeader({ session }: { session: Session }) {
   };
 
   const stats = [
-    { label: "Orders", value: statsData.orders, icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-50" },
-    { label: "Wishlist", value: statsData.wishlist, icon: Heart, color: "text-rose-500", bg: "bg-rose-50" },
-    { label: "Reviews", value: statsData.reviews, icon: Star, color: "text-amber-500", bg: "bg-amber-50" },
-    { label: "Coupons", value: statsData.coupons, icon: Ticket, color: "text-emerald-500", bg: "bg-emerald-50" },
+    { label: "Orders", value: statsData.orders, icon: ShoppingBag, color: "text-sky-600", bg: "bg-sky-100/80" },
+    { label: "Wishlist", value: statsData.wishlist, icon: Heart, color: "text-rose-600", bg: "bg-rose-100/80" },
+    { label: "Reviews", value: statsData.reviews, icon: Star, color: "text-amber-600", bg: "bg-amber-100/80" },
+    { label: "Coupons", value: statsData.coupons, icon: Ticket, color: "text-emerald-600", bg: "bg-emerald-100/80" },
   ];
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-[2.5rem] bg-white border border-gray-100 shadow-xl shadow-gray-200/50"
+      className="relative w-full overflow-hidden rounded-[2rem] border border-slate-200/60 bg-white shadow-lg shadow-slate-200/40"
     >
-      {/* Premium Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-r from-brand/5 via-transparent to-brand/10 pointer-events-none" />
-      <div className="absolute -top-24 -right-24 w-64 h-64 bg-brand/5 rounded-full blur-3xl" />
-      <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl" />
-
-      <div className="relative p-8 md:p-10 flex flex-col md:flex-row items-center md:items-end justify-between gap-8">
-        <div className="flex flex-col md:flex-row items-center md:items-center gap-6">
-          {/* Avatar Section */}
-          <div className="relative group">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-2xl overflow-hidden relative ring-4 ring-brand/10">
+      <div className="absolute inset-0 bg-[url(/subtle-noise.svg)] opacity-30"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-slate-50/30"></div>
+      
+      <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex flex-col md:flex-row items-center gap-5">
+          <div className="relative group shrink-0">
+            <div className="relative w-28 h-28 md:w-32 md:h-32 rounded-full shadow-xl shadow-slate-300/40">
               <Image
-                src={userProfile?.avatarUrl || session.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile?.fullName || session.user?.name || "User")}&background=ee4d2d&color=fff&size=256`}
+                src={userProfile?.avatarUrl || session.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile?.fullName || session.user?.name || "U")}&background=ee4d2d&color=fff&size=256`}
                 alt={userProfile?.fullName || session.user?.name || "User"}
                 fill
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                className="object-cover rounded-full border-4 border-white"
               />
               {uploading && (
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center rounded-full">
                   <Loader2 className="w-8 h-8 text-white animate-spin" />
                 </div>
               )}
+              <button
+                onClick={handleAvatarClick}
+                disabled={uploading}
+                className="absolute bottom-1 right-1 flex items-center justify-center w-9 h-9 bg-brand text-white rounded-full shadow-md hover:bg-brand-hover transition-all active:scale-90 ring-2 ring-white disabled:opacity-50"
+              >
+                <Camera size={18} />
+              </button>
             </div>
-            <button
-              onClick={handleAvatarClick}
-              disabled={uploading}
-              className="absolute bottom-2 right-2 p-2.5 bg-brand text-white rounded-full shadow-lg hover:bg-brand-hover transition-all active:scale-90 ring-4 ring-white disabled:opacity-50"
-            >
-              <Camera size={20} />
-            </button>
             <input
               type="file"
               ref={fileInputRef}
@@ -136,51 +131,55 @@ export default function UserHeader({ session }: { session: Session }) {
             />
           </div>
 
-          {/* User Info */}
-          <div className="text-center md:text-left space-y-2">
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-              <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
-                {userProfile?.fullName || session.user?.name}
+          <div className="text-center md:text-left space-y-1.5">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5">
+              <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">
+                {userProfile?.fullName || session.user?.name || "Valued Customer"}
               </h1>
-              <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">
-                <ShieldCheck size={12} className="fill-amber-700/20" />
-                Platinum Member
+              <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full">
+                <Crown size={12} className="fill-amber-400" />
+                Platinum
               </span>
             </div>
-            <p className="text-slate-500 font-medium">{userProfile?.email || session.user?.email}</p>
-            <div className="flex items-center justify-center md:justify-start gap-4 mt-4">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Loyalty Points</span>
-                <span className="text-xl font-black text-brand">2,450 <span className="text-xs font-bold text-slate-400">pts</span></span>
+            <p className="text-slate-500 font-medium break-all">{userProfile?.email || session.user?.email}</p>
+            <div className="flex items-center justify-center md:justify-start gap-4 pt-2">
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Points</span>
+                <p className="text-lg font-black text-brand">2,450</p>
               </div>
-              <div className="w-px h-8 bg-slate-100 mx-2" />
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Member Since</span>
-                <span className="text-sm font-bold text-slate-700">
-                  {userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : 'May 2024'}
-                </span>
+              <div className="w-px h-6 bg-slate-200" />
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Since</span>
+                <p className="text-sm font-bold text-slate-700">
+                  {userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'May 2024'}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:flex gap-4 w-full md:w-auto">
+        <div className="w-full md:w-px md:h-24 bg-slate-200/80 mx-4 hidden lg:block" />
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-3 w-full md:w-auto md:max-w-md">
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 * i }}
-              className="flex-1 md:w-28 p-4 rounded-3xl bg-slate-50/50 border border-slate-100 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all group cursor-pointer"
+              transition={{ delay: 0.05 * i }}
+              className="p-3 rounded-2xl bg-white/40 border border-slate-200/60 hover:bg-white transition-all cursor-pointer"
             >
-              <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                <stat.icon size={20} />
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 ${stat.bg} ${stat.color} rounded-lg flex items-center justify-center`}>
+                  <stat.icon size={16} />
+                </div>
+                <div>
+                  <div className="text-base font-black text-slate-800 leading-none">
+                    {loadingStats ? <Loader2 size={14} className="animate-spin text-slate-400" /> : stat.value}
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{stat.label}</div>
+                </div>
               </div>
-              <div className="text-xl font-black text-slate-900 leading-none mb-1">
-                {loadingStats ? <Loader2 size={16} className="animate-spin text-slate-300" /> : stat.value}
-              </div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{stat.label}</div>
             </motion.div>
           ))}
         </div>
