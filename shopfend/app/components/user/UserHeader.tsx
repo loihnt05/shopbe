@@ -4,7 +4,7 @@ import type { Session } from "next-auth";
 import Image from "next/image";
 import { Camera, Crown, Heart, Loader2, ShoppingBag, Star, Ticket } from "lucide-react";
 import { motion } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { shopbeApi, User, PagedResult, Wishlist, Review } from "@/lib/shopbeApi";
 import { toast } from "@/lib/toast";
 
