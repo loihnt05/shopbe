@@ -6,6 +6,7 @@ import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
 import CartDrawer from "./CartDrawer";
 import Chatbot from "./chatbot/Chatbot";
+import ToastHost from "./ToastHost";
 
 export default function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -25,6 +26,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <SiteFooter />
       <CartDrawer />
       <Chatbot />
+      <ToastHost />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { Plus, MapPin, Phone, User, Edit2, Trash2, CheckCircle2, X, Loader2 } from "lucide-react";
 import { shopbeApi, type UserAddressResponseDto, type UserAddressRequestDto } from "@/lib/shopbeApi";
 import { locations } from "@/lib/locations";
-import { toast } from "react-hot-toast";
+import { toast } from "@/lib/toast";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AddressesTab() {

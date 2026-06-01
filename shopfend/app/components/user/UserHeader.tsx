@@ -6,7 +6,7 @@ import { Camera, ShieldCheck, ShoppingBag, Heart, Star, Ticket, Loader2 } from "
 import { motion } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 import { shopbeApi } from "@/lib/shopbeApi";
-import { toast } from "react-hot-toast";
+import { toast } from "@/lib/toast";
 
 export default function UserHeader({ session }: { session: Session }) {
   const [statsData, setStatsData] = useState({

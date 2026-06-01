@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Save, X, Globe, Phone, Mail, User, Calendar, Languages, Loader2 } from "lucide-react";
 import { shopbeApi, UserRequestDto } from "@/lib/shopbeApi";
-import { toast } from "react-hot-toast";
+import { toast } from "@/lib/toast";
 
 export default function ProfileTab() {
   const { data: session } = useSession();
@@ -176,7 +176,7 @@ export default function ProfileTab() {
           <input
             type="date"
             name="birthday"
-            value={formData.birthday}
+            value={formData.birthday ?? ""}
             onChange={handleChange}
             className="peer w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand/20 focus:ring-4 focus:ring-brand/5 transition-all text-slate-900 font-bold"
           />
@@ -192,7 +192,7 @@ export default function ProfileTab() {
           </div>
           <select
             name="language"
-            value={formData.language}
+            value={formData.language ?? "English (US)"}
             onChange={handleChange}
             className="peer w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand/20 focus:ring-4 focus:ring-brand/5 transition-all text-slate-900 font-bold appearance-none"
           >
@@ -216,7 +216,7 @@ export default function ProfileTab() {
           </div>
           <select
             name="country"
-            value={formData.country}
+            value={formData.country ?? "Vietnam"}
             onChange={handleChange}
             className="peer w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-brand/20 focus:ring-4 focus:ring-brand/5 transition-all text-slate-900 font-bold appearance-none"
           >

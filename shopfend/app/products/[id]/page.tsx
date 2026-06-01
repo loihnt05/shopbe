@@ -230,6 +230,9 @@ export default function ProductDetailPage({
       signIn("keycloak");
       return;
     }
+
+    if (!session.accessToken || !id) return;
+
     setWishlistBusy(true);
     try {
       if (isWishlisted) {

@@ -8,6 +8,7 @@ export type ProductImageDto = {
   id: string;
   imageUrl: string;
   isPrimary: boolean;
+  altText?: string | null;
 };
 
 export type ProductListItem = {
@@ -389,6 +390,7 @@ export function productResponseToListItem(item: unknown): ProductListItem {
         id: (i.id as string) ?? "",
         imageUrl: (i.imageUrl as string) ?? "",
         isPrimary: (i.isPrimary as boolean) ?? false,
+        altText: (i.altText as string | null) ?? null,
       };
     });
   };
