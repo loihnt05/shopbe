@@ -31,7 +31,7 @@ public class DeleteUserAddressHandler(IUnitOfWork unitOfWork, ICurrentUser curre
             throw new UnauthorizedAccessException("You do not have permission to delete this address.");
         }
 
-        await unitOfWork.UserAddresses.DeleteUserAddressAsync(address);
+        await unitOfWork.UserAddresses.DeleteUserAddressAsync(request.Id);
         return true;
     }
 }

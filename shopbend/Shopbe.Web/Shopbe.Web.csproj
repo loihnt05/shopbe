@@ -20,8 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Shopbe.Application\Shopbe.Application.csproj" />
-    <ProjectReference Include="..\Shopbe.Infrastructure\Shopbe.Infrastructure.csproj" />
+    <ProjectReference Include="..\Shopbe.Infrastructure\Shopbe.Infrastructure.csproj" SetTargetFramework="TargetFramework=net8.0" SkipGetTargetFrameworkProperties="true" />
   </ItemGroup>
 
 </Project>
