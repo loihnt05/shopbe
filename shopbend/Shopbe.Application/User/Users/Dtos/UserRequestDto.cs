@@ -16,7 +16,6 @@ public record UserRequestDto
     public string Email { get; set; } = string.Empty;
 
     [StringLength(2048)]
-    [Url]
     public string? AvatarUrl { get; set; }
 
     [Phone]

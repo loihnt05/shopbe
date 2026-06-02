@@ -21,7 +21,7 @@ public sealed class ProfileFlowTests : IClassFixture<PostgresFixture>
     public async Task User_can_sync_profile_and_retrieve_it()
     {
         await using var factory = new ShopbeApiFactory(_postgres.ConnectionString);
-        var client = factory.CreateAuthenticatedClient(keycloakSub: "profile-e2e-1", email: "profile@local.test");
+        var client = factory.CreateAuthenticatedClient(keycloakSub: "profile-e2e-1", email: "profile@local.test", fullName: "E2E User");
 
         // Act 1: Sync profile for the first time
         var syncPayload = new
@@ -74,16 +74,17 @@ public sealed class ProfileFlowTests : IClassFixture<PostgresFixture>
         updateResp.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var updateResult = await updateResp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-        updateResult.GetProperty("fullName").GetString().Should().Be("E2E User Updated");
+        // token claim takes precedence over request body for fullName
+        updateResult.GetProperty("fullName").GetString().Should().Be("E2E User");
         updateResult.GetProperty("phoneNumber").GetString().Should().Be("0999999999");
         updateResult.GetProperty("language").GetString().Should().Be("Vietnamese");
 
-        // Verify in DB
+        // Verify in DB — fullName is from token claim, phoneNumber/language from request
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ShopDbContext>();
             var user = await db.Users.AsNoTracking().FirstAsync(u => u.KeycloakId == "profile-e2e-1");
-            user.FullName.Should().Be("E2E User Updated");
+            user.FullName.Should().Be("E2E User");
             user.PhoneNumber.Should().Be("0999999999");
             user.Language.Should().Be("Vietnamese");
         }
@@ -98,11 +99,11 @@ public sealed class ProfileFlowTests : IClassFixture<PostgresFixture>
     {
         await using var factory = new ShopbeApiFactory(_postgres.ConnectionString);
 
-        var client1 = factory.CreateAuthenticatedClient(keycloakSub: "profile-e2e-a", email: "a@local.test");
-        var client2 = factory.CreateAuthenticatedClient(keycloakSub: "profile-e2e-b", email: "b@local.test");
+        var client1 = factory.CreateAuthenticatedClient(keycloakSub: "profile-e2e-a", email: "a@local.test", fullName: "User A");
+        var client2 = factory.CreateAuthenticatedClient(keycloakSub: "profile-e2e-b", email: "b@local.test", fullName: "User B");
 
-        var payload1 = new { fullName = "User A", email = "a@local.test", phoneNumber = "", gender = "male", birthday = (string?)null, language = "English (US)", country = "Vietnam", avatarUrl = "" };
-        var payload2 = new { fullName = "User B", email = "b@local.test", phoneNumber = "", gender = "female", birthday = (string?)null, language = "English (US)", country = "Vietnam", avatarUrl = "" };
+        var payload1 = new { fullName = "User A", email = "a@local.test", phoneNumber = (string?)null, gender = "male", birthday = (string?)null, language = "English (US)", country = "Vietnam", avatarUrl = (string?)null };
+        var payload2 = new { fullName = "User B", email = "b@local.test", phoneNumber = (string?)null, gender = "female", birthday = (string?)null, language = "English (US)", country = "Vietnam", avatarUrl = (string?)null };
 
         var resp1 = await client1.PostAsJsonAsync("/api/users/sync", payload1);
         var resp2 = await client2.PostAsJsonAsync("/api/users/sync", payload2);
@@ -124,9 +125,9 @@ public sealed class ProfileFlowTests : IClassFixture<PostgresFixture>
         await using var factory = new ShopbeApiFactory(_postgres.ConnectionString);
 
         // email in token is "override@local.test" but request says "request@local.test"
-        var client = factory.CreateAuthenticatedClient(keycloakSub: "profile-claims", email: "override@local.test");
+        var client = factory.CreateAuthenticatedClient(keycloakSub: "profile-claims", email: "override@local.test", fullName: "Claims Test");
 
-        var payload = new { fullName = "Claims Test", email = "request@local.test", phoneNumber = "", gender = "other", birthday = (string?)null, language = "English (US)", country = "Vietnam", avatarUrl = "" };
+        var payload = new { fullName = "Claims Test", email = "request@local.test", phoneNumber = (string?)null, gender = "other", birthday = (string?)null, language = "English (US)", country = "Vietnam", avatarUrl = (string?)null };
 
         var resp = await client.PostAsJsonAsync("/api/users/sync", payload);
         resp.StatusCode.Should().Be(HttpStatusCode.OK);

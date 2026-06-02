@@ -74,13 +74,17 @@ public sealed class ShopbeApiFactory : WebApplicationFactory<Program>
         });
     }
 
-    public HttpClient CreateAuthenticatedClient(string keycloakSub = "e2e-sub-1", string? email = "e2e@local.test")
+    public HttpClient CreateAuthenticatedClient(string keycloakSub = "e2e-sub-1", string? email = "e2e@local.test", string? fullName = null)
     {
         var client = CreateClient();
         client.DefaultRequestHeaders.Add("X-Test-Sub", keycloakSub);
         if (!string.IsNullOrWhiteSpace(email))
         {
             client.DefaultRequestHeaders.Add("X-Test-Email", email);
+        }
+        if (!string.IsNullOrWhiteSpace(fullName))
+        {
+            client.DefaultRequestHeaders.Add("X-Test-Name", fullName);
         }
 
         return client;

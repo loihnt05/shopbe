@@ -20,13 +20,18 @@ public sealed class TestAuthHandler(
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var sub = Request.Headers.TryGetValue("X-Test-Sub", out var subHeader)
-            ? subHeader.ToString()
-            : "e2e-sub-1";
+        if (!Request.Headers.TryGetValue("X-Test-Sub", out var subHeader))
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
 
+        var sub = subHeader.ToString();
         var email = Request.Headers.TryGetValue("X-Test-Email", out var emailHeader)
             ? emailHeader.ToString()
             : "e2e@local.test";
+        var name = Request.Headers.TryGetValue("X-Test-Name", out var nameHeader)
+            ? nameHeader.ToString()
+            : null;
 
         var claims = new List<Claim>
         {
@@ -35,6 +40,11 @@ public sealed class TestAuthHandler(
             new("email", email),
             new(ClaimTypes.Role, "Customer")
         };
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            claims.Add(new Claim("name", name));
+        }
 
         var identity = new ClaimsIdentity(claims, SchemeName);
         var principal = new ClaimsPrincipal(identity);
