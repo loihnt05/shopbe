@@ -88,7 +88,7 @@ export default function ProfileTab() {
   
   const handleReset = () => {
     setFormData(initialData);
-    toast.info("Changes have been reset.");
+    toast.success("Changes have been reset.");
   };
 
   const handleSave = async (e: React.FormEvent) => {
