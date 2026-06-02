@@ -39,9 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Stripe.net">
-      <HintPath>..\..\..\..\.nuget\packages\stripe.net\51.0.0\lib\net8.0\Stripe.net.dll</HintPath>
-    </Reference>
+    <PackageReference Include="Stripe.net" Version="51.0.0" />
   </ItemGroup>
 
 </Project>
