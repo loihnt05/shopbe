@@ -100,12 +100,21 @@ export default function ProfileTab() {
 
     setLoading(true);
     try {
-      await shopbeApi.users.sync(session.accessToken, formData);
+      // Convert empty strings to null for fields the backend expects as nullable
+      // (especially DateTime? fields like birthday)
+      const payload: UserRequestDto = {
+        ...formData,
+        birthday: formData.birthday || null,
+        phoneNumber: formData.phoneNumber || null,
+        avatarUrl: formData.avatarUrl || null,
+      };
+      await shopbeApi.users.sync(session.accessToken, payload);
       setInitialData(formData);
       toast.success("Profile updated successfully!");
     } catch (error) {
-      console.error("Failed to update profile:", error);
-      toast.error("Failed to update profile. Please try again.");
+      const message = error instanceof Error ? error.message : "Failed to update profile. Please try again.";
+      console.error("Failed to update profile:", message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

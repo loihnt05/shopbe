@@ -132,14 +132,89 @@ describe('ProfileTab', () => {
     await waitFor(() => {
       expect(shopbeApi.users.sync).toHaveBeenCalledWith(
         'test-token',
-        expect.objectContaining({ fullName: 'Jane Doe' })
+        expect.objectContaining({ fullName: 'Jane Doe', birthday: '1990-01-01' })
       )
     })
 
     expect(toast.success).toHaveBeenCalledWith('Profile updated successfully!')
   })
 
-  it('shows error toast when save fails', async () => {
+  it('converts empty birthday to null before sync', async () => {
+    const user = userEvent.setup()
+    vi.mocked(shopbeApi.users.getMe).mockResolvedValue({
+      ...mockProfile,
+      birthday: '',
+    })
+    vi.mocked(shopbeApi.users.sync).mockResolvedValue(mockProfile)
+
+    render(<ProfileTab />)
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('John Doe')).toBeInTheDocument()
+    })
+
+    const nameInput = screen.getByDisplayValue('John Doe')
+    await user.clear(nameInput)
+    await user.type(nameInput, 'Jane Doe')
+
+    const saveBtn = screen.getByRole('button', { name: /save changes/i })
+    await user.click(saveBtn)
+
+    await waitFor(() => {
+      expect(shopbeApi.users.sync).toHaveBeenCalledWith(
+        'test-token',
+        expect.objectContaining({ birthday: null })
+      )
+    })
+  })
+
+  it('shows error message from API on save failure', async () => {
+    const user = userEvent.setup()
+    vi.mocked(shopbeApi.users.getMe).mockResolvedValue(mockProfile)
+    vi.mocked(shopbeApi.users.sync).mockRejectedValue(new Error('API 400 Bad Request: validation failed'))
+
+    render(<ProfileTab />)
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('John Doe')).toBeInTheDocument()
+    })
+
+    const nameInput = screen.getByDisplayValue('John Doe')
+    await user.clear(nameInput)
+    await user.type(nameInput, 'Jane Doe')
+
+    const saveBtn = screen.getByRole('button', { name: /save changes/i })
+    await user.click(saveBtn)
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('API 400 Bad Request: validation failed')
+    })
+  })
+
+  it('shows fallback message when error has no message', async () => {
+    const user = userEvent.setup()
+    vi.mocked(shopbeApi.users.getMe).mockResolvedValue(mockProfile)
+    vi.mocked(shopbeApi.users.sync).mockRejectedValue('string error')
+
+    render(<ProfileTab />)
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('John Doe')).toBeInTheDocument()
+    })
+
+    const nameInput = screen.getByDisplayValue('John Doe')
+    await user.clear(nameInput)
+    await user.type(nameInput, 'Jane Doe')
+
+    const saveBtn = screen.getByRole('button', { name: /save changes/i })
+    await user.click(saveBtn)
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Failed to update profile. Please try again.')
+    })
+  })
+
+  it('shows error toast with API message when save fails', async () => {
     const user = userEvent.setup()
     vi.mocked(shopbeApi.users.getMe).mockResolvedValue(mockProfile)
     vi.mocked(shopbeApi.users.sync).mockRejectedValue(new Error('API error'))
@@ -158,7 +233,7 @@ describe('ProfileTab', () => {
     await user.click(saveBtn)
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Failed to update profile. Please try again.')
+      expect(toast.error).toHaveBeenCalledWith('API error')
     })
   })
 

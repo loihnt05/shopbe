@@ -6,11 +6,11 @@ public record UserRequestDto
 {
     // Do NOT accept KeycloakId from clients; it should be derived from the authenticated principal (sub claim).
 
-    [Required]
+    // [Required] intentionally omitted — CreateUserHandler falls back to token claims
+    // if the request body omits these fields (e.g. empty birthday → null).
     [StringLength(200)]
     public string FullName { get; set; } = string.Empty;
 
-    [Required]
     [EmailAddress]
     [StringLength(320)]
     public string Email { get; set; } = string.Empty;

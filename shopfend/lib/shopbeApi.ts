@@ -376,6 +376,7 @@ async function requestJson<T>(
     };
     const message =
       pick("message") ||
+      pick("detail") ||
       pick("title") ||
       pick("error") ||
       (text && text.slice(0, 500)) ||

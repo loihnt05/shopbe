@@ -41,7 +41,15 @@ public class UserRepository(ShopDbContext context) : IUserRepository
 
     public async Task UpdateUserAsync(User user)
     {
-        context.Users.Update(user);
+        var tracked = context.Users.Local.FirstOrDefault(u => u.Id == user.Id);
+        if (tracked is not null)
+        {
+            context.Entry(tracked).CurrentValues.SetValues(user);
+        }
+        else
+        {
+            context.Users.Update(user);
+        }
         await context.SaveChangesAsync();
     }
     
