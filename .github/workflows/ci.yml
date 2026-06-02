@@ -23,10 +23,10 @@ jobs:
           dotnet-version: 8.0
 
       - name: Restore
-        run: dotnet restore Shopbe.slnx
+        run: dotnet restore Shopbe.sln
 
       - name: Build
-        run: dotnet build Shopbe.slnx --no-restore --configuration Release
+        run: dotnet build Shopbe.sln --no-restore --configuration Release
 
       - name: Detect test projects
         id: test_projects
@@ -39,7 +39,7 @@ jobs:
 
       - name: Test
         if: steps.test_projects.outputs.has_tests == 'true'
-        run: dotnet test Shopbe.slnx --no-build --configuration Release --verbosity normal
+        run: dotnet test Shopbe.sln --no-build --configuration Release --verbosity normal
 
       - name: Skip tests
         if: steps.test_projects.outputs.has_tests != 'true'
