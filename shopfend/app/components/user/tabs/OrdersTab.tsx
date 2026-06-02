@@ -12,12 +12,12 @@ import {
   ExternalLink,
   Search
 } from "lucide-react";
-import { shopbeApi } from "@/lib/shopbeApi";
+import { shopbeApi, type OrderListItem } from "@/lib/shopbeApi";
 import { formatMoney } from "@/lib/format";
 
 export default function OrdersTab() {
   const { data: session } = useSession();
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -190,6 +190,41 @@ export type ChatMessageDto = {
   createdAt: string;
 };
 
+export type WishlistItem = {
+  productId: string;
+};
+
+export type OrderListItem = {
+  id: string;
+  createdAt: string;
+  status: string;
+  totalAmount: number;
+  shippingReceiverName: string;
+  shippingPhone: string;
+  shippingAddressLine: string;
+  shippingCity: string;
+  shippingDistrict: string;
+  shippingWard: string;
+};
+
+export type ReviewableProduct = {
+  orderId: string;
+  productId: string;
+  productName: string;
+  productImageUrl?: string | null;
+  purchasedAt: string;
+  isReviewed: boolean;
+  reviewId?: string | null;
+};
+
+export type PagedResult<T> = {
+  items: T[];
+  totalItems: number;
+  totalPages: number;
+  pageNumber: number;
+  pageSize: number;
+};
+
 export type ShopbeApiClientOptions = {
   /** Default timeout used when an endpoint doesn't provide one. */
   defaultTimeoutMs?: number;
@@ -737,7 +772,7 @@ export const shopbeApi = {
   },
   reviews: {
     getMyReviewableProducts: (accessToken: string, onlyNotReviewed = false, signal?: AbortSignal) =>
-      requestJson<any[]>(`/api/reviews/me/reviewable-products?onlyNotReviewed=${onlyNotReviewed}`, {
+      requestJson<ReviewableProduct[]>(`/api/reviews/me/reviewable-products?onlyNotReviewed=${onlyNotReviewed}`, {
         accessToken,
         signal,
       }),
@@ -870,20 +905,7 @@ export const shopbeApi = {
       if (params?.page) query.append("page", params.page.toString());
       if (params?.pageSize) query.append("pageSize", params.pageSize.toString());
       const queryString = query.toString();
-      return requestJson<{
-        items: Array<{
-          id: string;
-          createdAt: string;
-          status: string;
-          totalAmount: number;
-          shippingReceiverName: string;
-          shippingPhone: string;
-          shippingAddressLine: string;
-          shippingCity: string;
-          shippingDistrict: string;
-          shippingWard: string;
-        }>;
-      }>(`/api/orders${queryString ? `?${queryString}` : ""}`, {
+      return requestJson<PagedResult<OrderListItem>>(`/api/orders${queryString ? `?${queryString}` : ""}`, {
         accessToken,
         signal,
       });
@@ -965,7 +987,7 @@ export const shopbeApi = {
       if (params?.pageSize) query.append("pageSize", params.pageSize.toString());
       
       const queryString = query.toString();
-      return requestJson<unknown[]>(`/api/wishlist${queryString ? `?${queryString}` : ""}`, {
+      return requestJson<WishlistItem[]>(`/api/wishlist${queryString ? `?${queryString}` : ""}`, {
         accessToken,
         signal,
       });

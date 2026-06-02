@@ -10,6 +10,7 @@ import {
   type ProductDetail,
   type ProductListItem,
   type ProductVariantDto,
+  type WishlistItem,
 } from "@/lib/shopbeApi";
 import Link from "next/link";
 import { formatMoney } from "@/lib/format";
@@ -219,8 +220,8 @@ export default function ProductDetailPage({
 
   useEffect(() => {
     if (session?.accessToken && id) {
-      shopbeApi.wishlist.get(session.accessToken).then((items: any) => {
-        setIsWishlisted(items.some((i: any) => i.productId === id));
+      shopbeApi.wishlist.get(session.accessToken).then((items: WishlistItem[]) => {
+        setIsWishlisted(items.some((i) => i.productId === id));
       }).catch(() => {});
     }
   }, [session?.accessToken, id]);

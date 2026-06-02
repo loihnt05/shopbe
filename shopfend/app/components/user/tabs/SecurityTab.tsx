@@ -1,6 +1,6 @@
 "use client";
 
-import { Shield, Key, Smartphone, Fingerprint, History, Monitor, LogOut, ExternalLink } from "lucide-react";
+import { Shield, Key, Smartphone, History, Monitor, LogOut, ExternalLink } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 export default function SecurityTab() {

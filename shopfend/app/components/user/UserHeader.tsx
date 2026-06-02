@@ -5,13 +5,8 @@ import Image from "next/image";
 import { Camera, Crown, Heart, Loader2, ShoppingBag, Star, Ticket } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useState, useRef } from "react";
-import { shopbeApi, User, PagedResult, Wishlist, Review } from "@/lib/shopbeApi";
+import { shopbeApi, type UserResponseDto } from "@/lib/shopbeApi";
 import { toast } from "@/lib/toast";
-
-interface OrdersResponse {
-  totalItems?: number;
-  items?: any[];
-}
 
 export default function UserHeader({ session }: { session: Session }) {
   const [statsData, setStatsData] = useState({
@@ -21,7 +16,7 @@ export default function UserHeader({ session }: { session: Session }) {
     coupons: "0",
   });
   const [loadingStats, setLoadingStats] = useState(true);
-  const [userProfile, setUserProfile] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserResponseDto | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,10 +27,10 @@ export default function UserHeader({ session }: { session: Session }) {
       setLoadingStats(true);
       const [profileRes, ordersRes, wishlistRes, reviewsRes, couponsRes] = await Promise.all([
         shopbeApi.users.getMe(session.accessToken),
-        shopbeApi.orders.getMyOrders(session.accessToken, { pageSize: 1 }) as Promise<PagedResult<any>>,
-        shopbeApi.wishlist.get(session.accessToken, { pageSize: 1 }) as Promise<Wishlist[]>,
-        shopbeApi.reviews.getMyReviewableProducts(session.accessToken, false) as Promise<Review[]>,
-        shopbeApi.coupons.list() as Promise<any[]>,
+        shopbeApi.orders.getMyOrders(session.accessToken, { pageSize: 1 }),
+        shopbeApi.wishlist.get(session.accessToken, { pageSize: 1 }),
+        shopbeApi.reviews.getMyReviewableProducts(session.accessToken, false),
+        shopbeApi.coupons.list(),
       ]);
 
       setUserProfile(profileRes);

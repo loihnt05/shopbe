@@ -2,7 +2,7 @@ import { useSession, signIn } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { shopbeApi, type ProductListItem } from "@/lib/shopbeApi";
+import { shopbeApi, type ProductListItem, type WishlistItem } from "@/lib/shopbeApi";
 import { formatMoney } from "@/lib/format";
 import { StarIcon } from "./icons";
 
@@ -30,8 +30,8 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
     if (session?.accessToken) {
       // Small optimization: we could fetch the whole wishlist once in a context,
       // but for now let's keep it simple.
-      shopbeApi.wishlist.get(session.accessToken).then((items: any) => {
-        setIsWishlisted(items.some((i: any) => i.productId === product.id));
+      shopbeApi.wishlist.get(session.accessToken).then((items: WishlistItem[]) => {
+        setIsWishlisted(items.some((i) => i.productId === product.id));
       }).catch(() => {});
     }
   }, [session?.accessToken, product.id]);
