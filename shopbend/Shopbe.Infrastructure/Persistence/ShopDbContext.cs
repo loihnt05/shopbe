@@ -8,6 +8,7 @@ using Shopbe.Domain.Entities.Payment;
 using Shopbe.Domain.Entities.Product;
 using Shopbe.Domain.Entities.Recommendation;
 using Shopbe.Domain.Entities.Review;
+using Shopbe.Domain.Entities.Seller;
 using Shopbe.Domain.Entities.Shipping;
 using Shopbe.Domain.Entities.ShoppingCart;
 using Shopbe.Domain.Entities.User;
@@ -66,6 +67,8 @@ public class ShopDbContext(DbContextOptions<ShopDbContext> options) : DbContext(
     public DbSet<EmailMessage> EmailMessages { get; set; }
 
     public DbSet<AuditLog> AuditLogs { get; set; }
+
+    public DbSet<SellerProfile> SellerProfiles { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

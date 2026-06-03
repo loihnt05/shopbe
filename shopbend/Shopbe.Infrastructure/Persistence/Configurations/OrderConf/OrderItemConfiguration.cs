@@ -43,8 +43,12 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
+        builder.Property(oi => oi.SellerId)
+            .IsRequired();
+
         builder.HasIndex(oi => oi.OrderId);
         builder.HasIndex(oi => oi.ProductVariantId);
+        builder.HasIndex(oi => oi.SellerId);
         builder.HasIndex(oi => new { oi.OrderId, oi.ProductVariantId });
 
         // Relationships
@@ -56,6 +60,11 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.HasOne(oi => oi.ProductVariant)
             .WithMany()
             .HasForeignKey(oi => oi.ProductVariantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(oi => oi.Seller)
+            .WithMany()
+            .HasForeignKey(oi => oi.SellerId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

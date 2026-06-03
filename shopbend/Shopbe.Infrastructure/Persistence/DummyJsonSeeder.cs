@@ -14,6 +14,9 @@ public static class DummyJsonSeeder
 
     public static async Task SeedAsync(ShopDbContext db, ILogger? logger = null, int maxCount = int.MaxValue, CancellationToken ct = default)
     {
+        var adminUser = await db.Users.FirstOrDefaultAsync(u => u.Role == Domain.Enums.UserRole.Admin, ct);
+        if (adminUser == null) return;
+
         logger?.LogInformation("Fetching products from DummyJSON...");
         using var http = new HttpClient();
         
@@ -114,7 +117,8 @@ public static class DummyJsonSeeder
                 SoldCount = soldCount,
                 CategoryId = category.Id,
                 BrandId = brand?.Id,
-                IsActive = true
+                IsActive = true,
+                SellerId = adminUser.Id
             };
             db.Products.Add(product);
             await db.SaveChangesAsync(ct);

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Shopbe.Domain.Entities.Product;
+using Shopbe.Domain.Enums;
 
 namespace Shopbe.Infrastructure.Persistence.Configurations.ProductConf;
 
@@ -45,8 +46,21 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.HasIndex(p => p.DeletedAt);
 
+        builder.Property(p => p.SellerId)
+            .IsRequired();
+
+        builder.Property(p => p.ApprovalStatus)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .HasDefaultValue(ApprovalStatus.Pending);
+
+        builder.Property(p => p.AdminNotes)
+            .HasMaxLength(1000);
+
         builder.HasIndex(p => p.CategoryId);
         builder.HasIndex(p => p.BrandId);
+        builder.HasIndex(p => p.SellerId);
+        builder.HasIndex(p => p.ApprovalStatus);
 
         builder.HasMany(p => p.Images)
             .WithOne(i => i.Product)
@@ -67,5 +81,10 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .WithMany(b => b.Products)
             .HasForeignKey(p => p.BrandId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(p => p.Seller)
+            .WithMany()
+            .HasForeignKey(p => p.SellerId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

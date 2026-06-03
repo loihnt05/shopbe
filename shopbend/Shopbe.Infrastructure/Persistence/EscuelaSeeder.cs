@@ -14,6 +14,9 @@ public static class EscuelaSeeder
 
     public static async Task SeedAsync(ShopDbContext db, ILogger? logger = null, CancellationToken ct = default)
     {
+        var adminUser = await db.Users.FirstOrDefaultAsync(u => u.Role == Domain.Enums.UserRole.Admin, ct);
+        if (adminUser == null) return;
+
         logger?.LogInformation("Fetching products from EscuelaJS (Platzi Fake Store)...");
         using var http = new HttpClient();
         
@@ -96,7 +99,8 @@ public static class EscuelaSeeder
                 BasePrice = ep.Price * VndExchangeRate,
                 SoldCount = soldCount,
                 CategoryId = category.Id,
-                IsActive = true
+                IsActive = true,
+                SellerId = adminUser.Id
             };
             db.Products.Add(product);
             await db.SaveChangesAsync(ct);

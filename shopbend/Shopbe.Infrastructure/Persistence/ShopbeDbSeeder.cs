@@ -4,6 +4,7 @@ using Shopbe.Domain.Entities.Category;
 using Shopbe.Domain.Entities.Order;
 using Shopbe.Domain.Entities.Product;
 using Shopbe.Domain.Entities.Shipping;
+using Shopbe.Domain.Entities.User;
 using Shopbe.Domain.Enums;
 
 namespace Shopbe.Infrastructure.Persistence;
@@ -16,15 +17,13 @@ public static class ShopbeDbSeeder
 {
     public static async Task SeedAsync(ShopDbContext db, ILogger? logger = null, CancellationToken ct = default)
     {
-        // Seed is split into sections so we can safely add more seed types over time.
-        // (e.g. shipping locations) without being blocked by existing catalog data.
+        await SeedAdminUserAsync(db, logger, ct);
         await ShippingDataSeeder.SeedAsync(db, logger, ct);
         await SeedCouponsAsync(db, logger, ct);
         await SeedAttributesAsync(db, logger, ct);
 
         logger?.LogInformation("Seeding sample catalog data...");
 
-        // Seed from multiple sources. Seeders are idempotent by slug/sku.
         await DummyJsonSeeder.SeedAsync(db, logger, ct: ct);
         await EscuelaSeeder.SeedAsync(db, logger, ct: ct);
         await SeedTestProductsAsync(db, logger, ct);
@@ -32,10 +31,51 @@ public static class ShopbeDbSeeder
 
         await db.SaveChangesAsync(ct);
         
-        // After products/variants are seeded, randomly assign some attributes to them
+        await BackfillProductSellerIdsAsync(db, logger, ct);
         await AssignRandomAttributesToVariantsAsync(db, logger, ct);
 
         logger?.LogInformation("Seeded sample catalog: {Count} products.", await db.Products.CountAsync(ct));
+    }
+
+    private static async Task SeedAdminUserAsync(ShopDbContext db, ILogger? logger, CancellationToken ct)
+    {
+        if (await db.Users.AnyAsync(u => u.Role == UserRole.Admin, ct))
+            return;
+
+        var adminKeycloakId = Environment.GetEnvironmentVariable("ADMIN_KEYCLOAK_ID") ?? "admin-keycloak-id";
+
+        var admin = new User
+        {
+            KeycloakId = adminKeycloakId,
+            Email = "admin@shopbee.vn",
+            FullName = "System Admin",
+            Role = UserRole.Admin,
+            Status = UserStatus.Active
+        };
+        db.Users.Add(admin);
+        await db.SaveChangesAsync(ct);
+
+        logger?.LogInformation("Seeded admin user: {Email}", admin.Email);
+    }
+
+    private static async Task BackfillProductSellerIdsAsync(ShopDbContext db, ILogger? logger, CancellationToken ct)
+    {
+        var adminUser = await db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Admin, ct);
+        if (adminUser == null) return;
+
+        var productsWithoutSeller = await db.Products
+            .Where(p => p.SellerId == Guid.Empty)
+            .ToListAsync(ct);
+
+        if (productsWithoutSeller.Count == 0) return;
+
+        foreach (var product in productsWithoutSeller)
+        {
+            product.SellerId = adminUser.Id;
+        }
+
+        await db.SaveChangesAsync(ct);
+        logger?.LogInformation("Backfilled {Count} products with admin SellerId.", productsWithoutSeller.Count);
     }
 
     private static async Task SeedGamingLaptopAsync(ShopDbContext db, ILogger? logger, CancellationToken ct)
