@@ -10,6 +10,7 @@ public class ProductVariantRepository(ShopDbContext context) : IProductVariantRe
     public async Task<ProductVariant?> GetProductVariantByIdAsync(Guid productVariantId)
     {
         return await context.ProductVariants
+            .Include(pv => pv.Product)
             .AsNoTracking()
             .FirstOrDefaultAsync(pv => pv.Id == productVariantId && pv.DeletedAt == null);
     }

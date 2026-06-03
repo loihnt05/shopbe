@@ -7,6 +7,7 @@ using Shopbe.Domain.Entities.Category;
 using Shopbe.Domain.Entities.Order;
 using Shopbe.Domain.Entities.Product;
 using Shopbe.Domain.Entities.Recommendation;
+using Shopbe.Domain.Entities.User;
 using Shopbe.Domain.Enums;
 using Shopbe.E2E.Tests.Infrastructure;
 using Shopbe.Infrastructure.Persistence;
@@ -36,16 +37,27 @@ public sealed class RecommendationFlowTests : IClassFixture<PostgresFixture>
         {
             var db = scope.ServiceProvider.GetRequiredService<ShopDbContext>();
             
+            var seller = new User
+            {
+                KeycloakId = "rec-seller-1",
+                Email = "rec-seller@test.com",
+                FullName = "Rec Seller",
+                Role = UserRole.Seller,
+                Status = UserStatus.Active
+            };
+            db.Users.Add(seller);
+            await db.SaveChangesAsync();
+
             var cat1 = new Category { Name = "Cat 1", Slug = "cat-1", IsActive = true };
             var cat2 = new Category { Name = "Cat 2", Slug = "cat-2", IsActive = true };
             db.Categories.AddRange(cat1, cat2);
             await db.SaveChangesAsync();
             cat1Id = cat1.Id; cat2Id = cat2.Id;
 
-            var p1 = new Product { Name = "Product 1", Slug = "p-1", BasePrice = 100, CategoryId = cat1Id, IsActive = true };
-            var p2 = new Product { Name = "Product 2", Slug = "p-2", BasePrice = 120, CategoryId = cat1Id, IsActive = true };
-            var p3 = new Product { Name = "Product 3", Slug = "p-3", BasePrice = 200, CategoryId = cat2Id, IsActive = true };
-            var p4 = new Product { Name = "Product 4", Slug = "p-4", BasePrice = 220, CategoryId = cat2Id, IsActive = true };
+            var p1 = new Product { Name = "Product 1", Slug = "p-1", BasePrice = 100, CategoryId = cat1Id, IsActive = true, SellerId = seller.Id };
+            var p2 = new Product { Name = "Product 2", Slug = "p-2", BasePrice = 120, CategoryId = cat1Id, IsActive = true, SellerId = seller.Id };
+            var p3 = new Product { Name = "Product 3", Slug = "p-3", BasePrice = 200, CategoryId = cat2Id, IsActive = true, SellerId = seller.Id };
+            var p4 = new Product { Name = "Product 4", Slug = "p-4", BasePrice = 220, CategoryId = cat2Id, IsActive = true, SellerId = seller.Id };
             
             db.Products.AddRange(p1, p2, p3, p4);
             await db.SaveChangesAsync();
@@ -129,6 +141,7 @@ public sealed class RecommendationFlowTests : IClassFixture<PostgresFixture>
             db.Users.Add(user);
             await db.SaveChangesAsync();
 
+            var seller = db.Users.First(u => u.KeycloakId == "rec-seller-1");
             var orderId = Guid.NewGuid();
             var order = new Order
             {
@@ -139,8 +152,8 @@ public sealed class RecommendationFlowTests : IClassFixture<PostgresFixture>
             };
             var v3 = db.ProductVariants.First(v => v.ProductId == p3Id);
             var v4 = db.ProductVariants.First(v => v.ProductId == p4Id);
-            order.OrderItems.Add(new OrderItem { Id = Guid.NewGuid(), ProductVariantId = v3.Id, Quantity = 1, UnitPrice = 200, TotalPrice = 200 });
-            order.OrderItems.Add(new OrderItem { Id = Guid.NewGuid(), ProductVariantId = v4.Id, Quantity = 1, UnitPrice = 220, TotalPrice = 220 });
+            order.OrderItems.Add(new OrderItem { Id = Guid.NewGuid(), ProductVariantId = v3.Id, Quantity = 1, UnitPrice = 200, TotalPrice = 200, SellerId = seller.Id });
+            order.OrderItems.Add(new OrderItem { Id = Guid.NewGuid(), ProductVariantId = v4.Id, Quantity = 1, UnitPrice = 220, TotalPrice = 220, SellerId = seller.Id });
             db.Orders.Add(order);
             await db.SaveChangesAsync();
         }

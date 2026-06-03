@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Shopbe.Domain.Entities.Category;
 using Shopbe.Domain.Entities.Product;
+using Shopbe.Domain.Entities.User;
+using Shopbe.Domain.Enums;
 using Shopbe.Infrastructure.Persistence;
 
 namespace Shopbe.E2E.Tests.Infrastructure;
@@ -11,6 +13,22 @@ public static class DatabaseSeed
 
     public static async Task<SeedResult> SeedMinimalCatalogAsync(ShopDbContext db, CancellationToken ct = default)
     {
+        // Ensure an admin user exists for SellerId FK
+        var adminUser = await db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Admin, ct);
+        if (adminUser is null)
+        {
+            adminUser = new User
+            {
+                KeycloakId = "e2e-admin",
+                Email = "e2e-admin@test.com",
+                FullName = "E2E Admin",
+                Role = UserRole.Admin,
+                Status = UserStatus.Active
+            };
+            db.Users.Add(adminUser);
+            await db.SaveChangesAsync(ct);
+        }
+
         // Ensure a category exists
         var category = await db.Categories.AsNoTracking().FirstOrDefaultAsync(ct);
         if (category is null)
@@ -32,7 +50,8 @@ public static class DatabaseSeed
             Description = "Seeded for end-to-end tests",
             BasePrice = 100_000m,
             CategoryId = category.Id,
-            IsActive = true
+            IsActive = true,
+            SellerId = adminUser.Id
         };
         db.Products.Add(product);
         await db.SaveChangesAsync(ct);

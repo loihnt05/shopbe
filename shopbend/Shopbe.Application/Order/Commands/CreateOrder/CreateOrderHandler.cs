@@ -142,7 +142,8 @@ public sealed class CreateOrderHandler(
                     ProductNameSnapshot = variant.Product?.Name ?? string.Empty,
                     Quantity = checkoutQty,
                     UnitPrice = unitPrice,
-                    TotalPrice = totalPrice
+                    TotalPrice = totalPrice,
+                    SellerId = variant.Product?.SellerId ?? Guid.Empty
                 });
             }
 
