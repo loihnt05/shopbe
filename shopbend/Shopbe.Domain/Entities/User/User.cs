@@ -2,6 +2,7 @@ using Shopbe.Domain.Entities.Admin;
 using Shopbe.Domain.Entities.Chatbot;
 using Shopbe.Domain.Entities.Order;
 using Shopbe.Domain.Entities.Recommendation;
+using Shopbe.Domain.Entities.Seller;
 using Shopbe.Domain.Entities.Wishlist;
 using Shopbe.Domain.Enums;
 
@@ -21,8 +22,10 @@ public class User : BaseEntity
     public string? Country { get; set; }
     public UserStatus? Status { get; set; }
     public DateTime? DeletedAt { get; set; }
+
     // Navigation Properties
     public ShoppingCart.ShoppingCart? ShoppingCart { get; set; }
+    public SellerProfile? SellerProfile { get; set; }
     public ICollection<UserAddress> UserAddresses { get; set; } = new List<UserAddress>();
     public ICollection<Order.Order> Orders { get; set; } = new List<Order.Order>();
     public ICollection<CouponUsage> CouponUsages { get; set; } = new List<CouponUsage>();

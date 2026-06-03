@@ -2,6 +2,7 @@ using Shopbe.Domain.Entities.Order;
 using Shopbe.Domain.Entities.Recommendation;
 using Shopbe.Domain.Entities.ShoppingCart;
 using Shopbe.Domain.Entities.Wishlist;
+using Shopbe.Domain.Enums;
 
 namespace Shopbe.Domain.Entities.Product;
 
@@ -17,10 +18,14 @@ public class Product : BaseEntity
     public Guid? BrandId { get; set; }
     public bool IsActive { get; set; }
     public DateTime? DeletedAt { get; set; }
-    
+    public Guid SellerId { get; set; }
+    public ApprovalStatus ApprovalStatus { get; set; } = ApprovalStatus.Pending;
+    public string? AdminNotes { get; set; }
+
     // Navigation Properties
     public Category.Category? Category { get; set; }
     public Brand? Brand { get; set; }
+    public User.User? Seller { get; set; }
     public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
     public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();

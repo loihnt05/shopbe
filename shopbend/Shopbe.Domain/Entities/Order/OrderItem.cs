@@ -9,8 +9,10 @@ public class OrderItem : BaseEntity
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal TotalPrice { get; set; }
+    public Guid SellerId { get; set; }
 
     // Navigation Properties
     public Order? Order { get; set; }
     public Product.ProductVariant? ProductVariant { get; set; }
+    public User.User? Seller { get; set; }
 }
