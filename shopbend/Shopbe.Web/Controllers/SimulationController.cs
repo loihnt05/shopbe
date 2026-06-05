@@ -91,12 +91,18 @@ public sealed class SimulationController(
 
                 if (v1 != null && v2 != null)
                 {
+                    if (seedProduct.SellerId == Guid.Empty || complementaryProduct.SellerId == Guid.Empty)
+                    {
+                        return BadRequest("Simulation products must have valid sellers before creating order items.");
+                    }
+
                     order.OrderItems.Add(new OrderItem { 
                         Id = Guid.NewGuid(), 
                         ProductVariantId = v1.Id, 
                         Quantity = 1, 
                         UnitPrice = seedProduct.BasePrice, 
                         TotalPrice = seedProduct.BasePrice,
+                        SellerId = seedProduct.SellerId,
                         SkuSnapshot = v1.Sku,
                         ProductNameSnapshot = seedProduct.Name
                     });
@@ -106,6 +112,7 @@ public sealed class SimulationController(
                         Quantity = 1, 
                         UnitPrice = complementaryProduct.BasePrice, 
                         TotalPrice = complementaryProduct.BasePrice,
+                        SellerId = complementaryProduct.SellerId,
                         SkuSnapshot = v2.Sku,
                         ProductNameSnapshot = complementaryProduct.Name
                     });

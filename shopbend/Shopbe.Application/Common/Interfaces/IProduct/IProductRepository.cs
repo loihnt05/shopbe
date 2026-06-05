@@ -3,6 +3,7 @@ namespace Shopbe.Application.Common.Interfaces.IProduct;
 public interface IProductRepository
 {
     Task<IEnumerable<Shopbe.Domain.Entities.Product.Product>> GetAllProductsAsync();
+    Task<IEnumerable<Shopbe.Domain.Entities.Product.Product>> GetProductsBySellerIdAsync(Guid sellerId);
 
     Task<IEnumerable<Shopbe.Domain.Entities.Product.Product>> GetProductsPageAsync(
         string? name,

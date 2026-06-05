@@ -33,6 +33,32 @@ public sealed class CurrentUser(IHttpContextAccessor httpContextAccessor) : ICur
 
     public string? PreferredUsername => Principal?.FindFirstValue("preferred_username");
 
+    public bool IsAuthenticated => Principal?.Identity?.IsAuthenticated == true;
+
+    public IReadOnlyCollection<string> Roles => Principal?
+        .FindAll(ClaimTypes.Role)
+        .Select(claim => claim.Value)
+        .Where(value => !string.IsNullOrWhiteSpace(value))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray()
+        ?? Array.Empty<string>();
+
+    public bool HasRole(string role)
+    {
+        if (string.IsNullOrWhiteSpace(role))
+        {
+            return false;
+        }
+
+        return Roles.Contains(role, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public bool IsAdmin => HasRole("Admin");
+
+    public bool IsSeller => HasRole("Seller");
+
+    public bool IsCustomer => HasRole("Customer");
+
     public string? FullName
     {
         get
@@ -54,4 +80,3 @@ public sealed class CurrentUser(IHttpContextAccessor httpContextAccessor) : ICur
         }
     }
 }
-

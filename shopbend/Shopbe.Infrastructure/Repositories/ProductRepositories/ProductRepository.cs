@@ -12,6 +12,8 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
         return await context.Products
             .Include(p => p.Category)
             .Include(p => p.Brand)
+            .Include(p => p.Seller)
+                .ThenInclude(s => s!.SellerProfile)
             .Include(p => p.Images)
             .Include(p => p.Reviews)
             .Include(p => p.Variants)
@@ -25,12 +27,31 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
         return await context.Products
             .Include(p => p.Category)
             .Include(p => p.Brand)
+            .Include(p => p.Seller)
+                .ThenInclude(s => s!.SellerProfile)
             .Include(p => p.Images)
             .Include(p => p.Reviews)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
                     .ThenInclude(pva => pva.AttributeValue)
                         .ThenInclude(av => av.Attribute)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Product>> GetProductsBySellerIdAsync(Guid sellerId)
+    {
+        return await context.Products
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
+            .Include(p => p.Seller)
+                .ThenInclude(s => s!.SellerProfile)
+            .Include(p => p.Images)
+            .Include(p => p.Reviews)
+            .Include(p => p.Variants)
+                .ThenInclude(v => v.ProductVariantAttributes)
+                    .ThenInclude(pva => pva.AttributeValue)
+                        .ThenInclude(av => av.Attribute)
+            .Where(p => p.SellerId == sellerId)
             .ToListAsync();
     }
 
@@ -103,6 +124,8 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
         IQueryable<Product> query = BuildSearchQuery(name, categoryIds, categorySlugs, brandIds, minBasePrice, maxBasePrice, minRating)
             .Include(p => p.Category)
             .Include(p => p.Brand)
+            .Include(p => p.Seller)
+                .ThenInclude(s => s!.SellerProfile)
             .Include(p => p.Images)
             .Include(p => p.Reviews)
             .Include(p => p.Variants)

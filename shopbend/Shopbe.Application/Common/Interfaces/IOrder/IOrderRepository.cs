@@ -2,6 +2,8 @@ namespace Shopbe.Application.Common.Interfaces.IOrder;
 
 public interface IOrderRepository
 {
+    Task<IReadOnlyList<Shopbe.Domain.Entities.Order.Order>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<long> CountAsync(CancellationToken cancellationToken = default);
     Task<Shopbe.Domain.Entities.Order.Order?> GetByIdAsync(Guid orderId, CancellationToken cancellationToken = default);
     Task<Shopbe.Domain.Entities.Order.Order?> GetByIdForUserAsync(Guid orderId, Guid userId, CancellationToken cancellationToken = default);
     Task<Shopbe.Domain.Entities.Order.Order?> GetTrackedByIdForUserAsync(Guid orderId, Guid userId, CancellationToken cancellationToken = default);
@@ -9,6 +11,5 @@ public interface IOrderRepository
     Task<long> CountByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
     Task AddAsync(Shopbe.Domain.Entities.Order.Order order, CancellationToken cancellationToken = default);
 }
-
 
 

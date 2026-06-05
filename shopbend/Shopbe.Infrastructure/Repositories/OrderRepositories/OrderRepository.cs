@@ -7,10 +7,34 @@ namespace Shopbe.Infrastructure.Repositories.OrderRepositories;
 
 public class OrderRepository(ShopDbContext context) : IOrderRepository
 {
+    public async Task<IReadOnlyList<Order>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        page = page <= 0 ? 1 : page;
+        pageSize = pageSize <= 0 ? 20 : pageSize;
+
+        return await context.Orders
+            .AsNoTracking()
+            .Include(o => o.User)
+            .Include(o => o.Coupon)
+            .Include(o => o.OrderItems)
+            .Include(o => o.OrderStatusHistory)
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<long> CountAsync(CancellationToken cancellationToken = default)
+    {
+        return await context.Orders.LongCountAsync(cancellationToken);
+    }
+
     public async Task<Order?> GetByIdAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         return await context.Orders
             .AsNoTracking()
+            .Include(o => o.User)
             .Include(o => o.Coupon)
             .Include(o => o.OrderItems)
             .Include(o => o.OrderStatusHistory)
@@ -66,5 +90,4 @@ public class OrderRepository(ShopDbContext context) : IOrderRepository
         await context.Orders.AddAsync(order, cancellationToken);
     }
 }
-
 

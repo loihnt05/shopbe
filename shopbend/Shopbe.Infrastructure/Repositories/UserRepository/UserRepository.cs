@@ -9,28 +9,37 @@ public class UserRepository(ShopDbContext context) : IUserRepository
 {
     public async Task<User?> GetUserByIdAsync(Guid userId)
     {
-        // FindAsync only supports primary-key lookups.
-        return await context.Users.FindAsync(userId);
+        return await context.Users
+            .Include(u => u.SellerProfile)
+            .FirstOrDefaultAsync(u => u.Id == userId);
     }
 
     public async Task<User?> GetUserByKeycloakIdAsync(string keyCloakId)
     {
-        // For non-primary-key lookups, use a LINQ query.
         return await context.Users
-            .AsNoTracking()
+            .Include(u => u.SellerProfile)
             .FirstOrDefaultAsync(u => u.KeycloakId == keyCloakId);
     }
 
     public async Task<User?> GetUserByEmailAsync(string email)
     {
         return await context.Users
-            .AsNoTracking()
+            .Include(u => u.SellerProfile)
             .FirstOrDefaultAsync(u => u.Email == email);
+    }
+
+    public async Task<User?> GetUserBySellerIdAsync(Guid sellerId)
+    {
+        return await context.Users
+            .Include(u => u.SellerProfile)
+            .FirstOrDefaultAsync(u => u.Id == sellerId);
     }
 
     public async Task<IEnumerable<User>> GetAllUsersAsync()
     {
-        return await context.Users.ToListAsync();
+        return await context.Users
+            .Include(u => u.SellerProfile)
+            .ToListAsync();
     }
 
     public async Task CreateUserAsync(User user)

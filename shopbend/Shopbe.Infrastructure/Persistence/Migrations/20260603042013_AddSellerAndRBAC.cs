@@ -94,6 +94,86 @@ namespace Shopbe.Infrastructure.Persistence.Migrations
                 column: "UserId",
                 unique: true);
 
+            migrationBuilder.Sql(@"
+INSERT INTO ""Users"" (""Id"", ""KeycloakId"", ""Email"", ""FullName"", ""Status"", ""Role"", ""CreatedAt"", ""UpdatedAt"")
+SELECT '11111111-1111-1111-1111-111111111111',
+       'migration-admin-keycloak-id',
+       'migration-admin@shopbee.local',
+       'Migration Admin',
+       'Active',
+       'Admin',
+       CURRENT_TIMESTAMP,
+       CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM ""Users""
+    WHERE ""Role"" = 'Admin'
+);
+");
+
+            migrationBuilder.Sql(@"
+UPDATE ""Products"" AS p
+SET ""SellerId"" = admin.""Id""
+FROM (
+    SELECT ""Id""
+    FROM ""Users""
+    WHERE ""Role"" = 'Admin'
+    ORDER BY ""CreatedAt""
+    LIMIT 1
+) AS admin
+WHERE p.""SellerId"" = '00000000-0000-0000-0000-000000000000';
+");
+
+            migrationBuilder.Sql(@"
+UPDATE ""OrderItems"" AS oi
+SET ""SellerId"" = COALESCE(NULLIF(p.""SellerId"", '00000000-0000-0000-0000-000000000000'), admin.""Id"")
+FROM ""ProductVariants"" AS pv
+JOIN ""Products"" AS p ON p.""Id"" = pv.""ProductId""
+LEFT JOIN (
+    SELECT ""Id""
+    FROM ""Users""
+    WHERE ""Role"" = 'Admin'
+    ORDER BY ""CreatedAt""
+    LIMIT 1
+) AS admin ON TRUE
+WHERE oi.""ProductVariantId"" = pv.""Id""
+  AND oi.""SellerId"" = '00000000-0000-0000-0000-000000000000';
+");
+
+            migrationBuilder.Sql(@"
+UPDATE ""OrderItems""
+SET ""SellerId"" = admin.""Id""
+FROM (
+    SELECT ""Id""
+    FROM ""Users""
+    WHERE ""Role"" = 'Admin'
+    ORDER BY ""CreatedAt""
+    LIMIT 1
+) AS admin
+WHERE ""OrderItems"".""SellerId"" = '00000000-0000-0000-0000-000000000000';
+");
+
+            migrationBuilder.Sql(@"
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM ""Products""
+        WHERE ""SellerId"" = '00000000-0000-0000-0000-000000000000'
+    ) THEN
+        RAISE EXCEPTION 'Cannot apply RBAC migration: some Products rows still have empty SellerId.';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM ""OrderItems""
+        WHERE ""SellerId"" = '00000000-0000-0000-0000-000000000000'
+    ) THEN
+        RAISE EXCEPTION 'Cannot apply RBAC migration: some OrderItems rows still have empty SellerId.';
+    END IF;
+END $$;
+");
+
             migrationBuilder.AddForeignKey(
                 name: "FK_OrderItems_Users_SellerId",
                 table: "OrderItems",

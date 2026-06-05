@@ -133,6 +133,12 @@ public sealed class CreateOrderHandler(
                 var totalPrice = unitPrice * checkoutQty;
                 subtotal += totalPrice;
 
+                var sellerId = variant.Product?.SellerId
+                    ?? throw new InvalidOperationException($"Product for variant '{item.ProductVariantId}' was not loaded.");
+
+                if (sellerId == Guid.Empty)
+                    throw new InvalidOperationException($"Product variant '{item.ProductVariantId}' is missing a valid seller.");
+
                 order.OrderItems.Add(new OrderItem
                 {
                     Id = Guid.NewGuid(),
@@ -143,7 +149,7 @@ public sealed class CreateOrderHandler(
                     Quantity = checkoutQty,
                     UnitPrice = unitPrice,
                     TotalPrice = totalPrice,
-                    SellerId = variant.Product?.SellerId ?? Guid.Empty
+                    SellerId = sellerId
                 });
             }
 
