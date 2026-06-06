@@ -20,6 +20,7 @@ public class CreateOrderEnqueuesEmailTests
         // Transaction
         uow.Setup(x => x.BeginTransactionAsync()).Returns(Task.CompletedTask);
         uow.Setup(x => x.CommitTransactionAsync()).Returns(Task.CompletedTask);
+        uow.Setup(x => x.RollbackTransactionAsync()).Returns(Task.CompletedTask);
 
         // Cart
         var cartRepo = new Mock<Shopbe.Application.Common.Interfaces.IShoppingCart.ICartRepository>(MockBehavior.Strict);
@@ -43,7 +44,12 @@ public class CreateOrderEnqueuesEmailTests
                 Id = Guid.NewGuid(),
                 Price = 100_000,
                 Sku = "SKU",
-                Product = new Shopbe.Domain.Entities.Product.Product { Id = Guid.NewGuid(), Name = "Test Product" }
+                Product = new Shopbe.Domain.Entities.Product.Product
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Test Product",
+                    SellerId = Guid.NewGuid()
+                }
             });
 
         var ordersRepo = new Mock<Shopbe.Application.Common.Interfaces.IOrder.IOrderRepository>(MockBehavior.Strict);
@@ -89,6 +95,5 @@ public class CreateOrderEnqueuesEmailTests
         ordersRepo.Verify(x => x.AddAsync(It.IsAny<Shopbe.Domain.Entities.Order.Order>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
-
 
 

@@ -131,7 +131,7 @@ public static class DummyJsonSeeder
                     db.ProductImages.Add(new ProductImage
                     {
                         ProductId = product.Id,
-                        ImageUrl = dp.Images[i],
+                        ImageUrl = NormalizeImageUrl(dp.Images[i]),
                         AltText = product.Name,
                         IsPrimary = i == 0,
                         SortOrder = i
@@ -143,7 +143,7 @@ public static class DummyJsonSeeder
                 db.ProductImages.Add(new ProductImage
                 {
                     ProductId = product.Id,
-                    ImageUrl = dp.Thumbnail,
+                    ImageUrl = NormalizeImageUrl(dp.Thumbnail),
                     AltText = product.Name,
                     IsPrimary = true,
                     SortOrder = 0
@@ -151,7 +151,7 @@ public static class DummyJsonSeeder
             }
 
             // Variants
-            var skuBase = !string.IsNullOrEmpty(dp.Sku) ? dp.Sku : $"{product.Slug.Replace('-', '_').ToUpperInvariant()}_1";
+            var skuBase = LimitLength(!string.IsNullOrEmpty(dp.Sku) ? dp.Sku : $"{product.Slug.Replace('-', '_').ToUpperInvariant()}_1", 100);
             db.ProductVariants.Add(new ProductVariant
             {
                 ProductId = product.Id,
@@ -190,13 +190,33 @@ public static class DummyJsonSeeder
 
     private static string UniqueSku(string skuBase, HashSet<string> used)
     {
-        var sku = skuBase;
+        var sku = LimitLength(skuBase, 100);
         var i = 1;
         while (!used.Add(sku))
         {
-            sku = $"{skuBase}_{i++}";
+            var suffix = $"_{i++}";
+            sku = $"{LimitLength(skuBase, 100 - suffix.Length)}{suffix}";
         }
         return sku;
+    }
+
+    private static string NormalizeImageUrl(string value)
+    {
+        var trimmed = value.Trim();
+        if (trimmed.Length <= 500) return trimmed;
+
+        var queryIndex = trimmed.IndexOf('?');
+        if (queryIndex > 0)
+        {
+            trimmed = trimmed[..queryIndex];
+        }
+
+        return LimitLength(trimmed, 500);
+    }
+
+    private static string LimitLength(string value, int maxLength)
+    {
+        return value.Length <= maxLength ? value : value[..maxLength];
     }
 
     private static string ToTitleCase(string str)

@@ -225,6 +225,229 @@ export type PagedResult<T> = {
   pageSize: number;
 };
 
+export type BackendPagedResult<T> = {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+};
+
+export type AdminDashboardOverviewDto = {
+  totalUsers: number;
+  totalCustomers: number;
+  totalSellers: number;
+  totalProducts: number;
+  pendingProducts: number;
+  totalOrders: number;
+  pendingOrders: number;
+  completedOrders: number;
+  totalRevenue: number;
+  monthlyRevenue: number;
+  topProducts: AdminTopProductDto[];
+  topSellers: AdminTopSellerDto[];
+  recentOrders: AdminOrderListItemDto[];
+  recentUsers: AdminUserDto[];
+};
+
+export type AdminUserDto = {
+  id: string;
+  keycloakId: string;
+  email: string;
+  fullName: string;
+  role?: string | null;
+  status?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+};
+
+export type AdminSellerDto = {
+  userId: string;
+  sellerProfileId?: string | null;
+  ownerName: string;
+  ownerEmail: string;
+  shopName: string;
+  status: string;
+  totalSales: number;
+  totalRevenue: number;
+  rating?: number | null;
+  commissionRate: number;
+  createdAt: string;
+};
+
+export type AdminSellerStatsDto = {
+  userId: string;
+  shopName: string;
+  totalProducts: number;
+  approvedProducts: number;
+  pendingProducts: number;
+  totalOrders: number;
+  completedOrders: number;
+  totalRevenue: number;
+};
+
+export type AdminProductDto = {
+  id: string;
+  name: string;
+  slug: string;
+  sellerName: string;
+  shopName?: string | null;
+  categoryName?: string | null;
+  price: number;
+  approvalStatus: string;
+  isActive: boolean;
+  adminNotes?: string | null;
+  createdAt: string;
+};
+
+export type AdminOrderListItemDto = {
+  id: string;
+  userId: string;
+  customerName: string;
+  customerEmail: string;
+  totalAmount: number;
+  currency: string;
+  status: string;
+  itemsCount: number;
+  createdAt: string;
+};
+
+export type AdminTopProductDto = {
+  productId: string;
+  productName: string;
+  soldCount: number;
+  revenue: number;
+};
+
+export type AdminTopSellerDto = {
+  sellerId: string;
+  sellerName: string;
+  shopName?: string | null;
+  totalSales: number;
+  revenue: number;
+};
+
+export type AdminRevenuePointDto = {
+  label: string;
+  revenue: number;
+  orders: number;
+};
+
+export type AdminSalesBreakdownDto = {
+  revenueByPeriod: AdminRevenuePointDto[];
+  salesByStatus: Array<{ key: string; value: number }>;
+};
+
+export type AdminCategoryDto = {
+  id: string;
+  name: string;
+  parentCategoryId?: string | null;
+  slug: string;
+  sortOrder: number;
+  isActive: boolean;
+};
+
+export type AdminCategoryUpsertDto = {
+  name: string;
+  parentCategoryId?: string | null;
+  slug?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+};
+
+export type SellerDashboardOverviewDto = {
+  myProducts: number;
+  pendingOrders: number;
+  processingOrders: number;
+  shippedOrders: number;
+  deliveredOrders: number;
+  totalRevenue: number;
+  thisMonthRevenue: number;
+  lowStockProducts: SellerLowStockProductDto[];
+  recentOrders: SellerOrderListItemDto[];
+  bestSellingProducts: SellerProductListItemDto[];
+};
+
+export type SellerProductListItemDto = {
+  id: string;
+  name: string;
+  slug: string;
+  categoryName?: string | null;
+  price: number;
+  stock: number;
+  approvalStatus: string;
+  isActive: boolean;
+  createdAt: string;
+};
+
+export type SellerOrderListItemDto = {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  sellerItemsCount: number;
+  sellerItemsTotal: number;
+  status: string;
+  createdAt: string;
+};
+
+export type SellerRevenuePointDto = {
+  label: string;
+  revenue: number;
+  orders: number;
+};
+
+export type SellerLowStockProductDto = {
+  productId: string;
+  productName: string;
+  stock: number;
+};
+
+export type SellerProfileDto = {
+  id: string;
+  userId: string;
+  shopName: string;
+  shopDescription?: string | null;
+  shopLogoUrl?: string | null;
+  shopBannerUrl?: string | null;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
+  address?: string | null;
+  city?: string | null;
+  status: string;
+  commissionRate: number;
+  rating?: number | null;
+  totalSales: number;
+  totalRevenue: number;
+};
+
+export type SellerProductUpsertDto = {
+  name: string;
+  description: string;
+  basePrice: number;
+  categoryId: string;
+  brandId?: string | null;
+  isActive: boolean;
+  images?: Array<{ imageUrl: string; isPrimary: boolean }>;
+  variants?: Array<{
+    sku: string;
+    price: number;
+    stockQuantity: number;
+    isActive: boolean;
+    attributeValueIds?: string[] | null;
+  }>;
+};
+
+export type SellerProfileUpsertDto = {
+  shopName: string;
+  shopDescription?: string | null;
+  shopLogoUrl?: string | null;
+  shopBannerUrl?: string | null;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
+  address?: string | null;
+  city?: string | null;
+};
+
 export type ShopbeApiClientOptions = {
   /** Default timeout used when an endpoint doesn't provide one. */
   defaultTimeoutMs?: number;
@@ -631,6 +854,84 @@ export type UserRequestDto = {
 };
 
 export const shopbeApi = {
+  admin: {
+    dashboardOverview: (accessToken: string, signal?: AbortSignal) =>
+      requestJson<AdminDashboardOverviewDto>("/api/admin/dashboard/overview", { accessToken, signal }),
+    users: (accessToken: string, query?: Record<string, string | undefined>, signal?: AbortSignal) =>
+      requestJson<BackendPagedResult<AdminUserDto>>(withQuery("/api/admin/users", query ?? {}), { accessToken, signal }),
+    userById: (accessToken: string, id: string, signal?: AbortSignal) =>
+      requestJson<AdminUserDto>(`/api/admin/users/${id}`, { accessToken, signal }),
+    updateUserStatus: (accessToken: string, id: string, status: string, signal?: AbortSignal) =>
+      requestJson<AdminUserDto>(`/api/admin/users/${id}/status`, { accessToken, method: "PUT", body: { status }, signal }),
+    updateUserRole: (accessToken: string, id: string, role: string, signal?: AbortSignal) =>
+      requestJson<AdminUserDto>(`/api/admin/users/${id}/role`, { accessToken, method: "PUT", body: { role }, signal }),
+    deleteUser: (accessToken: string, id: string, signal?: AbortSignal) =>
+      requestJson<void>(`/api/admin/users/${id}`, { accessToken, method: "DELETE", signal }),
+    sellers: (accessToken: string, query?: Record<string, string | undefined>, signal?: AbortSignal) =>
+      requestJson<BackendPagedResult<AdminSellerDto>>(withQuery("/api/admin/sellers", query ?? {}), { accessToken, signal }),
+    sellerById: (accessToken: string, id: string, signal?: AbortSignal) =>
+      requestJson<AdminSellerDto>(`/api/admin/sellers/${id}`, { accessToken, signal }),
+    updateSellerStatus: (accessToken: string, id: string, status: string, signal?: AbortSignal) =>
+      requestJson<AdminSellerDto>(`/api/admin/sellers/${id}/status`, { accessToken, method: "PUT", body: { status }, signal }),
+    sellerStats: (accessToken: string, id: string, signal?: AbortSignal) =>
+      requestJson<AdminSellerStatsDto>(`/api/admin/sellers/${id}/stats`, { accessToken, signal }),
+    products: (accessToken: string, query?: Record<string, string | undefined>, signal?: AbortSignal) =>
+      requestJson<BackendPagedResult<AdminProductDto>>(withQuery("/api/admin/products", query ?? {}), { accessToken, signal }),
+    updateProductApproval: (accessToken: string, id: string, status: string, adminNotes?: string, signal?: AbortSignal) =>
+      requestJson<AdminProductDto>(`/api/admin/products/${id}/approval`, { accessToken, method: "PUT", body: { status, adminNotes }, signal }),
+    updateProductVisibility: (accessToken: string, id: string, isActive: boolean, signal?: AbortSignal) =>
+      requestJson<AdminProductDto>(`/api/admin/products/${id}/visibility`, { accessToken, method: "PUT", body: { isActive }, signal }),
+    deleteProduct: (accessToken: string, id: string, signal?: AbortSignal) =>
+      requestJson<void>(`/api/admin/products/${id}`, { accessToken, method: "DELETE", signal }),
+    orders: (accessToken: string, query?: Record<string, string | undefined>, signal?: AbortSignal) =>
+      requestJson<BackendPagedResult<AdminOrderListItemDto>>(withQuery("/api/admin/orders", query ?? {}), { accessToken, signal }),
+    orderById: (accessToken: string, id: string, signal?: AbortSignal) =>
+      requestJson<unknown>(`/api/admin/orders/${id}`, { accessToken, signal }),
+    revenue: (accessToken: string, period = "monthly", signal?: AbortSignal) =>
+      requestJson<AdminRevenuePointDto[]>(`/api/admin/analytics/revenue?period=${encodeURIComponent(period)}`, { accessToken, signal }),
+    sales: (accessToken: string, period = "monthly", signal?: AbortSignal) =>
+      requestJson<AdminSalesBreakdownDto>(`/api/admin/analytics/sales?period=${encodeURIComponent(period)}`, { accessToken, signal }),
+    topProducts: (accessToken: string, take = 10, signal?: AbortSignal) =>
+      requestJson<AdminTopProductDto[]>(`/api/admin/analytics/top-products?take=${take}`, { accessToken, signal }),
+    topSellers: (accessToken: string, take = 10, signal?: AbortSignal) =>
+      requestJson<AdminTopSellerDto[]>(`/api/admin/analytics/top-sellers?take=${take}`, { accessToken, signal }),
+    categories: (accessToken: string, query?: Record<string, string | undefined>, signal?: AbortSignal) =>
+      requestJson<AdminCategoryDto[]>(withQuery("/api/admin/categories", query ?? {}), { accessToken, signal }),
+    createCategory: (accessToken: string, body: AdminCategoryUpsertDto, signal?: AbortSignal) =>
+      requestJson<AdminCategoryDto>("/api/admin/categories", { accessToken, method: "POST", body, signal }),
+    updateCategory: (accessToken: string, id: string, body: AdminCategoryUpsertDto, signal?: AbortSignal) =>
+      requestJson<AdminCategoryDto>(`/api/admin/categories/${id}`, { accessToken, method: "PUT", body, signal }),
+    deleteCategory: (accessToken: string, id: string, signal?: AbortSignal) =>
+      requestJson<void>(`/api/admin/categories/${id}`, { accessToken, method: "DELETE", signal }),
+  },
+  seller: {
+    dashboardOverview: (accessToken: string, signal?: AbortSignal) =>
+      requestJson<SellerDashboardOverviewDto>("/api/seller/dashboard/overview", { accessToken, signal }),
+    products: (accessToken: string, query?: Record<string, string | undefined>, signal?: AbortSignal) =>
+      requestJson<BackendPagedResult<SellerProductListItemDto>>(withQuery("/api/seller/products", query ?? {}), { accessToken, signal }),
+    createProduct: (accessToken: string, body: SellerProductUpsertDto, signal?: AbortSignal) =>
+      requestJson<SellerProductListItemDto>("/api/seller/products", { accessToken, method: "POST", body, signal }),
+    updateProduct: (accessToken: string, id: string, body: SellerProductUpsertDto, signal?: AbortSignal) =>
+      requestJson<SellerProductListItemDto>(`/api/seller/products/${id}`, { accessToken, method: "PUT", body, signal }),
+    deleteProduct: (accessToken: string, id: string, signal?: AbortSignal) =>
+      requestJson<void>(`/api/seller/products/${id}`, { accessToken, method: "DELETE", signal }),
+    orders: (accessToken: string, query?: Record<string, string | undefined>, signal?: AbortSignal) =>
+      requestJson<BackendPagedResult<SellerOrderListItemDto>>(withQuery("/api/seller/orders", query ?? {}), { accessToken, signal }),
+    orderById: (accessToken: string, id: string, signal?: AbortSignal) =>
+      requestJson<unknown>(`/api/seller/orders/${id}`, { accessToken, signal }),
+    updateOrderStatus: (accessToken: string, id: string, status: string, note?: string, signal?: AbortSignal) =>
+      requestJson<unknown>(`/api/seller/orders/${id}/status`, { accessToken, method: "PUT", body: { status, note }, signal }),
+    revenue: (accessToken: string, period = "monthly", signal?: AbortSignal) =>
+      requestJson<SellerRevenuePointDto[]>(`/api/seller/analytics/revenue?period=${encodeURIComponent(period)}`, { accessToken, signal }),
+    sales: (accessToken: string, period = "monthly", signal?: AbortSignal) =>
+      requestJson<SellerRevenuePointDto[]>(`/api/seller/analytics/sales?period=${encodeURIComponent(period)}`, { accessToken, signal }),
+    lowStock: (accessToken: string, threshold = 10, signal?: AbortSignal) =>
+      requestJson<SellerLowStockProductDto[]>(`/api/seller/analytics/low-stock?threshold=${threshold}`, { accessToken, signal }),
+    profile: (accessToken: string, signal?: AbortSignal) =>
+      requestJson<SellerProfileDto>("/api/seller/profile", { accessToken, signal }),
+    updateProfile: (accessToken: string, body: SellerProfileUpsertDto, signal?: AbortSignal) =>
+      requestJson<SellerProfileDto>("/api/seller/profile", { accessToken, method: "PUT", body, signal }),
+  },
   users: {
     getMe: (accessToken: string, signal?: AbortSignal) =>
       requestJson<UserResponseDto>(

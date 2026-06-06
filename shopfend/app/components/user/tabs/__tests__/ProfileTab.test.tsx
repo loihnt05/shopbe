@@ -31,9 +31,11 @@ const { toast } = await import('@/lib/toast')
 const mockSession = {
   data: {
     accessToken: 'test-token',
+    expires: '2099-01-01T00:00:00.000Z',
     user: { name: 'John Doe', email: 'john@example.com', image: '' },
   },
-  status: 'authenticated',
+  status: 'authenticated' as const,
+  update: vi.fn(),
 }
 
 const mockProfile = {

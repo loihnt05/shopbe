@@ -3,6 +3,29 @@ import KeycloakProvider from "next-auth/providers/keycloak";
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
 
+type JwtPayload = {
+  realm_access?: {
+    roles?: string[];
+  };
+};
+
+function decodeJwtPayload(token: string): JwtPayload | null {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(
+      normalized.length + ((4 - (normalized.length % 4)) % 4),
+      "="
+    );
+    const decoded = Buffer.from(padded, "base64").toString("utf8");
+    return JSON.parse(decoded) as JwtPayload;
+  } catch {
+    return null;
+  }
+}
+
 const issuer = process.env.KEYCLOAK_ISSUER
   ? process.env.KEYCLOAK_ISSUER
   : `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}`;
@@ -44,12 +67,20 @@ const handler = NextAuth({
       if (account) {
         token.accessToken = account.access_token;
         token.idToken = account.id_token;
+
+        const decoded = account.access_token
+          ? decodeJwtPayload(account.access_token)
+          : null;
+        token.roles = decoded?.realm_access?.roles ?? [];
       }
       return token;
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken as string | undefined;
       session.idToken = token.idToken as string | undefined;
+      if (session.user) {
+        session.user.roles = Array.isArray(token.roles) ? token.roles : [];
+      }
       return session;
     },
   },
