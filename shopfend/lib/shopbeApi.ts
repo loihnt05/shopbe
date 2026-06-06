@@ -748,6 +748,15 @@ export type BrandFacetDto = {
   count: number;
 };
 
+export type PublicCategoryDto = {
+  id: string;
+  name: string;
+  parentCategoryId?: string | null;
+  slug: string;
+  sortOrder: number;
+  isActive: boolean;
+};
+
 export type ProductSearchResponse = {
   products: ProductListItem[];
   categoryFacets: CategoryFacetDto[];
@@ -1070,6 +1079,12 @@ export const shopbeApi = {
       const ids = excludeIds?.join(",") ?? "";
       return requestJson<ProductListItem[]>(`/api/products/discover?limit=${limit}&excludeIds=${ids}`, { signal });
     },
+  },
+  categories: {
+    list: (signal?: AbortSignal) =>
+      requestJson<PublicCategoryDto[]>("/api/categories", { signal }),
+    getById: (id: string, signal?: AbortSignal) =>
+      requestJson<PublicCategoryDto>(`/api/categories/${id}`, { signal }),
   },
   reviews: {
     getMyReviewableProducts: (accessToken: string, onlyNotReviewed = false, signal?: AbortSignal) =>
