@@ -28,7 +28,7 @@ The system simulates a **production-level online shopping platform**, integratin
 | Architecture | **Service-Oriented / Microservice-ready** |
 | Database     | **SQL Server / PostgreSQL**               |
 | Cache        | **Redis**                                 |
-| Payments     | **Stripe / PayOS**                        |
+| Payments     | **Stripe**                                |
 | AI           | **LLM Chatbot + Recommendation Engine**   |
 
 This platform demonstrates **real-world backend architecture** and **AI service integration** in a modern commerce system.
@@ -153,10 +153,9 @@ Pending → Paid → Shipping → Completed
 
 Supports **real-world payment integration**.
 
-Supported Gateways:
+Supported Gateway:
 
 * **Stripe**
-* **PayOS**
 
 ### Payment Flow
 
@@ -253,7 +252,6 @@ User behavior tracking:
 | -------------- | -------------------------------- |
 | Rule-based     | Same category / popular products |
 | Behavior-based | Similar user preferences         |
-| ML-based       | External Python ML service       |
 
 ### API
 
@@ -321,7 +319,7 @@ Implementation:
 | Auth         | ASP.NET Identity + JWT    |
 | Database     | SQL Server / PostgreSQL   |
 | Cache        | Redis                     |
-| Payments     | Stripe / PayOS            |
+| Payments     | Stripe                    |
 | AI           | LLM API                   |
 | Queue        | RabbitMQ / Kafka          |
 | Jobs         | Hangfire / Worker Service |
@@ -440,4 +438,3 @@ This project demonstrates:
 # 📜 License
 
 This project is licensed under the **MIT License**.
-
