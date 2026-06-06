@@ -13,6 +13,10 @@ export default function SiteHeader() {
   const { totalQuantity, openDrawer } = useCart();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const roles = session?.user?.roles ?? [];
+  const isAdmin = roles.some((role) => role.toLowerCase() === "admin");
+  const isSeller = roles.some((role) => role.toLowerCase() === "seller");
+  const sellerHref = isSeller ? "/seller/dashboard" : "/api/auth/signin?callbackUrl=/seller/dashboard";
 
   const initialQ = useMemo(() => searchParams.get("q") ?? "", [searchParams]);
   const [q, setQ] = useState(initialQ);
@@ -42,9 +46,9 @@ export default function SiteHeader() {
       <div className="text-xs">
         <div className="sb-container h-8 flex items-center justify-between px-4">
           <div className="flex items-center gap-4 opacity-90">
-            <Link href="#" className="hover:opacity-80">Seller Centre</Link>
+            <Link href={sellerHref} className="hover:opacity-80">Seller Centre</Link>
             <span className="w-px h-3 bg-white/40"></span>
-            <Link href="#" className="hover:opacity-80">Start Selling</Link>
+            <Link href={sellerHref} className="hover:opacity-80">Start Selling</Link>
             <span className="w-px h-3 bg-white/40"></span>
             <Link href="#" className="hover:opacity-80">Download</Link>
             <span className="w-px h-3 bg-white/40"></span>
@@ -63,10 +67,12 @@ export default function SiteHeader() {
             {status !== "loading" ? (
               session ? (
                 <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1 font-medium hover:opacity-80 cursor-pointer">
+                  <Link href="/user" className="flex items-center gap-1 font-medium hover:opacity-80 cursor-pointer">
                     <UserIcon className="h-4 w-4" />
                     {session.user?.name ?? session.user?.email ?? "User"}
-                  </span>
+                  </Link>
+                  {isAdmin ? <Link href="/admin/overview" className="font-medium hover:opacity-80">Admin</Link> : null}
+                  {isSeller ? <Link href="/seller/dashboard" className="font-medium hover:opacity-80">Seller</Link> : null}
                   <button
                     className="hover:opacity-80 font-medium"
                     onClick={() => signOut({ redirect: false })}
@@ -116,6 +122,8 @@ export default function SiteHeader() {
               <Link className="hover:text-white transition-colors" href="/recommendations">Recommendations</Link>
               <Link className="hover:text-white transition-colors" href="/chat">Chat</Link>
               <Link className="hover:text-white transition-colors" href="/purchases">My Purchases</Link>
+              {isSeller ? <Link className="hover:text-white transition-colors" href="/seller/dashboard">Seller Dashboard</Link> : null}
+              {isAdmin ? <Link className="hover:text-white transition-colors" href="/admin/overview">Admin Dashboard</Link> : null}
               <Link className="hover:text-white transition-colors" href="/cart">Cart</Link>
             </nav>
           </div>

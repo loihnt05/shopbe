@@ -10,9 +10,12 @@ import {
   Ticket, 
   Clock, 
   Shield, 
-  LogOut 
+  LogOut,
+  ShieldCheck,
+  Store
 } from "lucide-react";
-import { signOut } from "next-auth/react";
+import Link from "next/link";
+import { signOut, useSession } from "next-auth/react";
 import type { TabType } from "../../user/page";
 
 interface SidebarProps {
@@ -21,6 +24,10 @@ interface SidebarProps {
 }
 
 export default function UserSidebar({ activeTab, setActiveTab }: SidebarProps) {
+  const { data: session } = useSession();
+  const roles = session?.user?.roles ?? [];
+  const isAdmin = roles.some((role) => role.toLowerCase() === "admin");
+  const isSeller = roles.some((role) => role.toLowerCase() === "seller");
   const menuItems = [
     { id: "profile", label: "My Profile", icon: User },
     { id: "orders", label: "My Orders", icon: Package },
@@ -64,6 +71,26 @@ export default function UserSidebar({ activeTab, setActiveTab }: SidebarProps) {
             </button>
           );
         })}
+
+        {isSeller ? (
+          <Link
+            href="/seller/dashboard"
+            className="group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-700 hover:bg-amber-50 hover:text-amber-700 transition-all duration-200 whitespace-nowrap"
+          >
+            <Store size={20} className="text-slate-400 group-hover:text-amber-600 transition-colors" />
+            <span className="flex-1 text-left">Seller Dashboard</span>
+          </Link>
+        ) : null}
+
+        {isAdmin ? (
+          <Link
+            href="/admin/overview"
+            className="group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-700 hover:bg-sky-50 hover:text-sky-700 transition-all duration-200 whitespace-nowrap"
+          >
+            <ShieldCheck size={20} className="text-slate-400 group-hover:text-sky-600 transition-colors" />
+            <span className="flex-1 text-left">Admin Dashboard</span>
+          </Link>
+        ) : null}
 
         <div className="w-px h-full bg-slate-200/80 mx-2 md:hidden" />
 
