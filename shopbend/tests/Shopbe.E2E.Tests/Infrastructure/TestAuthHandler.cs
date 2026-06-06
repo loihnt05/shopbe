@@ -32,13 +32,16 @@ public sealed class TestAuthHandler(
         var name = Request.Headers.TryGetValue("X-Test-Name", out var nameHeader)
             ? nameHeader.ToString()
             : null;
+        var role = Request.Headers.TryGetValue("X-Test-Role", out var roleHeader)
+            ? roleHeader.ToString()
+            : "Customer";
 
         var claims = new List<Claim>
         {
             new("sub", sub),
             new("preferred_username", "e2e-user"),
             new("email", email),
-            new(ClaimTypes.Role, "Customer")
+            new(ClaimTypes.Role, role)
         };
 
         if (!string.IsNullOrWhiteSpace(name))
@@ -53,6 +56,5 @@ public sealed class TestAuthHandler(
         return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 }
-
 
 
