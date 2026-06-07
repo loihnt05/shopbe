@@ -12,12 +12,18 @@ type UserFilters = {
   status: string;
 };
 
+const ROLE_OPTIONS = ["Admin", "Seller", "Customer", "Staff"];
+const STATUS_OPTIONS = ["Active", "Inactive", "Banned", "PendingVerification"];
+
 export default function AdminUsersPage() {
   const { data: session, status } = useSession();
   const [filters, setFilters] = useState<UserFilters>({ search: "", role: "", status: "" });
   const [result, setResult] = useState<BackendPagedResult<AdminUserDto> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUserDto | null>(null);
+  const [roleDrafts, setRoleDrafts] = useState<Record<string, string>>({});
+  const [statusDrafts, setStatusDrafts] = useState<Record<string, string>>({});
 
   const load = async (accessToken: string, signal?: AbortSignal) => {
     const query: Record<string, string | undefined> = {
@@ -62,6 +68,20 @@ export default function AdminUsersPage() {
     }
   };
 
+  const openUserDetail = async (userId: string) => {
+    if (!session?.accessToken) return;
+    try {
+      const user = await shopbeApi.admin.userById(session.accessToken, userId);
+      setSelectedUser(user);
+      setError(null);
+    } catch (err) {
+      setError(errorMessage(err, "Failed to load user details."));
+    }
+  };
+
+  const draftRoleFor = (user: AdminUserDto) => roleDrafts[user.id] ?? user.role ?? "Customer";
+  const draftStatusFor = (user: AdminUserDto) => statusDrafts[user.id] ?? user.status ?? "Active";
+
   if (status === "loading" || (status === "authenticated" && !result && !error)) return <AdminLoadingState />;
   if (error && !result) return <AdminErrorState message={error} />;
 
@@ -69,6 +89,14 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <AdminPageIntro title="User management" description="Search the marketplace user base and correct role or lifecycle status without leaving the dashboard." />
 
+      <div className="grid gap-4 md:grid-cols-4">
+        <AdminCard><p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Visible users</p><p className="mt-3 text-3xl font-black text-slate-950">{result?.items.length ?? 0}</p></AdminCard>
+        <AdminCard><p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">All matches</p><p className="mt-3 text-3xl font-black text-slate-950">{result?.totalCount ?? 0}</p></AdminCard>
+        <AdminCard><p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Admin tools</p><p className="mt-3 text-base font-bold text-slate-950">Role changes, status control, lifecycle cleanup</p></AdminCard>
+        <AdminCard><p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Scope</p><p className="mt-3 text-base font-bold text-slate-950">Platform-wide user administration</p></AdminCard>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
       <AdminCard>
         <AdminToolbar>
           <div className="grid flex-1 gap-3 md:grid-cols-3">
@@ -115,22 +143,41 @@ export default function AdminUsersPage() {
                   <tr key={user.id} className="border-t border-slate-100 align-top">
                     <td className="py-4 font-medium text-slate-900">{user.fullName}</td>
                     <td className="py-4 text-slate-600">{user.email}</td>
-                    <td className="py-4"><AdminBadge value={user.role} /></td>
-                    <td className="py-4"><AdminBadge value={user.status} /></td>
+                    <td className="py-4">
+                      <div className="space-y-2">
+                        <AdminBadge value={user.role} />
+                        <AdminSelect value={draftRoleFor(user)} onChange={(event) => setRoleDrafts((value) => ({ ...value, [user.id]: event.target.value }))}>
+                          {ROLE_OPTIONS.map((role) => <option key={role} value={role}>{role}</option>)}
+                        </AdminSelect>
+                      </div>
+                    </td>
+                    <td className="py-4">
+                      <div className="space-y-2">
+                        <AdminBadge value={user.status} />
+                        <AdminSelect value={draftStatusFor(user)} onChange={(event) => setStatusDrafts((value) => ({ ...value, [user.id]: event.target.value }))}>
+                          {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status}</option>)}
+                        </AdminSelect>
+                      </div>
+                    </td>
                     <td className="py-4 text-slate-600">{formatAdminDate(user.createdAt)}</td>
                     <td className="py-4">
                       <div className="flex flex-wrap gap-2">
                         <AdminButton variant="secondary" disabled={busyId === user.id} onClick={() => {
-                          setBusyId(user.id);
-                          void runAction(() => shopbeApi.admin.updateUserRole(session!.accessToken!, user.id, user.role === "Seller" ? "Customer" : "Seller"), "Failed to update user role.");
+                          void openUserDetail(user.id);
                         }}>
-                          {user.role === "Seller" ? "Make customer" : "Make seller"}
+                          View
                         </AdminButton>
-                        <AdminButton variant="secondary" disabled={busyId === user.id} onClick={() => {
+                        <AdminButton variant="secondary" disabled={busyId === user.id || draftRoleFor(user) === (user.role ?? "Customer")} onClick={() => {
                           setBusyId(user.id);
-                          void runAction(() => shopbeApi.admin.updateUserStatus(session!.accessToken!, user.id, user.status === "Active" ? "Inactive" : "Active"), "Failed to update user status.");
+                          void runAction(() => shopbeApi.admin.updateUserRole(session!.accessToken!, user.id, draftRoleFor(user)), "Failed to update user role.");
                         }}>
-                          {user.status === "Active" ? "Deactivate" : "Activate"}
+                          Save role
+                        </AdminButton>
+                        <AdminButton variant="secondary" disabled={busyId === user.id || draftStatusFor(user) === (user.status ?? "Active")} onClick={() => {
+                          setBusyId(user.id);
+                          void runAction(() => shopbeApi.admin.updateUserStatus(session!.accessToken!, user.id, draftStatusFor(user)), "Failed to update user status.");
+                        }}>
+                          Save status
                         </AdminButton>
                         <AdminButton variant="danger" disabled={busyId === user.id} onClick={() => {
                           if (!window.confirm(`Delete ${user.fullName}?`)) return;
@@ -148,6 +195,30 @@ export default function AdminUsersPage() {
           </div>
         )}
       </AdminCard>
+
+      <AdminCard>
+        <h2 className="text-lg font-black text-slate-950">User detail</h2>
+        {selectedUser ? (
+          <div className="mt-5 space-y-4 text-sm text-slate-600">
+            <div>
+              <p className="text-xl font-black text-slate-950">{selectedUser.fullName}</p>
+              <p className="mt-1">{selectedUser.email}</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Role</p><p className="mt-2"><AdminBadge value={selectedUser.role} /></p></div>
+              <div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Status</p><p className="mt-2"><AdminBadge value={selectedUser.status} /></p></div>
+              <div className="rounded-2xl bg-slate-50 p-4 sm:col-span-2"><p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Keycloak ID</p><p className="mt-2 break-all font-mono text-xs text-slate-700">{selectedUser.keycloakId}</p></div>
+              <div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Created</p><p className="mt-2 text-slate-800">{formatAdminDate(selectedUser.createdAt)}</p></div>
+              <div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Updated</p><p className="mt-2 text-slate-800">{formatAdminDate(selectedUser.updatedAt)}</p></div>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-5">
+            <AdminEmptyState title="Select a user" message="Use the View action in the table to inspect a user record before making platform changes." />
+          </div>
+        )}
+      </AdminCard>
+      </div>
     </div>
   );
 }

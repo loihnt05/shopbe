@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { errorMessage } from "@/lib/errors";
@@ -47,6 +48,22 @@ export default function AdminOverviewPage() {
         <AdminStatCard label="Total orders" value={data.totalOrders.toLocaleString()} tone="emerald" />
         <AdminStatCard label="Monthly revenue" value={<AdminCompactMoney amount={data.monthlyRevenue} currency="USD" />} />
       </div>
+
+      <AdminCard>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-black text-slate-950">Administration tools</h2>
+            <p className="mt-1 text-sm text-slate-500">Jump straight into platform-wide user, product, order, and business management workflows.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <Link href="/admin/users" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-800 transition hover:border-slate-300 hover:bg-slate-100">User management</Link>
+            <Link href="/admin/products" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-800 transition hover:border-slate-300 hover:bg-slate-100">Product management</Link>
+            <Link href="/admin/orders" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-800 transition hover:border-slate-300 hover:bg-slate-100">Order monitoring</Link>
+            <Link href="/admin/analytics" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-800 transition hover:border-slate-300 hover:bg-slate-100">Revenue analytics</Link>
+            <Link href="/admin/sellers" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-800 transition hover:border-slate-300 hover:bg-slate-100">Business statistics</Link>
+          </div>
+        </div>
+      </AdminCard>
 
       <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
         <AdminCard>

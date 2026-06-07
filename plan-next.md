@@ -1,87 +1,76 @@
-# Next Plan: Phase 3
+# Next Plan: Phase 4
 
-This phase turns the existing cache scaffolding into a correct and useful runtime optimization for public read paths.
+This phase improves notification delivery resilience using the persistence that already exists in the email queue path.
 
 ## Goal
 
-Improve cache correctness and reduce repeated database work on high-value product and recommendation reads.
+Make persisted email messages recoverable if the immediate Hangfire enqueue/processing path is interrupted.
 
 ## Why This Is Next
 
-- Phase 1 made the app easier to start and demo.
-- Phase 2 made the demo flow verified and stable.
-- The repo already advertises Redis as partial infrastructure, but cache invalidation is incomplete and some expensive public reads are still uncached.
+- Phase 3 improved cache correctness and high-value read performance.
+- The app already writes `EmailMessage` records before queueing background work.
+- The README still calls notifications partial, and the smallest useful improvement is to recover stuck pending/failed email messages automatically.
 
-## Phase 3 Scope
+## Phase 4 Scope
 
-1. Fix product cache invalidation so updates and deletes clear the real cache keys.
-2. Implement prefix-based cache invalidation for grouped product/recommendation cache entries.
-3. Add cache coverage to the most valuable public recommendation endpoints.
-4. Keep all cache changes bounded to runtime behavior, not new product features.
+1. Add a recovery job for `EmailMessage` rows that are pending or retryable.
+2. Schedule that recovery job as recurring background work.
+3. Keep the change bounded to email reliability, not a full event-driven notification redesign.
 
 ## Deliverables
 
-### 1. Cache Invalidation Correctness
+### 1. Email Recovery Job
 
-Fix mismatches between read cache keys and mutation invalidation logic.
-
-Required coverage:
-
-- product detail cache key invalidates correctly after update/delete
-- search/list caches can be invalidated by prefix
-- recommendation caches can be invalidated by prefix when product data changes
-
-### 2. Prefix Cache Removal
-
-Replace the current `NotImplementedException` in `RedisCacheService.RemoveByPrefixAsync` with working Redis-backed prefix deletion.
+Add a background job that scans persisted email messages and re-enqueues retryable work.
 
 Required behavior:
 
-- uses the configured Redis connection
-- respects the configured instance-name prefix
-- safely removes matching keys without changing non-matching keys
+- picks up `Pending` and `Failed` messages
+- ignores `Sent` and `DeadLetter` messages
+- respects `MaxAttempts`
+- avoids hot-loop re-enqueueing by using a retry delay window
 
-### 3. Recommendation Read Caching
+### 2. Startup Scheduling
 
-Add cache-aside behavior for public recommendation endpoints that are likely to be hit often.
+Wire the recovery job into app startup similarly to the existing recurring cleanup job.
 
-Recommended targets:
+Required behavior:
 
-- top selling products
-- similar products by product ID
-- frequently bought together
+- configurable enable/disable flag
+- configurable cron expression
+- configurable batch size and retry delay window
 
-### 4. Verification Path
+### 3. Verification Path
 
-Run targeted backend tests after the cache changes and ensure existing E2E coverage still passes.
+Run backend tests/build to ensure the new recurring job wiring does not break existing flows.
 
 Recommended verification:
 
+- `dotnet test tests/Shopbe.Application.Tests/Shopbe.Application.Tests.csproj`
 - `dotnet test tests/Shopbe.E2E.Tests/Shopbe.E2E.Tests.csproj`
 - `dotnet build Shopbe.sln`
 
 ## Execution Order
 
-1. Fix the current invalidation key mismatch.
-2. Implement working prefix invalidation in Redis cache service.
-3. Add recommendation caching with clear cache keys.
-4. Invalidate search/recommendation caches from product mutation handlers.
-5. Re-run tests/build and fix any fallout.
+1. Add the email recovery job.
+2. Register it in DI.
+3. Schedule it from `Program.cs` with configuration defaults.
+4. Re-run tests/build and confirm no startup regressions.
 
 ## Acceptance Criteria
 
-- Product updates and deletes no longer leave stale detail cache entries behind.
-- Product search and recommendation caches can be invalidated by prefix.
-- Public recommendation endpoints use cache-aside reads.
-- Existing tests still pass after cache behavior changes.
+- Retryable persisted email messages can be re-enqueued automatically.
+- Recovery scheduling is configuration-driven.
+- Existing tests still pass after the new background job is introduced.
 
-## Out Of Scope For Phase 3
+## Out Of Scope For Phase 4
 
-- cache metrics dashboards
-- full cache invalidation for every domain object
-- write-through caching
-- queue-based cache invalidation events
+- replacing Hangfire with an external broker
+- general notification center redesign
+- SMS/push channels
+- full outbox/event bus architecture
 
 ## Exit Condition
 
-Phase 3 is done when the public product/recommendation read paths use cache more effectively and product mutations invalidate the relevant cache entries correctly.
+Phase 4 is done when persisted email messages have an automatic recovery path instead of depending only on the initial enqueue attempt.

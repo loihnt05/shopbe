@@ -191,6 +191,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 // User behavior lifecycle cleanup (recurring job)
 builder.Services.AddScoped<Shopbe.Infrastructure.Services.UserBehaviorCleanupJob>();
+builder.Services.AddScoped<Shopbe.Infrastructure.Services.Email.EmailRecoveryJob>();
 
 var app = builder.Build();
 
@@ -246,6 +247,24 @@ if (builder.Configuration.GetValue("UserBehavior:Cleanup:Enabled", true))
         recurringJobs.AddOrUpdate<Shopbe.Infrastructure.Services.UserBehaviorCleanupJob>(
             recurringJobId: "user-behavior-cleanup",
             methodCall: job => job.RunAsync(batchSize, CancellationToken.None),
+            cronExpression: cron,
+            options: new RecurringJobOptions());
+    }
+}
+
+// Schedule recurring recovery for persisted email messages that are still pending or retryable.
+if (builder.Configuration.GetValue("Email:Recovery:Enabled", true))
+{
+    var cron = builder.Configuration["Email:Recovery:Cron"] ?? "*/10 * * * *";
+    var batchSize = builder.Configuration.GetValue("Email:Recovery:BatchSize", 100);
+    var retryDelayMinutes = builder.Configuration.GetValue("Email:Recovery:RetryDelayMinutes", 5);
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var recurringJobs = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+        recurringJobs.AddOrUpdate<Shopbe.Infrastructure.Services.Email.EmailRecoveryJob>(
+            recurringJobId: "email-recovery",
+            methodCall: job => job.RunAsync(batchSize, retryDelayMinutes, CancellationToken.None),
             cronExpression: cron,
             options: new RecurringJobOptions());
     }
@@ -339,4 +358,3 @@ static void AddRoleClaims(ClaimsIdentity identity, string? json, string? resourc
 
 // Expose Program for integration/E2E tests (WebApplicationFactory<Program>).
 public partial class Program;
-
