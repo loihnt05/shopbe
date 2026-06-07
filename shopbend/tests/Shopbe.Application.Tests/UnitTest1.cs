@@ -19,7 +19,8 @@ public class ProductHandlersTests
     public async Task CreateProductHandler_ShouldThrow_WhenNameIsMissing()
     {
         var (_, _, _, _, unitOfWork) = CreateUnitOfWorkMocks();
-        var handler = new CreateProductHandler(unitOfWork.Object);
+        var cache = new Mock<ICacheService>(MockBehavior.Strict);
+        var handler = new CreateProductHandler(unitOfWork.Object, cache.Object);
 
         var command = new CreateProductCommand(new ProductRequestDto(
             Name: "   ",
@@ -39,7 +40,8 @@ public class ProductHandlersTests
     public async Task CreateProductHandler_ShouldThrow_WhenVariantSkusAreDuplicated()
     {
         var (_, _, _, _, unitOfWork) = CreateUnitOfWorkMocks();
-        var handler = new CreateProductHandler(unitOfWork.Object);
+        var cache = new Mock<ICacheService>(MockBehavior.Strict);
+        var handler = new CreateProductHandler(unitOfWork.Object, cache.Object);
 
         var command = new CreateProductCommand(new ProductRequestDto(
             Name: "T-Shirt",
@@ -63,7 +65,9 @@ public class ProductHandlersTests
     public async Task CreateProductHandler_ShouldPersistProductAndUsePrimaryImage()
     {
         var (productRepository, categoryRepository, _, _, unitOfWork) = CreateUnitOfWorkMocks();
-        var handler = new CreateProductHandler(unitOfWork.Object);
+        var cache = new Mock<ICacheService>(MockBehavior.Strict);
+        cache.Setup(x => x.RemoveByPrefixAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+        var handler = new CreateProductHandler(unitOfWork.Object, cache.Object);
 
         var categoryId = Guid.NewGuid();
         categoryRepository
@@ -104,6 +108,7 @@ public class ProductHandlersTests
 
         productRepository.Verify(r => r.AddProductAsync(It.IsAny<DomainProduct>()), Times.Once);
         unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        cache.Verify(x => x.RemoveByPrefixAsync(It.IsAny<string>()), Times.Exactly(2));
     }
 
     [Fact]
@@ -130,6 +135,7 @@ public class ProductHandlersTests
         var (productRepository, _, _, _, unitOfWork) = CreateUnitOfWorkMocks();
         var cache = new Mock<ICacheService>(MockBehavior.Strict);
         cache.Setup(x => x.RemoveAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+        cache.Setup(x => x.RemoveByPrefixAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
         var handler = new DeleteProductHandler(unitOfWork.Object, cache.Object);
 
         var productId = Guid.NewGuid();
@@ -145,6 +151,8 @@ public class ProductHandlersTests
         Assert.True(deleted);
         productRepository.Verify(r => r.DeleteProductAsync(productId), Times.Once);
         unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        cache.Verify(x => x.RemoveAsync($"products:id:v2:{productId}"), Times.Once);
+        cache.Verify(x => x.RemoveByPrefixAsync(It.IsAny<string>()), Times.Exactly(2));
     }
 
     private static (

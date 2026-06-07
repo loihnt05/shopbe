@@ -10,6 +10,12 @@ namespace Shopbe.Application.Product.Products.Commands.UpdateProduct;
 public class UpdateProductHandler(IUnitOfWork unitOfWork, ICacheService cache)
     : IRequestHandler<UpdateProductCommand, ProductResponseDto>
 {
+    private static readonly string[] CachePrefixesToInvalidate =
+    [
+        "products:search:",
+        "recommendations:"
+    ];
+
     public async Task<ProductResponseDto> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
     {
         var product = await unitOfWork.Product.GetProductByIdAsync(request.Id);
@@ -70,7 +76,11 @@ public class UpdateProductHandler(IUnitOfWork unitOfWork, ICacheService cache)
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Cache-aside invalidation
-        await cache.RemoveAsync($"products:id:{request.Id}");
+        await cache.RemoveAsync($"products:id:v2:{request.Id}");
+        foreach (var prefix in CachePrefixesToInvalidate)
+        {
+            await cache.RemoveByPrefixAsync(prefix);
+        }
 
         return ProductDtoMapper.ToResponse(product);
     }

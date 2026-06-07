@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Shopbe.Domain.Entities.Category;
 using Shopbe.Domain.Entities.Order;
 using Shopbe.Domain.Entities.Product;
+using Shopbe.Domain.Entities.Seller;
 using Shopbe.Domain.Entities.Shipping;
 using Shopbe.Domain.Entities.User;
 using Shopbe.Domain.Enums;
@@ -15,9 +16,70 @@ namespace Shopbe.Infrastructure.Persistence;
 /// </summary>
 public static class ShopbeDbSeeder
 {
+    private sealed record DemoUserSeed(
+        string PlaceholderKeycloakId,
+        string Email,
+        string FullName,
+        UserRole Role,
+        string PhoneNumber,
+        string City,
+        string District,
+        string Ward,
+        string AddressLine,
+        string? ShopName = null,
+        string? ShopDescription = null);
+
+    private static readonly DemoUserSeed[] DemoUsers =
+    [
+        new(
+            PlaceholderKeycloakId: "demo-admin-keycloak-id",
+            Email: "admin@shopbee.vn",
+            FullName: "System Admin",
+            Role: UserRole.Admin,
+            PhoneNumber: "0900000001",
+            City: "Ho Chi Minh City",
+            District: "District 1",
+            Ward: "Ben Nghe",
+            AddressLine: "1 Admin Street"),
+        new(
+            PlaceholderKeycloakId: "demo-seller1-keycloak-id",
+            Email: "seller1@shopbee.vn",
+            FullName: "Seller One",
+            Role: UserRole.Seller,
+            PhoneNumber: "0900000002",
+            City: "Ho Chi Minh City",
+            District: "District 3",
+            Ward: "Ward 7",
+            AddressLine: "12 Seller Street",
+            ShopName: "Luna Tech",
+            ShopDescription: "Electronics and desk setup accessories."),
+        new(
+            PlaceholderKeycloakId: "demo-seller2-keycloak-id",
+            Email: "seller2@shopbee.vn",
+            FullName: "Seller Two",
+            Role: UserRole.Seller,
+            PhoneNumber: "0900000003",
+            City: "Ha Noi",
+            District: "Cau Giay",
+            Ward: "Dich Vong",
+            AddressLine: "88 Market Avenue",
+            ShopName: "Northwind Home",
+            ShopDescription: "Home office and lifestyle goods."),
+        new(
+            PlaceholderKeycloakId: "demo-customer1-keycloak-id",
+            Email: "customer1@shopbee.vn",
+            FullName: "Customer One",
+            Role: UserRole.Customer,
+            PhoneNumber: "0900000004",
+            City: "Da Nang",
+            District: "Hai Chau",
+            Ward: "Thach Thang",
+            AddressLine: "25 Customer Lane")
+    ];
+
     public static async Task SeedAsync(ShopDbContext db, ILogger? logger = null, CancellationToken ct = default)
     {
-        await SeedAdminUserAsync(db, logger, ct);
+        await EnsureDemoUsersAsync(db, logger, ct);
         await ShippingDataSeeder.SeedAsync(db, logger, ct);
         await SeedCouponsAsync(db, logger, ct);
         await SeedAttributesAsync(db, logger, ct);
@@ -32,30 +94,99 @@ public static class ShopbeDbSeeder
         await db.SaveChangesAsync(ct);
         
         await BackfillProductSellerIdsAsync(db, logger, ct);
+        await SeedSellerShowcaseProductsAsync(db, logger, ct);
+        await SeedDemoOrdersAsync(db, logger, ct);
         await AssignRandomAttributesToVariantsAsync(db, logger, ct);
 
         logger?.LogInformation("Seeded sample catalog: {Count} products.", await db.Products.CountAsync(ct));
     }
 
-    private static async Task SeedAdminUserAsync(ShopDbContext db, ILogger? logger, CancellationToken ct)
+    private static async Task EnsureDemoUsersAsync(ShopDbContext db, ILogger? logger, CancellationToken ct)
     {
-        if (await db.Users.AnyAsync(u => u.Role == UserRole.Admin, ct))
-            return;
-
-        var adminKeycloakId = Environment.GetEnvironmentVariable("ADMIN_KEYCLOAK_ID") ?? "admin-keycloak-id";
-
-        var admin = new User
+        foreach (var demoUser in DemoUsers)
         {
-            KeycloakId = adminKeycloakId,
-            Email = "admin@shopbee.vn",
-            FullName = "System Admin",
-            Role = UserRole.Admin,
-            Status = UserStatus.Active
-        };
-        db.Users.Add(admin);
-        await db.SaveChangesAsync(ct);
+            var user = await db.Users
+                .Include(u => u.SellerProfile)
+                .Include(u => u.UserAddresses)
+                .Include(u => u.ShoppingCart)
+                .FirstOrDefaultAsync(u => u.Email == demoUser.Email, ct);
 
-        logger?.LogInformation("Seeded admin user: {Email}", admin.Email);
+            var created = false;
+            if (user is null)
+            {
+                user = new User
+                {
+                    KeycloakId = demoUser.PlaceholderKeycloakId,
+                    Email = demoUser.Email,
+                    FullName = demoUser.FullName,
+                    Role = demoUser.Role,
+                    Status = UserStatus.Active,
+                    PhoneNumber = demoUser.PhoneNumber,
+                    Country = "Vietnam",
+                    Language = "vi-VN"
+                };
+                db.Users.Add(user);
+                await db.SaveChangesAsync(ct);
+                created = true;
+            }
+            else
+            {
+                user.FullName = demoUser.FullName;
+                user.Role = demoUser.Role;
+                user.Status = UserStatus.Active;
+                user.PhoneNumber = demoUser.PhoneNumber;
+                user.Country = user.Country ?? "Vietnam";
+                user.Language = user.Language ?? "vi-VN";
+                if (string.IsNullOrWhiteSpace(user.KeycloakId))
+                {
+                    user.KeycloakId = demoUser.PlaceholderKeycloakId;
+                }
+            }
+
+            if (!user.UserAddresses.Any())
+            {
+                user.UserAddresses.Add(new UserAddress
+                {
+                    UserId = user.Id,
+                    ReceiverName = user.FullName,
+                    Phone = demoUser.PhoneNumber,
+                    AddressLine = demoUser.AddressLine,
+                    City = demoUser.City,
+                    District = demoUser.District,
+                    Ward = demoUser.Ward,
+                    Label = "Default",
+                    IsDefault = true
+                });
+            }
+
+            if (user.ShoppingCart is null)
+            {
+                user.ShoppingCart = new Shopbe.Domain.Entities.ShoppingCart.ShoppingCart
+                {
+                    UserId = user.Id
+                };
+            }
+
+            if (demoUser.Role == UserRole.Seller)
+            {
+                user.SellerProfile ??= new SellerProfile
+                {
+                    UserId = user.Id
+                };
+
+                user.SellerProfile.ShopName = demoUser.ShopName ?? user.FullName;
+                user.SellerProfile.ShopDescription = demoUser.ShopDescription;
+                user.SellerProfile.ContactEmail = user.Email;
+                user.SellerProfile.ContactPhone = demoUser.PhoneNumber;
+                user.SellerProfile.Address = demoUser.AddressLine;
+                user.SellerProfile.City = demoUser.City;
+                user.SellerProfile.Status = SellerStatus.Active;
+                user.SellerProfile.CommissionRate = 0.05m;
+            }
+
+            await db.SaveChangesAsync(ct);
+            logger?.LogInformation("Ensured demo user: {Email} ({Role}){Suffix}", user.Email, user.Role, created ? " [created]" : string.Empty);
+        }
     }
 
     private static async Task BackfillProductSellerIdsAsync(ShopDbContext db, ILogger? logger, CancellationToken ct)
@@ -76,6 +207,361 @@ public static class ShopbeDbSeeder
 
         await db.SaveChangesAsync(ct);
         logger?.LogInformation("Backfilled {Count} products with admin SellerId.", productsWithoutSeller.Count);
+    }
+
+    private static async Task SeedSellerShowcaseProductsAsync(ShopDbContext db, ILogger? logger, CancellationToken ct)
+    {
+        var seller1 = await db.Users.FirstOrDefaultAsync(u => u.Email == "seller1@shopbee.vn", ct);
+        var seller2 = await db.Users.FirstOrDefaultAsync(u => u.Email == "seller2@shopbee.vn", ct);
+        if (seller1 is null || seller2 is null)
+        {
+            return;
+        }
+
+        var category = await db.Categories.FirstOrDefaultAsync(c => c.Slug == "electronics", ct)
+            ?? await db.Categories.FirstOrDefaultAsync(c => c.IsActive, ct);
+
+        if (category is null)
+        {
+            category = new Category
+            {
+                Name = "Electronics",
+                Slug = "electronics",
+                IsActive = true
+            };
+            db.Categories.Add(category);
+            await db.SaveChangesAsync(ct);
+        }
+
+        await EnsureDemoProductAsync(
+            db,
+            seller1.Id,
+            category.Id,
+            slug: "luna-wireless-headphones",
+            name: "Luna Wireless Headphones",
+            description: "Seller demo product for testing the approved seller catalog flow.",
+            basePrice: 1290000m,
+            approvalStatus: ApprovalStatus.Approved,
+            imageUrl: "https://picsum.photos/seed/luna-wireless-headphones/800/800",
+            sku: "LUNA-HEADPHONE-01",
+            stockQuantity: 24,
+            logger: logger,
+            ct: ct);
+
+        await EnsureDemoProductAsync(
+            db,
+            seller2.Id,
+            category.Id,
+            slug: "northwind-monitor-stand",
+            name: "Northwind Monitor Stand",
+            description: "Seller demo product for testing another active seller account.",
+            basePrice: 690000m,
+            approvalStatus: ApprovalStatus.Approved,
+            imageUrl: "https://picsum.photos/seed/northwind-monitor-stand/800/800",
+            sku: "NORTHWIND-STAND-01",
+            stockQuantity: 18,
+            logger: logger,
+            ct: ct);
+
+        await EnsureDemoProductAsync(
+            db,
+            seller2.Id,
+            category.Id,
+            slug: "northwind-desk-lamp",
+            name: "Northwind Desk Lamp",
+            description: "Seller demo product left pending so admin moderation can be tested quickly.",
+            basePrice: 450000m,
+            approvalStatus: ApprovalStatus.Pending,
+            imageUrl: "https://picsum.photos/seed/northwind-desk-lamp/800/800",
+            sku: "NORTHWIND-LAMP-01",
+            stockQuantity: 10,
+            logger: logger,
+            ct: ct);
+    }
+
+    private static async Task SeedDemoOrdersAsync(ShopDbContext db, ILogger? logger, CancellationToken ct)
+    {
+        var customer = await db.Users
+            .Include(u => u.UserAddresses)
+            .FirstOrDefaultAsync(u => u.Email == "customer1@shopbee.vn", ct);
+        var seller1 = await db.Users
+            .Include(u => u.SellerProfile)
+            .FirstOrDefaultAsync(u => u.Email == "seller1@shopbee.vn", ct);
+        var seller2 = await db.Users
+            .Include(u => u.SellerProfile)
+            .FirstOrDefaultAsync(u => u.Email == "seller2@shopbee.vn", ct);
+
+        if (customer is null || seller1 is null || seller2 is null)
+        {
+            return;
+        }
+
+        var defaultAddress = customer.UserAddresses.FirstOrDefault(a => a.IsDefault) ?? customer.UserAddresses.FirstOrDefault();
+        if (defaultAddress is null)
+        {
+            return;
+        }
+
+        var seller1Variant = await db.ProductVariants
+            .Include(v => v.Product)
+            .FirstOrDefaultAsync(v => v.Sku == "LUNA-HEADPHONE-01", ct);
+        var seller2Variant = await db.ProductVariants
+            .Include(v => v.Product)
+            .FirstOrDefaultAsync(v => v.Sku == "NORTHWIND-STAND-01", ct);
+
+        if (seller1Variant?.Product is null || seller2Variant?.Product is null)
+        {
+            return;
+        }
+
+        await EnsureDemoOrderAsync(
+            db,
+            customer,
+            defaultAddress,
+            seller1,
+            seller1Variant,
+            status: OrderStatus.Delivered,
+            shippingFee: 30000m,
+            quantity: 1,
+            note: "demo-order-seller1-delivered",
+            createdAt: DateTime.UtcNow.AddDays(-7),
+            changedAt: DateTime.UtcNow.AddDays(-5),
+            logger: logger,
+            ct: ct);
+
+        await EnsureDemoOrderAsync(
+            db,
+            customer,
+            defaultAddress,
+            seller2,
+            seller2Variant,
+            status: OrderStatus.Pending,
+            shippingFee: 25000m,
+            quantity: 1,
+            note: "demo-order-seller2-pending",
+            createdAt: DateTime.UtcNow.AddDays(-2),
+            changedAt: DateTime.UtcNow.AddDays(-2),
+            logger: logger,
+            ct: ct);
+
+        seller1.SellerProfile!.TotalSales = await db.OrderItems
+            .Where(i => i.SellerId == seller1.Id)
+            .SumAsync(i => i.Quantity, ct);
+        seller1.SellerProfile.TotalRevenue = await db.Orders
+            .Where(o => o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Processing || o.Status == OrderStatus.Shipped || o.Status == OrderStatus.Delivered)
+            .SelectMany(o => o.OrderItems)
+            .Where(i => i.SellerId == seller1.Id)
+            .SumAsync(i => i.TotalPrice, ct);
+
+        seller2.SellerProfile!.TotalSales = await db.OrderItems
+            .Where(i => i.SellerId == seller2.Id)
+            .SumAsync(i => i.Quantity, ct);
+        seller2.SellerProfile.TotalRevenue = await db.Orders
+            .Where(o => o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Processing || o.Status == OrderStatus.Shipped || o.Status == OrderStatus.Delivered)
+            .SelectMany(o => o.OrderItems)
+            .Where(i => i.SellerId == seller2.Id)
+            .SumAsync(i => i.TotalPrice, ct);
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static async Task EnsureDemoOrderAsync(
+        ShopDbContext db,
+        User customer,
+        UserAddress shippingAddress,
+        User seller,
+        ProductVariant variant,
+        OrderStatus status,
+        decimal shippingFee,
+        int quantity,
+        string note,
+        DateTime createdAt,
+        DateTime changedAt,
+        ILogger? logger,
+        CancellationToken ct)
+    {
+        var order = await db.Orders
+            .Include(o => o.OrderItems)
+            .Include(o => o.OrderStatusHistory)
+            .FirstOrDefaultAsync(o => o.Note == note, ct);
+
+        var subtotal = variant.Price * quantity;
+        var total = subtotal + shippingFee;
+
+        if (order is null)
+        {
+            order = new Order
+            {
+                UserId = customer.Id,
+                ShippingReceiverName = shippingAddress.ReceiverName,
+                ShippingPhone = shippingAddress.Phone,
+                ShippingAddressLine = shippingAddress.AddressLine,
+                ShippingCity = shippingAddress.City,
+                ShippingDistrict = shippingAddress.District,
+                ShippingWard = shippingAddress.Ward,
+                SubtotalAmount = subtotal,
+                DiscountAmount = 0,
+                ShippingFee = shippingFee,
+                TotalAmount = total,
+                Currency = "VND",
+                Status = status,
+                Note = note,
+                CreatedAt = createdAt,
+                UpdatedAt = changedAt
+            };
+            db.Orders.Add(order);
+            await db.SaveChangesAsync(ct);
+        }
+        else
+        {
+            order.UserId = customer.Id;
+            order.ShippingReceiverName = shippingAddress.ReceiverName;
+            order.ShippingPhone = shippingAddress.Phone;
+            order.ShippingAddressLine = shippingAddress.AddressLine;
+            order.ShippingCity = shippingAddress.City;
+            order.ShippingDistrict = shippingAddress.District;
+            order.ShippingWard = shippingAddress.Ward;
+            order.SubtotalAmount = subtotal;
+            order.DiscountAmount = 0;
+            order.ShippingFee = shippingFee;
+            order.TotalAmount = total;
+            order.Currency = "VND";
+            order.Status = status;
+            order.Note = note;
+            order.CreatedAt = createdAt;
+            order.UpdatedAt = changedAt;
+        }
+
+        var orderItem = order.OrderItems.FirstOrDefault();
+        if (orderItem is null)
+        {
+            orderItem = new OrderItem
+            {
+                OrderId = order.Id
+            };
+            order.OrderItems.Add(orderItem);
+        }
+
+        orderItem.ProductVariantId = variant.Id;
+        orderItem.SkuSnapshot = variant.Sku;
+        orderItem.ProductNameSnapshot = variant.Product!.Name;
+        orderItem.Quantity = quantity;
+        orderItem.UnitPrice = variant.Price;
+        orderItem.TotalPrice = subtotal;
+        orderItem.SellerId = seller.Id;
+        orderItem.CreatedAt = createdAt;
+        orderItem.UpdatedAt = changedAt;
+
+        foreach (var extraItem in order.OrderItems.Skip(1).ToList())
+        {
+            db.OrderItems.Remove(extraItem);
+        }
+
+        var statusHistory = order.OrderStatusHistory.FirstOrDefault();
+        if (statusHistory is null)
+        {
+            statusHistory = new OrderStatusHistory
+            {
+                OrderId = order.Id
+            };
+            order.OrderStatusHistory.Add(statusHistory);
+        }
+
+        statusHistory.Status = status;
+        statusHistory.Note = $"Seeded status for {note}";
+        statusHistory.ChangedBy = seller.Id;
+        statusHistory.ChangedAt = changedAt;
+        statusHistory.CreatedAt = createdAt;
+        statusHistory.UpdatedAt = changedAt;
+
+        foreach (var extraHistory in order.OrderStatusHistory.Skip(1).ToList())
+        {
+            db.OrderStatusHistory.Remove(extraHistory);
+        }
+
+        variant.Product.SoldCount = await db.OrderItems
+            .Where(i => i.ProductVariant!.ProductId == variant.ProductId)
+            .SumAsync(i => i.Quantity, ct);
+
+        await db.SaveChangesAsync(ct);
+        logger?.LogInformation("Ensured demo order: {Note} ({Status})", note, status);
+    }
+
+    private static async Task EnsureDemoProductAsync(
+        ShopDbContext db,
+        Guid sellerId,
+        Guid categoryId,
+        string slug,
+        string name,
+        string description,
+        decimal basePrice,
+        ApprovalStatus approvalStatus,
+        string imageUrl,
+        string sku,
+        int stockQuantity,
+        ILogger? logger,
+        CancellationToken ct)
+    {
+        var product = await db.Products
+            .Include(p => p.Images)
+            .Include(p => p.Variants)
+            .FirstOrDefaultAsync(p => p.Slug == slug, ct);
+
+        if (product is null)
+        {
+            product = new Product
+            {
+                Name = name,
+                Slug = slug,
+                Description = description,
+                BasePrice = basePrice,
+                CategoryId = categoryId,
+                SellerId = sellerId,
+                ApprovalStatus = approvalStatus,
+                IsActive = true,
+                SoldCount = 0
+            };
+            db.Products.Add(product);
+            await db.SaveChangesAsync(ct);
+            logger?.LogInformation("Seeded demo seller product: {Slug}", slug);
+        }
+        else
+        {
+            product.Name = name;
+            product.Description = description;
+            product.BasePrice = basePrice;
+            product.CategoryId = categoryId;
+            product.SellerId = sellerId;
+            product.ApprovalStatus = approvalStatus;
+            product.IsActive = true;
+            await db.SaveChangesAsync(ct);
+        }
+
+        if (!product.Images.Any())
+        {
+            db.ProductImages.Add(new ProductImage
+            {
+                ProductId = product.Id,
+                ImageUrl = imageUrl,
+                AltText = name,
+                IsPrimary = true,
+                SortOrder = 0
+            });
+        }
+
+        if (!product.Variants.Any())
+        {
+            db.ProductVariants.Add(new ProductVariant
+            {
+                ProductId = product.Id,
+                Sku = sku,
+                Price = basePrice,
+                StockQuantity = stockQuantity,
+                IsActive = true
+            });
+        }
+
+        await db.SaveChangesAsync(ct);
     }
 
     private static async Task SeedGamingLaptopAsync(ShopDbContext db, ILogger? logger, CancellationToken ct)

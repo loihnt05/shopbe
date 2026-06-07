@@ -84,9 +84,15 @@ public sealed class GetSellerProductsHandler(IUnitOfWork unitOfWork, ICurrentUse
     }
 }
 
-public sealed class CreateSellerProductHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+public sealed class CreateSellerProductHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser, ICacheService cache)
     : IRequestHandler<CreateSellerProductCommand, SellerProductListItemDto>
 {
+    private static readonly string[] CachePrefixesToInvalidate =
+    [
+        "products:search:",
+        "recommendations:"
+    ];
+
     public async Task<SellerProductListItemDto> Handle(CreateSellerProductCommand request, CancellationToken cancellationToken)
     {
         var seller = await SellerSupport.RequireSellerAsync(unitOfWork, currentUser);
@@ -120,13 +126,23 @@ public sealed class CreateSellerProductHandler(IUnitOfWork unitOfWork, ICurrentU
         }
 
         await unitOfWork.Product.AddProductAsync(product);
+        foreach (var prefix in CachePrefixesToInvalidate)
+        {
+            await cache.RemoveByPrefixAsync(prefix);
+        }
         return SellerSupport.MapProduct(product);
     }
 }
 
-public sealed class UpdateSellerProductHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+public sealed class UpdateSellerProductHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser, ICacheService cache)
     : IRequestHandler<UpdateSellerProductCommand, SellerProductListItemDto>
 {
+    private static readonly string[] CachePrefixesToInvalidate =
+    [
+        "products:search:",
+        "recommendations:"
+    ];
+
     public async Task<SellerProductListItemDto> Handle(UpdateSellerProductCommand request, CancellationToken cancellationToken)
     {
         var seller = await SellerSupport.RequireSellerAsync(unitOfWork, currentUser);
@@ -166,13 +182,24 @@ public sealed class UpdateSellerProductHandler(IUnitOfWork unitOfWork, ICurrentU
         }
 
         await unitOfWork.Product.UpdateProductAsync(product);
+        await cache.RemoveAsync($"products:id:v2:{product.Id}");
+        foreach (var prefix in CachePrefixesToInvalidate)
+        {
+            await cache.RemoveByPrefixAsync(prefix);
+        }
         return SellerSupport.MapProduct(product);
     }
 }
 
-public sealed class DeleteSellerProductHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser)
+public sealed class DeleteSellerProductHandler(IUnitOfWork unitOfWork, ICurrentUser currentUser, ICacheService cache)
     : IRequestHandler<DeleteSellerProductCommand, bool>
 {
+    private static readonly string[] CachePrefixesToInvalidate =
+    [
+        "products:search:",
+        "recommendations:"
+    ];
+
     public async Task<bool> Handle(DeleteSellerProductCommand request, CancellationToken cancellationToken)
     {
         var seller = await SellerSupport.RequireSellerAsync(unitOfWork, currentUser);
@@ -186,6 +213,11 @@ public sealed class DeleteSellerProductHandler(IUnitOfWork unitOfWork, ICurrentU
         product.DeletedAt = DateTime.UtcNow;
         product.UpdatedAt = DateTime.UtcNow;
         await unitOfWork.Product.UpdateProductAsync(product);
+        await cache.RemoveAsync($"products:id:v2:{product.Id}");
+        foreach (var prefix in CachePrefixesToInvalidate)
+        {
+            await cache.RemoveByPrefixAsync(prefix);
+        }
         return true;
     }
 }

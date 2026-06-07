@@ -2,12 +2,15 @@
 
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Configuration;
 using Shopbe.Application.Common.Interfaces;
+using StackExchange.Redis;
 
 namespace Shopbe.Infrastructure.Services;
 
-public class RedisCacheService(IDistributedCache cache) : ICacheService
+public class RedisCacheService(IDistributedCache cache, IConnectionMultiplexer redis, IConfiguration configuration) : ICacheService
 {
+    private readonly string _instanceName = configuration["Redis:InstanceName"] ?? "shopbe:";
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -35,10 +38,30 @@ public class RedisCacheService(IDistributedCache cache) : ICacheService
         await cache.RemoveAsync(key);
     }
 
-    public Task RemoveByPrefixAsync(string prefix)
+    public async Task RemoveByPrefixAsync(string prefix)
     {
-        // dùng cho invalidate hàng loạt, ví dụ xóa cache "products:*"
-        // cần IConnectionMultiplexer để scan keys
-        throw new NotImplementedException("Cần inject IConnectionMultiplexer");
+        var pattern = $"{_instanceName}{prefix}*";
+        var keys = new HashSet<RedisKey>();
+
+        foreach (var endPoint in redis.GetEndPoints())
+        {
+            var server = redis.GetServer(endPoint);
+            if (!server.IsConnected)
+            {
+                continue;
+            }
+
+            foreach (var key in server.Keys(pattern: pattern))
+            {
+                keys.Add(key);
+            }
+        }
+
+        if (keys.Count == 0)
+        {
+            return;
+        }
+
+        await redis.GetDatabase().KeyDeleteAsync(keys.ToArray());
     }
 }

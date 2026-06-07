@@ -53,6 +53,7 @@ public class SellerProfileConfiguration : IEntityTypeConfiguration<SellerProfile
         builder.Property(sp => sp.Status)
             .HasConversion<string>()
             .HasMaxLength(50)
+            .HasSentinel(SellerStatus.Active)
             .HasDefaultValue(SellerStatus.Pending);
 
         builder.Property(sp => sp.CommissionRate)

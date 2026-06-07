@@ -1,440 +1,215 @@
-# 🛒 AI-Enhanced E-Commerce Platform
+# ShopBee Online Shopping
 
-![.NET](https://img.shields.io/badge/.NET-ASP.NET%20Core-blue)
-![Architecture](https://img.shields.io/badge/Architecture-Clean%20Architecture-green)
-![Microservice](https://img.shields.io/badge/Architecture-Microservice%20Ready-purple)
-![AI](https://img.shields.io/badge/AI-Chatbot%20%2B%20Recommendation-orange)
-![License](https://img.shields.io/badge/License-MIT-lightgrey)
+ShopBee is a full-stack e-commerce application built as a single repository with a .NET 8 backend, a Next.js frontend, and Keycloak-based authentication.
 
-A **modern AI-powered e-commerce platform** built with **ASP.NET Core**, designed using **Clean Architecture** and prepared for **microservice scalability**.
+## Current State
 
-The system simulates a **production-level online shopping platform**, integrating:
+What is implemented now:
 
-* 🛍 Product management
-* 💳 Online payment gateway
-* 📦 Order lifecycle
-* 🤖 AI product recommendation
-* 💬 AI chatbot customer support
-* 📢 Notification & email system
+- ASP.NET Core 8 backend using Clean Architecture in `shopbend/`
+- Next.js 16 frontend in `shopfend/`
+- Keycloak authentication with NextAuth on the frontend
+- JWT bearer authentication and role checks on the backend
+- customer flows: catalog, product detail, cart, checkout, wishlist, purchases, reviews
+- admin flows: overview, users, sellers, products, orders, analytics, categories
+- seller flows: dashboard, products, orders, analytics, profile
+- Stripe payment endpoints
+- recommendation and chat endpoints/pages
+- local development infrastructure via Docker Compose: Keycloak, PostgreSQL, Redis
 
----
+What is only partial or planned:
 
-# 📌 Overview
+- Redis is configured but not yet fully rolled out across the highest-value read paths
+- notifications currently rely on in-process background jobs, not a queue-based pipeline
+- shipping entities and APIs exist, but provider-backed shipping integration is not the current local-dev focus
+- this repo is not running as separate deployed microservices today
 
-| Item         | Description                               |
-| ------------ | ----------------------------------------- |
-| Project      | **AI-Enhanced E-Commerce Platform**       |
-| Backend      | **ASP.NET Core 8.0**                          |
-| Architecture | **Service-Oriented / Microservice-ready** |
-| Database     | **SQL Server / PostgreSQL**               |
-| Cache        | **Redis**                                 |
-| Payments     | **Stripe**                                |
-| AI           | **LLM Chatbot + Recommendation Engine**   |
+## Repository Layout
 
-This platform demonstrates **real-world backend architecture** and **AI service integration** in a modern commerce system.
-
----
-
-# 🏗 System Architecture
-
-```mermaid
-flowchart TD
-
-Client[Web / Mobile Client]
-Gateway[API Gateway]
-
-Auth[Auth Service]
-Product[Product Service]
-Order[Order Service]
-Payment[Payment Service]
-Rec[Recommendation Service]
-Chat[Chatbot Service]
-Notify[Notification Service]
-
-DB[(Database)]
-Cache[(Redis Cache)]
-Queue[(Message Queue)]
-AI[(AI / LLM API)]
-
-Client --> Gateway
-
-Gateway --> Auth
-Gateway --> Product
-Gateway --> Order
-Gateway --> Payment
-Gateway --> Rec
-Gateway --> Chat
-Gateway --> Notify
-
-Auth --> DB
-Product --> DB
-Order --> DB
-Payment --> DB
-
-Rec --> Cache
-Chat --> AI
-Notify --> Queue
+```text
+.
+├── docker-compose.yml
+├── keycloak/
+│   ├── README.md
+│   └── realm-shopbee.json
+├── shopbend/
+│   ├── Shopbe.Domain/
+│   ├── Shopbe.Application/
+│   ├── Shopbe.Infrastructure/
+│   ├── Shopbe.Web/
+│   ├── Shopbe.Seeder/
+│   └── tests/
+└── shopfend/
 ```
 
-### Key Principles
+## Architecture
 
-* Clean Architecture
-* Service-Oriented Design
-* Loose Coupling
-* Scalability
-* Cloud-ready infrastructure
+The backend is a modular monolith, not an API gateway plus independently deployed services.
 
----
+- `Shopbe.Domain`: entities and enums
+- `Shopbe.Application`: CQRS handlers, DTOs, business logic
+- `Shopbe.Infrastructure`: EF Core, persistence, integrations, seeders, services
+- `Shopbe.Web`: HTTP API, auth wiring, middleware, Swagger
+- `shopfend`: customer/admin/seller UI built with App Router
 
-# 🧩 Core Services
+## Auth And Roles
 
-## 🔐 Auth Service
+The auth flow is:
 
-Handles **authentication and authorization**.
+1. The frontend signs users in through NextAuth using the Keycloak client `shopfend`.
+2. NextAuth stores the Keycloak access token and exposes realm roles in `session.user.roles`.
+3. Frontend middleware protects `/admin/*` and `/seller/*` based on those roles.
+4. The backend validates Keycloak JWTs and maps role claims from the token.
+5. `UserSyncMiddleware` ensures the authenticated Keycloak user exists in the app database.
 
-Features:
+Important detail:
 
-* User registration
-* Login / logout
-* JWT authentication
-* Refresh tokens
-* Role-based access control
+- Keycloak role claims control frontend access and backend `[Authorize(Roles = ...)]` checks.
+- App-side user records still matter for seller/admin data queries.
+- If a seeded app user and a Keycloak user share the same email, the backend links the existing app user to the Keycloak `sub` on first authenticated request.
 
-Roles:
+## Feature Status
 
-* **Admin**
-* **Seller**
-* **Customer**
+| Area | Status | Notes |
+| --- | --- | --- |
+| Keycloak login | Done | NextAuth + backend JWT validation |
+| Admin RBAC | Done | Admin pages and admin API controllers exist |
+| Seller RBAC | Done | Seller pages and seller API controllers exist |
+| Customer storefront | Done | Catalog, cart, checkout, purchases, wishlist |
+| Payments | Done | Stripe flow is wired in the backend |
+| Reviews | Done | Review endpoints and UI exist |
+| Recommendations | Partial | Available in current app, still evolving |
+| Chatbot | Partial | Available in current app, still evolving |
+| Redis caching | Partial | Present in infrastructure, not fully applied |
+| Notifications | Partial | Background job based, not queue based |
+| Shipping integration | Partial | Core pieces exist, provider integration is not finalized |
 
-Technology:
+## Local Setup
 
-* ASP.NET Identity
-* JWT Security
+### Prerequisites
 
----
+- Docker and Docker Compose
+- .NET 8 SDK
+- Node.js 20
+- `pnpm`
 
-# 🛍 Product Service
+### 1. Start infrastructure
 
-Manages the **product catalog**.
-
-Features:
-
-* Product CRUD
-* Category management
-* Product variants (size, color)
-* Image management
-* Inventory tracking
-* Product search and filtering
-
----
-
-# 📦 Order Service
-
-Handles the **shopping cart and order lifecycle**.
-
-Features:
-
-* Shopping cart
-* Checkout process
-* Shipping address
-* Discount codes
-* Order tracking
-
-Order Status:
-
-```
-Pending → Paid → Shipping → Completed
-                       ↘ Cancelled
-```
-
----
-
-# 💳 Payment Service
-
-Supports **real-world payment integration**.
-
-Supported Gateway:
-
-* **Stripe**
-
-### Payment Flow
-
-```
-Checkout
-   ↓
-Create Order (Pending)
-   ↓
-Create Payment Session
-   ↓
-User Pays
-   ↓
-Webhook from Gateway
-   ↓
-Verify Signature
-   ↓
-Update Order → Paid
-```
-
-Features:
-
-* Webhook verification
-* Idempotency protection
-* Refund support
-* Transaction lifecycle management
-
----
-
-# 🚚 Shipping Service
-
-Manages product delivery.
-
-Features:
-
-* Shipping provider integration
-* Tracking codes
-* Region-based shipping fees
-
----
-
-# ⭐ Review & Rating
-
-Customers can evaluate purchased products.
-
-Features:
-
-* Star rating
-* Product reviews
-* Purchase verification
-
----
-
-# ❤️ Wishlist
-
-Users can save favorite products.
-
-Features:
-
-* Add to wishlist
-* Remove from wishlist
-* Quick access to favorite products
-
----
-
-# 📊 Admin Dashboard
-
-Administration tools for platform management.
-
-Features:
-
-* User management
-* Product management
-* Order monitoring
-* Revenue analytics
-* Business statistics
-
----
-
-# 🤖 Recommendation Service
-
-Provides **intelligent product suggestions**.
-
-### Data Sources
-
-User behavior tracking:
-
-* Product views
-* Searches
-* Purchase history
-
-### Recommendation Methods
-
-| Type           | Method                           |
-| -------------- | -------------------------------- |
-| Rule-based     | Same category / popular products |
-| Behavior-based | Similar user preferences         |
-
-### API
-
-```
-GET /recommendation/home
-GET /recommendation/product/{id}
-GET /recommendation/user/{id}
-```
-
----
-
-# 💬 AI Chatbot Service
-
-An **AI-powered customer support assistant**.
-
-Capabilities:
-
-* Answer FAQs
-* Recommend products
-* Check order status
-* Guide users through purchasing
-
-### Architecture
-
-```
-Chat UI
-   ↓
-Chatbot Service
-   ↓
-LLM API
-   ↘ Knowledge Base
-     (FAQ + Product + Order)
-```
-
-Stored data:
-
-* ChatMessages
-* ConversationContext
-
----
-
-# 📢 Notification Service
-
-Handles system notifications.
-
-Examples:
-
-* Order confirmation email
-* Payment success notification
-* Password reset email
-
-Implementation:
-
-* Background jobs
-* Email service integration
-
----
-
-# 🧠 Tech Stack
-
-| Layer        | Technology                |
-| ------------ | ------------------------- |
-| Backend      | ASP.NET Core              |
-| Architecture | Clean Architecture        |
-| Auth         | ASP.NET Identity + JWT    |
-| Database     | SQL Server / PostgreSQL   |
-| Cache        | Redis                     |
-| Payments     | Stripe                    |
-| AI           | LLM API                   |
-| Queue        | RabbitMQ / Kafka          |
-| Jobs         | Hangfire / Worker Service |
-| Container    | Docker                    |
-
----
-
-# 📂 Project Structure
-
-Example structure:
-
-```
-src/
- ├── ApiGateway
- ├── Services
- │    ├── AuthService
- │    ├── ProductService
- │    ├── OrderService
- │    ├── PaymentService
- │    ├── RecommendationService
- │    ├── ChatbotService
- │    └── NotificationService
- │
- ├── Shared
- │    ├── Contracts
- │    ├── Common
- │    └── Infrastructure
-```
-
----
-
-# 🚀 Getting Started
-
-## 1️⃣ Clone Repository
-
-```bash
-git clone https://github.com/your-username/ecommerce-platform.git
-cd ecommerce-platform
-```
-
----
-
-## 2️⃣ Run with Docker
+From the repo root:
 
 ```bash
 docker compose up -d
 ```
 
-This `docker compose` setup starts **infrastructure only** (Keycloak + Postgres). The ASP.NET Core backend is intended to run **locally**.
+This starts:
 
----
+- Keycloak on `http://localhost:8080`
+- PostgreSQL on `localhost:5432`
+- Redis on `localhost:6379`
 
-## 3️⃣ Run Backend
+### 2. Configure Keycloak users and roles
+
+Use the guide in `keycloak/README.md`.
+
+The imported realm already includes the main clients:
+
+- `shopfend`
+- `shopbe-swagger`
+- `shopbe-api`
+
+You still need to create the demo realm roles and demo users unless they already exist in your Keycloak data volume.
+
+### 3. Run the backend
 
 ```bash
-cd shopbend
-dotnet restore
-dotnet build
-dotnet run --project Shopbe.Web
+dotnet restore shopbend/Shopbe.sln
+dotnet run --project shopbend/Shopbe.Web
 ```
 
----
+Notes:
 
-# 📡 Example API
+- the backend development profile listens on `http://localhost:5072`
+- EF Core migrations are applied automatically at startup in development
+- the development seeder runs automatically and creates demo app-side users plus sample catalog data
+- Swagger is available at `http://localhost:5072/swagger`
 
-### Create Product
+### 4. Run the frontend
 
-```
-POST /api/products
-```
+Create `shopfend/.env.local` with:
 
-Request
-
-```json
-{
-  "name": "Running Shoes",
-  "price": 99,
-  "category": "Shoes",
-  "stock": 50
-}
-```
-
----
-
-### Get Recommendations
-
-```
-GET /recommendation/home
+```env
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=replace-with-a-long-random-string
+KEYCLOAK_URL=http://localhost:8080
+KEYCLOAK_REALM=ShopBee
+KEYCLOAK_CLIENT_ID=shopfend
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5072
 ```
 
----
+Then start the frontend:
 
-# 🧪 Future Improvements
+```bash
+cd shopfend
+pnpm install
+pnpm dev
+```
 
-* AI recommendation model training
-* Real-time recommendation streaming
-* Full microservice deployment
-* Kubernetes orchestration
-* Event-driven architecture
-* Advanced analytics dashboard
+The frontend runs at `http://localhost:3000`.
 
----
+## Demo Accounts
 
-# 🎯 Learning Outcomes
+Use these emails in Keycloak so they match the seeded backend users:
 
-This project demonstrates:
+| Username | Email | Role | Expected access |
+| --- | --- | --- | --- |
+| `admin` | `admin@shopbee.vn` | `Admin` | `/admin/overview` and admin APIs |
+| `seller1` | `seller1@shopbee.vn` | `Seller` | `/seller/dashboard` with seller-owned sample products |
+| `seller2` | `seller2@shopbee.vn` | `Seller` | `/seller/dashboard` with seller-owned sample products |
+| `customer1` | `customer1@shopbee.vn` | `Customer` | storefront, cart, checkout, purchases |
 
-* Scalable backend architecture
-* Real-world payment integration
-* AI system integration
-* RESTful API design
-* Microservice-ready system design
+Recommended local-dev password convention:
 
----
+- set the same temporary password for all demo users, for example `Passw0rd!`
+- disable the temporary-password reset requirement if you want a smoother demo flow
 
-# 📜 License
+## Seeded Development Data
 
-This project is licensed under the **MIT License**.
+When `shopbend/Shopbe.Web` starts in development, the built-in seeder ensures:
+
+- demo users for admin, two sellers, and one customer
+- seller profiles for the seller accounts
+- sample catalog data
+- a few stable seller-owned products for dashboard and moderation testing
+- two stable demo orders for `customer1`: one delivered seller order and one pending seller order
+- coupons and shipping reference data
+
+The large-data generator in `shopbend/Shopbe.Seeder` is separate and intended for bigger local or staging datasets.
+
+Example:
+
+```bash
+dotnet run --project shopbend/Shopbe.Seeder -- --migrate true --products 2000 --users 500 --orders 1000
+```
+
+## Verification Checklist
+
+After setup, verify these flows:
+
+1. Sign in as `admin` and open `/admin/overview`.
+2. Confirm the admin overview shows at least one delivered order and one pending order.
+3. Sign in as `seller1` and open `/seller/dashboard` to confirm delivered-order revenue appears.
+4. Sign in as `seller2` and open `/seller/orders` to confirm a pending order appears.
+5. Sign in as `customer1` and browse `/products`.
+6. Open `http://localhost:5072/swagger` and confirm authenticated admin/seller endpoints are visible.
+7. Call `GET /api/auth/me` through Swagger or an authenticated client to inspect token claims if role mapping looks wrong.
+
+## Known Gaps
+
+- queue-based notification delivery is not implemented yet
+- shipping provider integration is not finalized
+- Redis usage needs a targeted rollout and invalidation review
+- some roadmap items in older docs were aspirational and are being corrected to match the current codebase
+
+## License
+
+MIT

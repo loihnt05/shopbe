@@ -302,9 +302,11 @@ internal sealed class ShopbeLargeDataSeeder
             {
                 // Note: PostgreSQL does NOT allow parameterizing table names (e.g. TRUNCATE TABLE @p0).
                 // Since 'tables' is a hard-coded list above, we can safely use string interpolation.
+#pragma warning disable EF1002
                 await db.Database.ExecuteSqlRawAsync(
                     $"TRUNCATE TABLE {t} RESTART IDENTITY CASCADE;",
                     cancellationToken: ct);
+#pragma warning restore EF1002
             }
             catch (Exception ex)
             {
@@ -1159,7 +1161,6 @@ internal sealed class ShopbeLargeDataSeeder
         return digits.Length <= 20 ? digits : digits[..20];
     }
 }
-
 
 
 

@@ -46,7 +46,10 @@ public sealed class PurchaseFlowTests : IClassFixture<PostgresFixture>
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ShopDbContext>();
-            variantId = db.ProductVariants.Select(v => v.Id).First();
+            variantId = db.ProductVariants
+                .OrderBy(v => v.CreatedAt)
+                .Select(v => v.Id)
+                .First();
         }
 
         // Act 1: add to cart
@@ -127,5 +130,4 @@ public sealed class PurchaseFlowTests : IClassFixture<PostgresFixture>
         }
     }
 }
-
 

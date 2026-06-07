@@ -6,25 +6,34 @@ using Shopbe.Infrastructure.Persistence;
 
 namespace Shopbe.Infrastructure.Services;
 
-public sealed class RecommendationService(ShopDbContext db) : IRecommendationService
+public sealed class RecommendationService(ShopDbContext db, ICacheService cache) : IRecommendationService
 {
     public async Task<List<ProductResponseDto>> GetTopSellingAsync(int count = 10)
     {
         count = NormalizeCount(count, 10);
+        var cacheKey = $"recommendations:top-selling:v1:count={count}";
+
+        var cached = await cache.GetAsync<List<ProductResponseDto>>(cacheKey);
+        if (cached is not null)
+        {
+            return cached;
+        }
 
         var topProductIds = await db.OrderItems
             .AsNoTracking()
             .GroupBy(oi => oi.ProductVariantId)
             .Select(g => new { ProductVariantId = g.Key, Qty = g.Sum(x => x.Quantity) })
-            .OrderByDescending(x => x.Qty)
-            .Take(count)
             .Join(
                 db.ProductVariants.AsNoTracking(),
                 x => x.ProductVariantId,
                 pv => pv.Id,
-                (x, pv) => pv.ProductId
+                (x, pv) => new { pv.ProductId, x.Qty }
             )
-            .Distinct()
+            .GroupBy(x => x.ProductId)
+            .Select(g => new { ProductId = g.Key, Qty = g.Sum(x => x.Qty) })
+            .OrderByDescending(x => x.Qty)
+            .Take(count)
+            .Select(x => x.ProductId)
             .ToListAsync();
 
         if (topProductIds.Count == 0)
@@ -35,18 +44,29 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
             .Where(p => topProductIds.Contains(p.Id))
             .Include(p => p.Images)
             .Include(p => p.Variants)
+            .AsSplitQuery()
             .ToListAsync();
 
         var byId = products.ToDictionary(p => p.Id);
-        return topProductIds
+        var result = topProductIds
             .Where(id => byId.ContainsKey(id))
             .Select(id => ProductDtoMapper.ToResponse(byId[id]))
             .ToList();
+
+        await cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(5));
+        return result;
     }
 
     public async Task<List<ProductResponseDto>> GetSimilarProductsAsync(Guid productId, int count = 8)
     {
         count = NormalizeCount(count, 8);
+        var cacheKey = $"recommendations:similar:v1:product={productId}:count={count}";
+
+        var cached = await cache.GetAsync<List<ProductResponseDto>>(cacheKey);
+        if (cached is not null)
+        {
+            return cached;
+        }
 
         var product = await db.Products
             .AsNoTracking()
@@ -68,9 +88,12 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
             .Include(p => p.Images)
             .Include(p => p.Variants)
             .Take(count)
+            .AsSplitQuery()
             .ToListAsync();
 
-        return products.Select(p => ProductDtoMapper.ToResponse(p, "Similar category & price")).ToList();
+        var result = products.Select(p => ProductDtoMapper.ToResponse(p, "Similar category & price")).ToList();
+        await cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(5));
+        return result;
     }
 
     public async Task<List<ProductResponseDto>> GetPersonalizedAsync(Guid userId, int count = 10)
@@ -117,6 +140,7 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
             .Include(p => p.Images)
             .Include(p => p.Variants)
             .Take(count)
+            .AsSplitQuery()
             .ToListAsync();
 
         if (products.Count == 0)
@@ -143,6 +167,7 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
             .Include(p => p.Images)
             .Include(p => p.Variants)
             .Take(limit)
+            .AsSplitQuery()
             .ToListAsync();
 
         return products.Select(p => ProductDtoMapper.ToResponse(p, "Discover something new")).ToList();
@@ -151,6 +176,13 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
     public async Task<List<ProductResponseDto>> GetFrequentlyBoughtTogetherAsync(Guid productId, int count = 5)
     {
         count = NormalizeCount(count, 5);
+        var cacheKey = $"recommendations:frequently-bought-together:v1:product={productId}:count={count}";
+
+        var cached = await cache.GetAsync<List<ProductResponseDto>>(cacheKey);
+        if (cached is not null)
+        {
+            return cached;
+        }
 
         // Find variants for this product
         var variantIds = await db.ProductVariants
@@ -175,11 +207,12 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
             .Where(oi => orderIds.Contains(oi.OrderId) && !variantIds.Contains(oi.ProductVariantId))
             .GroupBy(oi => oi.ProductVariantId)
             .Select(g => new { VariantId = g.Key, Count = g.Count() })
+            .Join(db.ProductVariants.AsNoTracking(), x => x.VariantId, v => v.Id, (x, v) => new { v.ProductId, x.Count })
+            .GroupBy(x => x.ProductId)
+            .Select(g => new { ProductId = g.Key, Count = g.Sum(x => x.Count) })
             .OrderByDescending(x => x.Count)
-            .Take(count * 2)
-            .Join(db.ProductVariants.AsNoTracking(), x => x.VariantId, v => v.Id, (x, v) => v.ProductId)
-            .Distinct()
             .Take(count)
+            .Select(x => x.ProductId)
             .ToListAsync();
 
         var products = await db.Products
@@ -187,9 +220,12 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
             .Where(p => otherProductIds.Contains(p.Id))
             .Include(p => p.Images)
             .Include(p => p.Variants)
+            .AsSplitQuery()
             .ToListAsync();
 
-        return products.Select(p => ProductDtoMapper.ToResponse(p, "Frequently bought together")).ToList();
+        var result = products.Select(p => ProductDtoMapper.ToResponse(p, "Frequently bought together")).ToList();
+        await cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(5));
+        return result;
     }
 
     public async Task<List<ProductResponseDto>> GetRecentlyViewedAsync(Guid userId, int count = 10)
@@ -199,10 +235,11 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
         var productIds = await db.UserBehaviors
             .AsNoTracking()
             .Where(b => b.UserId == userId && b.BehaviorType == BehaviorType.ProductView && b.ProductId != null)
-            .OrderByDescending(b => b.OccurredAt)
-            .Select(b => b.ProductId!.Value)
-            .Distinct()
+            .GroupBy(b => b.ProductId!.Value)
+            .Select(g => new { ProductId = g.Key, LastViewedAt = g.Max(x => x.OccurredAt) })
+            .OrderByDescending(x => x.LastViewedAt)
             .Take(count)
+            .Select(x => x.ProductId)
             .ToListAsync();
 
         var products = await db.Products
@@ -210,6 +247,7 @@ public sealed class RecommendationService(ShopDbContext db) : IRecommendationSer
             .Where(p => productIds.Contains(p.Id))
             .Include(p => p.Images)
             .Include(p => p.Variants)
+            .AsSplitQuery()
             .ToListAsync();
 
         var byId = products.ToDictionary(p => p.Id);

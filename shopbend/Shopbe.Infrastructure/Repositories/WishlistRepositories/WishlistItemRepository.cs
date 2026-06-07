@@ -89,6 +89,7 @@ public class WishlistItemRepository(ShopDbContext context) : IWishlistItemReposi
         return await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
+            .AsSplitQuery()
             .ToListAsync();
     }
 }

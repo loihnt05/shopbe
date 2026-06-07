@@ -1,459 +1,87 @@
-# Next Implementation Plan
+# Next Plan: Phase 3
 
-This document covers the next major work items after the RBAC/admin/seller rollout.
+This phase turns the existing cache scaffolding into a correct and useful runtime optimization for public read paths.
 
-## Scope
+## Goal
 
-Planned work:
+Improve cache correctness and reduce repeated database work on high-value product and recommendation reads.
 
-1. Shipping tracking and provider integration
-2. Complete Redis cache service
-3. Improve README to match the actual system
-4. Queue-based notifications
-5. Real admin/seller/user seed and Keycloak setup docs
+## Why This Is Next
 
----
+- Phase 1 made the app easier to start and demo.
+- Phase 2 made the demo flow verified and stable.
+- The repo already advertises Redis as partial infrastructure, but cache invalidation is incomplete and some expensive public reads are still uncached.
 
-## Recommended Execution Order
+## Phase 3 Scope
 
-1. Improve README to match the actual system
-2. Real admin/seller/user seed and Keycloak setup docs
-3. Complete Redis cache service
-4. Queue-based notifications
-5. Shipping tracking and provider integration
+1. Fix product cache invalidation so updates and deletes clear the real cache keys.
+2. Implement prefix-based cache invalidation for grouped product/recommendation cache entries.
+3. Add cache coverage to the most valuable public recommendation endpoints.
+4. Keep all cache changes bounded to runtime behavior, not new product features.
 
-Reasoning:
+## Deliverables
 
-- README and setup docs reduce confusion immediately
-- seed/docs make the system easier to demo and test
-- Redis improves the internal quality of existing features
-- notifications and shipping are larger integrations and should come after the system is easier to operate
+### 1. Cache Invalidation Correctness
 
----
+Fix mismatches between read cache keys and mutation invalidation logic.
 
-## 1. Shipping Tracking and Provider Integration
+Required coverage:
 
-### Goal
+- product detail cache key invalidates correctly after update/delete
+- search/list caches can be invalidated by prefix
+- recommendation caches can be invalidated by prefix when product data changes
 
-Allow the platform to create shipments, store tracking information, and expose shipment status to admins, sellers, and customers.
+### 2. Prefix Cache Removal
 
-### Scope Decision
+Replace the current `NotImplementedException` in `RedisCacheService.RemoveByPrefixAsync` with working Redis-backed prefix deletion.
 
-Pick one of these as the first delivery target:
+Required behavior:
 
-- Tracking only for manually-entered shipment codes
-- Provider-backed shipment creation plus tracking
-- Full label generation plus shipment tracking
+- uses the configured Redis connection
+- respects the configured instance-name prefix
+- safely removes matching keys without changing non-matching keys
 
-Recommended first step:
+### 3. Recommendation Read Caching
 
-- Provider-backed shipment creation plus tracking
+Add cache-aside behavior for public recommendation endpoints that are likely to be hit often.
 
-### Backend Work
+Recommended targets:
 
-#### Domain / Data
+- top selling products
+- similar products by product ID
+- frequently bought together
 
-Add or confirm shipment-related fields such as:
+### 4. Verification Path
 
-- `ShipmentProvider`
-- `ProviderShipmentId`
-- `TrackingCode`
-- `TrackingUrl`
-- `ShippingStatus`
-- `LabelUrl`
-- `ShippedAt`
-- `DeliveredAt`
-- `LastTrackingSyncAt`
+Run targeted backend tests after the cache changes and ensure existing E2E coverage still passes.
 
-### Application
+Recommended verification:
 
-Add abstraction:
+- `dotnet test tests/Shopbe.E2E.Tests/Shopbe.E2E.Tests.csproj`
+- `dotnet build Shopbe.sln`
 
-- `IShippingProviderService`
+## Execution Order
 
-Expected methods:
+1. Fix the current invalidation key mismatch.
+2. Implement working prefix invalidation in Redis cache service.
+3. Add recommendation caching with clear cache keys.
+4. Invalidate search/recommendation caches from product mutation handlers.
+5. Re-run tests/build and fix any fallout.
 
-- create shipment
-- get shipment tracking
-- cancel shipment if supported
-- generate tracking URL
+## Acceptance Criteria
 
-### Infrastructure
+- Product updates and deletes no longer leave stale detail cache entries behind.
+- Product search and recommendation caches can be invalidated by prefix.
+- Public recommendation endpoints use cache-aside reads.
+- Existing tests still pass after cache behavior changes.
 
-Implement one provider adapter first.
+## Out Of Scope For Phase 3
 
-Examples:
+- cache metrics dashboards
+- full cache invalidation for every domain object
+- write-through caching
+- queue-based cache invalidation events
 
-- GHN
-- GHTK
-- VNPost
-- a mock/manual provider for local development
+## Exit Condition
 
-Recommended first delivery:
-
-- manual/mock provider + one real provider adapter
-
-### Web/API
-
-Add endpoints for:
-
-- create shipment for order
-- get shipment tracking by order/shipment id
-- refresh shipment tracking
-- optionally register provider webhook callbacks
-
-### Frontend
-
-Add shipment tracking visibility to:
-
-- admin order monitoring
-- seller order management
-- customer purchase/order detail page
-
-### Acceptance Criteria
-
-- seller/admin can attach or create shipment for an order
-- tracking code and provider are stored
-- customer can see tracking status for shipped orders
-- provider refresh updates current shipment status
-- failures are logged and do not corrupt order state
-
-### Risks
-
-- webhook verification complexity
-- provider-specific field mismatches
-- retry/idempotency issues on shipment creation
-
----
-
-## 2. Complete Redis Cache Service
-
-### Goal
-
-Finish the Redis-backed cache layer and use it in the most valuable read-heavy paths.
-
-### Current Gap
-
-The Redis service exists, but parts of it are incomplete and at least one code path still throws `NotImplementedException`.
-
-### Work Breakdown
-
-#### Audit
-
-Review:
-
-- `Shopbe.Infrastructure/Services/RedisCacheService.cs`
-- `ICacheService`
-- all current cache consumers
-
-Identify:
-
-- unimplemented methods
-- invalidation gaps
-- missing connection multiplexer usage
-
-#### Design
-
-Define cache rules:
-
-- key naming convention
-- key versioning strategy
-- TTL per entity type
-- invalidation strategy by prefix or resource
-
-#### Implementation
-
-Complete:
-
-- get/set/remove
-- serialize/deserialize safety
-- prefix invalidation if required
-- pattern/key scanning approach
-- optional `IConnectionMultiplexer` injection if needed
-
-#### Apply Cache To High-Value Reads
-
-Recommended first targets:
-
-- product detail
-- product list facets
-- category list
-- recommendation responses
-- seller/admin overview summaries if needed
-
-### Acceptance Criteria
-
-- no `NotImplementedException` in Redis cache service
-- cache keys are predictable and documented
-- invalidation occurs after admin/seller product updates where needed
-- cached paths remain correct after data changes
-
-### Risks
-
-- stale data after admin moderation changes
-- expensive invalidation if key strategy is too broad
-- over-caching user-specific content
-
----
-
-## 3. Improve README To Match Actual System
-
-### Goal
-
-Make the documentation describe the real architecture and feature set rather than an aspirational future state.
-
-### Main Corrections Needed
-
-Update or remove claims about:
-
-- API Gateway / microservice split
-- ASP.NET Identity + refresh-token auth
-- PayOS
-- external ML recommendation service
-- queue stack if not yet implemented
-
-### Add Accurate Documentation For
-
-- Keycloak + NextAuth authentication flow
-- current Clean Architecture layout
-- admin/seller/customer RBAC
-- Stripe-based payment flow
-- recommendation and chatbot current scope
-- Docker/local startup instructions
-- admin login and role setup flow
-
-### Recommended README Structure
-
-1. What is currently implemented
-2. Architecture as it exists now
-3. Feature matrix: done / partial / planned
-4. Local development setup
-5. Keycloak setup
-6. Demo accounts and seeding
-7. Known gaps / roadmap
-
-### Acceptance Criteria
-
-- README no longer claims unsupported features
-- a new developer can run the project from docs alone
-- auth/admin setup is documented clearly
-
----
-
-## 4. Queue-Based Notifications
-
-### Goal
-
-Move notification delivery toward an event-driven flow using a proper queue and background consumer.
-
-### Scope Decision
-
-Pick one queue technology first.
-
-Recommended:
-
-- RabbitMQ
-
-Do not implement RabbitMQ and Kafka at the same time.
-
-### Work Breakdown
-
-#### Event Model
-
-Define notification events such as:
-
-- order created
-- payment succeeded
-- order shipped
-- product approved/rejected
-- seller status changed
-
-#### Producer Side
-
-Publish queue messages when business events occur.
-
-Recommended pattern:
-
-- domain event or application event
-- optional outbox pattern if stronger reliability is required
-
-#### Consumer Side
-
-Create a worker/consumer that:
-
-- receives notification jobs
-- sends email
-- writes notification logs
-- updates delivery status
-
-#### Persistence / Audit
-
-Track:
-
-- message id
-- delivery status
-- retry count
-- failure reason
-- sent timestamp
-
-### Integration Targets
-
-First events to implement:
-
-- order confirmation email
-- payment success email
-- admin moderation email
-
-### Acceptance Criteria
-
-- notifications are published asynchronously through queue
-- consumer processes and logs delivery attempts
-- retries are supported for transient failures
-- duplicate delivery is prevented or minimized via idempotency key
-
-### Risks
-
-- eventual consistency surprises
-- duplicated events without idempotency
-- partial migration if some notifications still use direct send
-
----
-
-## 5. Real Admin/Seller/User Seed and Keycloak Setup Docs
-
-### Goal
-
-Provide a stable demo/test setup with real app-side users, seller profiles, and matching Keycloak role instructions.
-
-### Demo Accounts To Support
-
-Recommended accounts:
-
-- `admin`
-- `seller1`
-- `seller2`
-- `customer1`
-
-### Seeder Work
-
-Seed or ensure existence of:
-
-- one admin user in app DB
-- at least two sellers in app DB
-- seller profiles for seller users
-- one or more customers
-- demo products owned by sellers
-- demo orders and payments if helpful
-
-### Keycloak Docs Work
-
-Document:
-
-- how to access Keycloak admin console
-- how to import/use realm `ShopBee`
-- how to create users
-- how to assign roles: `Admin`, `Seller`, `Customer`
-- which client is used by frontend
-- how token roles map to app authorization
-
-### Important Note To Document
-
-Admin/seller access depends on:
-
-- Keycloak role claims in token
-- matching app-side user data where required by handlers
-
-### Files To Update
-
-- `README.md`
-- `keycloak/README.md`
-- optional new file: `docs/demo-users.md`
-
-### Acceptance Criteria
-
-- a developer can create or import demo users in Keycloak quickly
-- app login works for admin, seller, and customer examples
-- admin dashboard access steps are explicitly documented
-
----
-
-## Suggested Deliverables By Milestone
-
-### Milestone A: Documentation and Setup
-
-- README corrected
-- Keycloak README written
-- demo users documented
-- seed accounts aligned with docs
-
-### Milestone B: Platform Reliability and Performance
-
-- Redis cache service completed
-- cache integrated into key read paths
-
-### Milestone C: Event-Driven Notifications
-
-- queue integration added
-- notification consumer implemented
-- first email events migrated
-
-### Milestone D: Shipping Integration
-
-- shipment provider abstraction added
-- first provider implemented
-- tracking exposed to admin/seller/customer
-
----
-
-## Recommended File/Area Targets
-
-### Shipping
-
-- `shopbend/Shopbe.Domain/Entities/...`
-- `shopbend/Shopbe.Application/Shipping/...`
-- `shopbend/Shopbe.Infrastructure/...Shipping...`
-- `shopbend/Shopbe.Web/Controllers/ShipmentsController.cs`
-- frontend order pages in `shopfend/app/admin`, `shopfend/app/seller`, `shopfend/app/purchases`
-
-### Redis
-
-- `shopbend/Shopbe.Infrastructure/Services/RedisCacheService.cs`
-- `shopbend/Shopbe.Application/Common/Interfaces/...`
-- read-heavy handlers using `ICacheService`
-
-### README / Docs
-
-- `README.md`
-- `keycloak/README.md`
-- optional `docs/`
-
-### Notifications
-
-- `shopbend/Shopbe.Application/Common/Interfaces/Notifications/...`
-- `shopbend/Shopbe.Infrastructure/...Email...`
-- queue integration area in infrastructure
-- notification logs / consumer worker
-
-### Seed / Keycloak
-
-- `shopbend/Shopbe.Seeder/...`
-- `shopbend/Shopbe.Infrastructure/Persistence/ShopbeDbSeeder.cs`
-- `keycloak/realm-shopbee.json`
-- docs files
-
----
-
-## Final Recommendation
-
-Start with:
-
-1. README alignment
-2. real seed + Keycloak docs
-
-Then move to:
-
-3. Redis completion
-4. queue-based notifications
-5. shipping provider integration
-
-This order gives the best balance of clarity, usability, and implementation risk.
+Phase 3 is done when the public product/recommendation read paths use cache more effectively and product mutations invalidate the relevant cache entries correctly.

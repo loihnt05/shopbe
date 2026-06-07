@@ -18,8 +18,9 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             .Include(p => p.Reviews)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
-                    .ThenInclude(pva => pva.AttributeValue)
-                        .ThenInclude(av => av.Attribute)
+                    .ThenInclude(pva => pva.AttributeValue!)
+                        .ThenInclude(av => av!.Attribute)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(p => p.Id == productId);
     }
     public async Task<IEnumerable<Product>> GetAllProductsAsync()
@@ -33,8 +34,9 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             .Include(p => p.Reviews)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
-                    .ThenInclude(pva => pva.AttributeValue)
-                        .ThenInclude(av => av.Attribute)
+                    .ThenInclude(pva => pva.AttributeValue!)
+                        .ThenInclude(av => av!.Attribute)
+            .AsSplitQuery()
             .ToListAsync();
     }
 
@@ -49,9 +51,10 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             .Include(p => p.Reviews)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
-                    .ThenInclude(pva => pva.AttributeValue)
-                        .ThenInclude(av => av.Attribute)
+                    .ThenInclude(pva => pva.AttributeValue!)
+                        .ThenInclude(av => av!.Attribute)
             .Where(p => p.SellerId == sellerId)
+            .AsSplitQuery()
             .ToListAsync();
     }
 
@@ -130,8 +133,8 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
             .Include(p => p.Reviews)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.ProductVariantAttributes)
-                    .ThenInclude(pva => pva.AttributeValue)
-                        .ThenInclude(av => av.Attribute);
+                    .ThenInclude(pva => pva.AttributeValue!)
+                        .ThenInclude(av => av!.Attribute);
 
         query = sortBy?.ToLower() switch
         {
@@ -149,6 +152,7 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
         return await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
+            .AsSplitQuery()
             .ToListAsync(cancellationToken);
     }
 

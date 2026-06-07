@@ -13,6 +13,7 @@ using Shopbe.Infrastructure.Services.Email;
 using Shopbe.Infrastructure.Storage;
 using Shopbe.Application.Common.Interfaces.IChat;
 using Shopbe.Infrastructure.Chatbot;
+using StackExchange.Redis;
 using Stripe;
 
 namespace Shopbe.Infrastructure;
@@ -29,6 +30,7 @@ public static class DependencyInjection
                                    ?? configuration.GetConnectionString("Redis");
         if (!string.IsNullOrWhiteSpace(redisConnectionString))
         {
+            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnectionString));
             services.AddStackExchangeRedisCache(options =>
             {
                 options.Configuration = redisConnectionString;

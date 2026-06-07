@@ -7,8 +7,14 @@ using Shopbe.Domain.Entities.Product;
 
 namespace Shopbe.Application.Product.Products.Commands.CreateProduct;
 
-public class CreateProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<CreateProductCommand, ProductResponseDto>
+public class CreateProductHandler(IUnitOfWork unitOfWork, ICacheService cache) : IRequestHandler<CreateProductCommand, ProductResponseDto>
 {
+	private static readonly string[] CachePrefixesToInvalidate =
+	[
+		"products:search:",
+		"recommendations:"
+	];
+
 	public async Task<ProductResponseDto> Handle(CreateProductCommand command, CancellationToken cancellationToken)
 	{
 		if (string.IsNullOrWhiteSpace(command.Request.Name))
@@ -66,6 +72,10 @@ public class CreateProductHandler(IUnitOfWork unitOfWork) : IRequestHandler<Crea
 
 		await unitOfWork.Product.AddProductAsync(product);
 		await unitOfWork.SaveChangesAsync(cancellationToken);
+		foreach (var prefix in CachePrefixesToInvalidate)
+		{
+			await cache.RemoveByPrefixAsync(prefix);
+		}
 
 		return ProductDtoMapper.ToResponse(product);
 	}

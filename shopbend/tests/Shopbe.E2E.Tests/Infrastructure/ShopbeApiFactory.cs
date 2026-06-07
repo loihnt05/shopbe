@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.E2E.Tests.Fakes;
 using Shopbe.Infrastructure.Persistence;
@@ -30,9 +31,19 @@ public sealed class ShopbeApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Authentication:Keycloak:AuthorityExternal", "http://test-keycloak");
         builder.UseSetting("Authentication:Keycloak:RequireHttpsMetadata", "false");
         builder.UseSetting("Authentication:Keycloak:ValidateAudience", "false");
+        builder.UseSetting("HttpsRedirection:Enabled", "false");
 
         builder.ConfigureServices(services =>
         {
+            services.AddLogging(logging =>
+            {
+                logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
+                logging.AddFilter("Microsoft.EntityFrameworkCore.Migrations", LogLevel.Warning);
+                logging.AddFilter("Hangfire", LogLevel.Warning);
+                logging.AddFilter("LuckyPennySoftware.MediatR.License", LogLevel.None);
+                logging.AddFilter("LuckyPennySoftware.AutoMapper.License", LogLevel.None);
+            });
+
             // Replace DbContext with a real Postgres connection from Testcontainers.
             var dbContextDescriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<ShopDbContext>));
@@ -91,5 +102,3 @@ public sealed class ShopbeApiFactory : WebApplicationFactory<Program>
         return client;
     }
 }
-
-
