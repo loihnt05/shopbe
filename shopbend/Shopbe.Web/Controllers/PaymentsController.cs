@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Shopbe.Application.Common.Interfaces;
+using Shopbe.Application.Common.Interfaces.Notifications;
 using Shopbe.Application.Payment.Payments.Dtos;
 using Shopbe.Application.Payment.PaymentTransaction.Dtos;
 using Shopbe.Application.Payment.Refund.Dtos;
@@ -26,6 +27,7 @@ public class PaymentsController(
     IUnitOfWork unitOfWork,
     ShopDbContext dbContext,
     IWebHostEnvironment environment,
+    INotificationService notificationService,
     IOptions<StripeOptions> stripeOptions) : ControllerBase
 {
     public sealed record StripeConfigResponse(string PublishableKey);
@@ -291,11 +293,13 @@ public class PaymentsController(
             return NotFound("Payment not found");
 
         // Idempotency: already paid
+        var shouldNotifyPaymentSucceeded = false;
         if (payment.Status != PaymentStatus.Paid)
         {
             payment.Status = PaymentStatus.Paid;
             payment.PaidAt = DateTime.UtcNow;
             payment.LastStripeEventId = "dev-mark-paid-" + Guid.NewGuid();
+            shouldNotifyPaymentSucceeded = true;
 
             dbContext.PaymentTransactions.Add(new PaymentTransaction
             {
@@ -331,6 +335,10 @@ public class PaymentsController(
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
+            if (shouldNotifyPaymentSucceeded)
+            {
+                await notificationService.SendPaymentSucceededAsync(payment.Id, cancellationToken);
+            }
         }
 
         return Ok(new MarkStripePaymentPaidDevResponse
@@ -385,11 +393,13 @@ public class PaymentsController(
         // Update local state based on Stripe status.
         if (string.Equals(stripeStatus, "succeeded", StringComparison.OrdinalIgnoreCase))
         {
+            var shouldNotifyPaymentSucceeded = false;
             if (payment.Status != PaymentStatus.Paid)
             {
                 payment.Status = PaymentStatus.Paid;
                 payment.PaidAt = DateTime.UtcNow;
                 payment.LastStripeEventId = $"sync:{paymentIntentId}:{DateTime.UtcNow:O}";
+                shouldNotifyPaymentSucceeded = true;
 
                 dbContext.PaymentTransactions.Add(new PaymentTransaction
                 {
@@ -423,15 +433,21 @@ public class PaymentsController(
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
+            if (shouldNotifyPaymentSucceeded)
+            {
+                await notificationService.SendPaymentSucceededAsync(payment.Id, cancellationToken);
+            }
         }
         else if (string.Equals(stripeStatus, "canceled", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(stripeStatus, "requires_payment_method", StringComparison.OrdinalIgnoreCase))
         {
             // Only mark failed if still pending (avoid overwriting paid/refunded).
+            var shouldNotifyPaymentFailed = false;
             if (payment.Status == PaymentStatus.Pending)
             {
                 payment.Status = PaymentStatus.Failed;
                 payment.LastStripeEventId = $"sync:{paymentIntentId}:{DateTime.UtcNow:O}";
+                shouldNotifyPaymentFailed = true;
 
                 dbContext.PaymentTransactions.Add(new PaymentTransaction
                 {
@@ -449,6 +465,10 @@ public class PaymentsController(
                 });
 
                 await dbContext.SaveChangesAsync(cancellationToken);
+                if (shouldNotifyPaymentFailed)
+                {
+                    await notificationService.SendPaymentFailedAsync(payment.Id, cancellationToken);
+                }
             }
         }
 
@@ -592,6 +612,7 @@ public class PaymentsController(
                 if (payment.LastStripeEventId == stripeEvent.Id)
                     return Ok();
 
+                var shouldNotifyPaymentSucceeded = payment.Status != PaymentStatus.Paid;
                 payment.LastStripeEventId = stripeEvent.Id;
                 payment.Status = PaymentStatus.Paid;
                 payment.PaidAt = DateTime.UtcNow;
@@ -623,6 +644,10 @@ public class PaymentsController(
                 }
 
                 await dbContext.SaveChangesAsync(cancellationToken);
+                if (shouldNotifyPaymentSucceeded)
+                {
+                    await notificationService.SendPaymentSucceededAsync(payment.Id, cancellationToken);
+                }
                 break;
             }
 
@@ -640,6 +665,7 @@ public class PaymentsController(
                 if (payment.LastStripeEventId == stripeEvent.Id)
                     return Ok();
 
+                var shouldNotifyPaymentFailed = payment.Status == PaymentStatus.Pending;
                 payment.LastStripeEventId = stripeEvent.Id;
                 payment.Status = PaymentStatus.Failed;
 
@@ -654,6 +680,10 @@ public class PaymentsController(
                 });
 
                 await dbContext.SaveChangesAsync(cancellationToken);
+                if (shouldNotifyPaymentFailed)
+                {
+                    await notificationService.SendPaymentFailedAsync(payment.Id, cancellationToken);
+                }
                 break;
             }
         }
@@ -661,7 +691,6 @@ public class PaymentsController(
         return Ok();
     }
 }
-
 
 
 

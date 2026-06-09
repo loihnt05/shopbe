@@ -64,6 +64,7 @@ public static class DependencyInjection
         services.Configure<SmtpEmailOptions>(opts => configuration.GetSection("Email:Smtp").Bind(opts));
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IEmailQueue, HangfireEmailQueue>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         // Chatbot (OpenAI)
         services.Configure<ChatbotOptions>(opts => configuration.GetSection(ChatbotOptions.SectionName).Bind(opts));

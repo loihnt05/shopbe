@@ -1,11 +1,12 @@
 using MediatR;
 using Shopbe.Application.Common.Interfaces;
+using Shopbe.Application.Common.Interfaces.Notifications;
 using Shopbe.Application.Shipping.Dtos;
 using Shopbe.Domain.Entities.Shipping;
 
 namespace Shopbe.Application.Shipping.Commands.CreateShipment;
 
-public sealed class CreateShipmentCommandHandler(IUnitOfWork unitOfWork) : IRequestHandler<CreateShipmentCommand, ShipmentDto>
+public sealed class CreateShipmentCommandHandler(IUnitOfWork unitOfWork, INotificationService notificationService) : IRequestHandler<CreateShipmentCommand, ShipmentDto>
 {
     public async Task<ShipmentDto> Handle(CreateShipmentCommand request, CancellationToken cancellationToken)
     {
@@ -31,6 +32,7 @@ public sealed class CreateShipmentCommandHandler(IUnitOfWork unitOfWork) : IRequ
 
         await unitOfWork.Shipments.AddAsync(shipment, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        await SendShipmentNotificationAsync(shipment.OrderId, shipment.Status, shipment.Carrier, shipment.TrackingNumber, notificationService, cancellationToken);
 
         return new ShipmentDto
         {
@@ -43,5 +45,26 @@ public sealed class CreateShipmentCommandHandler(IUnitOfWork unitOfWork) : IRequ
             DeliveredAt = shipment.DeliveredAt,
             ShippingFeeId = shipment.ShippingFeeId
         };
+    }
+
+    private static Task SendShipmentNotificationAsync(
+        Guid orderId,
+        string status,
+        string carrier,
+        string trackingNumber,
+        INotificationService notificationService,
+        CancellationToken cancellationToken)
+    {
+        if (status.Contains("delivered", StringComparison.OrdinalIgnoreCase))
+        {
+            return notificationService.SendOrderDeliveredAsync(orderId, carrier, trackingNumber, cancellationToken);
+        }
+
+        if (status.Contains("shipped", StringComparison.OrdinalIgnoreCase))
+        {
+            return notificationService.SendOrderShippedAsync(orderId, carrier, trackingNumber, cancellationToken);
+        }
+
+        return Task.CompletedTask;
     }
 }

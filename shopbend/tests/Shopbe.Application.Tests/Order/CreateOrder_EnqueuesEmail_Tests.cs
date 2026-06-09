@@ -1,5 +1,6 @@
 using Moq;
 using Shopbe.Application.Common.Interfaces;
+using Shopbe.Application.Common.Interfaces.Notifications;
 using Shopbe.Application.Order.Commands.CreateOrder;
 using Shopbe.Application.Order.Dtos;
 using Shopbe.Application.Shipping.Dtos;
@@ -70,7 +71,12 @@ public class CreateOrderEnqueuesEmailTests
         shipCalc.Setup(x => x.CalculateAsync(It.IsAny<ShippingCalculationRequestDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ShippingCalculationResponseDto(10000, "Zone", DateTime.UtcNow.AddDays(1)));
 
-        var handler = new CreateOrderHandler(uow.Object, tracking.Object, shipCalc.Object);
+        var notificationService = new Mock<INotificationService>();
+        notificationService
+            .Setup(x => x.SendOrderPlacedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var handler = new CreateOrderHandler(uow.Object, tracking.Object, shipCalc.Object, notificationService.Object);
 
         var cmd = new CreateOrderCommand(userId, new CreateOrderRequestDto
         {
@@ -93,7 +99,7 @@ public class CreateOrderEnqueuesEmailTests
         cartRepo.Verify(x => x.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
         cartRepo.Verify(x => x.ClearAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
         ordersRepo.Verify(x => x.AddAsync(It.IsAny<Shopbe.Domain.Entities.Order.Order>(), It.IsAny<CancellationToken>()), Times.Once);
+        notificationService.Verify(x => x.SendOrderPlacedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
-
 

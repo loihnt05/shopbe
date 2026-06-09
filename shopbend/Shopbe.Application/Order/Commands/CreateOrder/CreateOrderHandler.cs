@@ -1,5 +1,6 @@
 using MediatR;
 using Shopbe.Application.Common.Interfaces;
+using Shopbe.Application.Common.Interfaces.Notifications;
 using Shopbe.Application.Order.Dtos;
 using Shopbe.Application.Shipping.Dtos;
 using Shopbe.Domain.Enums;
@@ -12,7 +13,8 @@ namespace Shopbe.Application.Order.Commands.CreateOrder;
 public sealed class CreateOrderHandler(
     IUnitOfWork unitOfWork, 
     IBehaviorTrackingService tracking,
-    IShippingCalculationService shippingCalculationService) 
+    IShippingCalculationService shippingCalculationService,
+    INotificationService notificationService) 
     : IRequestHandler<CreateOrderCommand, OrderDetailsDto>
 {
     public async Task<OrderDetailsDto> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
@@ -295,6 +297,7 @@ public sealed class CreateOrderHandler(
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             await unitOfWork.CommitTransactionAsync();
+            await notificationService.SendOrderPlacedAsync(order.Id, cancellationToken);
             
             var details = order.ToDetailsDto();
             if (coupon != null) details.CouponCode = coupon.Code;
