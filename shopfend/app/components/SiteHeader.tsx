@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CartIcon, SearchIcon, UserIcon } from "./icons";
 import { useCart } from "./CartContext";
 import { Badge } from "./Badge";
+import NotificationBell from "./NotificationBell";
 
 export default function SiteHeader() {
   const { data: session, status } = useSession();
@@ -58,9 +59,7 @@ export default function SiteHeader() {
             </span>
           </div>
           <div className="flex items-center gap-4 opacity-90">
-            <Link href="/notifications" className="hover:opacity-80 flex items-center gap-1">
-              Notifications
-            </Link>
+            <NotificationBell />
             <Link href="/help" className="hover:opacity-80 flex items-center gap-1">
               Help
             </Link>

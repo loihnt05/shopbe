@@ -1,47 +1,83 @@
 "use client";
 
-import { useState } from "react";
-import { Bell, ShoppingBag, Tag, Zap, Mail, Smartphone, MessageSquare } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { Bell, Check, Mail, Megaphone, ShoppingBag, WalletCards } from "lucide-react";
+import { shopbeApi, type NotificationPreferenceDto } from "@/lib/shopbeApi";
+
+const defaultPrefs: NotificationPreferenceDto = {
+  orderStatusEmailsEnabled: true,
+  paymentEmailsEnabled: true,
+  marketingEmailsEnabled: false,
+  inAppNotificationsEnabled: true,
+};
 
 export default function NotificationsTab() {
-  const [prefs, setPrefs] = useState({
-    orderUpdates: true,
-    promotions: true,
-    flashSales: false,
-    wishlistDrops: true,
-    email: true,
-    sms: false,
-    appPush: true,
-  });
+  const { data: session } = useSession();
+  const [prefs, setPrefs] = useState<NotificationPreferenceDto>(defaultPrefs);
+  const [loading, setLoading] = useState(false);
+  const [savingKey, setSavingKey] = useState<keyof NotificationPreferenceDto | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggle = (key: keyof typeof prefs) => {
-    setPrefs(prev => ({ ...prev, [key]: !prev[key] }));
+  useEffect(() => {
+    if (!session?.accessToken) return;
+
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+    shopbeApi.notifications.getPreferences(session.accessToken, controller.signal)
+      .then(setPrefs)
+      .catch((err) => {
+        if ((err as { name?: string }).name !== "AbortError") {
+          setError(err instanceof Error ? err.message : "Could not load notification preferences.");
+        }
+      })
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, [session?.accessToken]);
+
+  const toggle = async (key: keyof NotificationPreferenceDto) => {
+    if (!session?.accessToken || savingKey) return;
+
+    const next = { ...prefs, [key]: !prefs[key] };
+    const previous = prefs;
+    setPrefs(next);
+    setSavingKey(key);
+    setError(null);
+
+    try {
+      const saved = await shopbeApi.notifications.updatePreferences(session.accessToken, next);
+      setPrefs(saved);
+    } catch (err) {
+      setPrefs(previous);
+      setError(err instanceof Error ? err.message : "Could not save notification preferences.");
+    } finally {
+      setSavingKey(null);
+    }
   };
 
   const sections = [
     {
-      title: "Activity Notifications",
-      description: "Stay updated on your orders and shopping activity.",
+      title: "Shopping Updates",
+      description: "Control updates tied to orders, shipping, and payments.",
       items: [
-        { id: "orderUpdates", label: "Order Status Updates", description: "Get notified when your order is confirmed, shipped, or delivered.", icon: ShoppingBag },
-        { id: "wishlistDrops", label: "Wishlist Price Drops", description: "Receive alerts when items in your wishlist go on sale.", icon: Tag },
+        { id: "orderStatusEmailsEnabled", label: "Order Status Emails", description: "Receive email when an order is placed, shipped, or delivered.", icon: ShoppingBag },
+        { id: "paymentEmailsEnabled", label: "Payment Emails", description: "Receive email when payment succeeds or fails.", icon: WalletCards },
       ]
     },
     {
-      title: "Promotions & Offers",
-      description: "Be the first to know about discounts and special events.",
+      title: "Channels",
+      description: "Choose where account updates appear.",
       items: [
-        { id: "promotions", label: "General Promotions", description: "Coupons, seasonal sales, and personalized offers.", icon: Bell },
-        { id: "flashSales", label: "Flash Sales", description: "Real-time alerts for limited-time deals.", icon: Zap },
+        { id: "inAppNotificationsEnabled", label: "In-App Notifications", description: "Show order and payment updates in the notification center.", icon: Bell },
       ]
     },
     {
-      title: "Delivery Channels",
-      description: "Choose how you want to receive your notifications.",
+      title: "Marketing",
+      description: "Promotional messages require your opt-in.",
       items: [
-        { id: "email", label: "Email Notifications", description: "Sent to your registered email address.", icon: Mail },
-        { id: "appPush", label: "Mobile Push Notifications", description: "Real-time alerts on your smartphone.", icon: Smartphone },
-        { id: "sms", label: "SMS Notifications", description: "Important updates sent via text message.", icon: MessageSquare },
+        { id: "marketingEmailsEnabled", label: "Marketing Emails", description: "Receive promotions, coupons, and campaign announcements.", icon: Megaphone },
       ]
     }
   ];
@@ -50,8 +86,12 @@ export default function NotificationsTab() {
     <div className="p-8 md:p-10 space-y-10">
       <div>
         <h2 className="text-2xl font-black text-slate-900 tracking-tight">Notification Preferences</h2>
-        <p className="text-sm text-slate-500 font-medium mt-1">Control how and when you want to be notified.</p>
+        <p className="text-sm text-slate-500 font-medium mt-1">Control how order, payment, and promotional updates reach you.</p>
       </div>
+
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>
+      ) : null}
 
       <div className="space-y-12">
         {sections.map((section) => (
@@ -65,11 +105,11 @@ export default function NotificationsTab() {
               {section.items.map((item) => (
                 <div 
                   key={item.id}
-                  onClick={() => toggle(item.id as keyof typeof prefs)}
-                  className="group flex items-center justify-between p-5 bg-white border border-slate-100 rounded-3xl hover:border-brand/20 hover:shadow-xl hover:shadow-slate-200/50 transition-all cursor-pointer"
+                  onClick={() => toggle(item.id as keyof NotificationPreferenceDto)}
+                  className="group flex cursor-pointer items-center justify-between rounded-lg border border-slate-100 bg-white p-5 transition-all hover:border-brand/20 hover:shadow-xl hover:shadow-slate-200/50"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-slate-50 text-slate-400 group-hover:bg-brand/10 group-hover:text-brand rounded-2xl flex items-center justify-center transition-colors">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-50 text-slate-400 transition-colors group-hover:bg-brand/10 group-hover:text-brand">
                       <item.icon size={24} />
                     </div>
                     <div>
@@ -78,8 +118,19 @@ export default function NotificationsTab() {
                     </div>
                   </div>
 
-                  <div className={`relative w-14 h-8 rounded-full transition-colors duration-300 ${prefs[item.id as keyof typeof prefs] ? 'bg-brand' : 'bg-slate-200'}`}>
-                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${prefs[item.id as keyof typeof prefs] ? 'translate-x-6' : 'translate-x-0'}`} />
+                  <div className="flex items-center gap-3">
+                    {savingKey === item.id ? (
+                      <span className="text-xs font-bold text-slate-400">Saving</span>
+                    ) : null}
+                    {loading ? (
+                      <span className="h-8 w-14 rounded-full bg-slate-100" />
+                    ) : (
+                      <div className={`relative h-8 w-14 rounded-full transition-colors duration-300 ${prefs[item.id as keyof NotificationPreferenceDto] ? 'bg-brand' : 'bg-slate-200'}`}>
+                        <div className={`absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ${prefs[item.id as keyof NotificationPreferenceDto] ? 'translate-x-6' : 'translate-x-0'}`}>
+                          {prefs[item.id as keyof NotificationPreferenceDto] ? <Check className="h-3.5 w-3.5 text-brand" /> : null}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

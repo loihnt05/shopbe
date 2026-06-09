@@ -232,6 +232,28 @@ export type BackendPagedResult<T> = {
   totalCount: number;
 };
 
+export type NotificationDto = {
+  id: string;
+  channel: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+};
+
+export type NotificationPageDto = BackendPagedResult<NotificationDto>;
+
+export type UnreadCountDto = {
+  count: number;
+};
+
+export type NotificationPreferenceDto = {
+  orderStatusEmailsEnabled: boolean;
+  paymentEmailsEnabled: boolean;
+  marketingEmailsEnabled: boolean;
+  inAppNotificationsEnabled: boolean;
+};
+
 export type AdminDashboardOverviewDto = {
   totalUsers: number;
   totalCustomers: number;
@@ -336,6 +358,16 @@ export type AdminRevenuePointDto = {
 export type AdminSalesBreakdownDto = {
   revenueByPeriod: AdminRevenuePointDto[];
   salesByStatus: Array<{ key: string; value: number }>;
+};
+
+export type AdminNotificationActionResultDto = {
+  inAppNotificationsCreated: number;
+  emailsQueued: number;
+};
+
+export type AdminLowStockNotificationResultDto = {
+  productsMatched: number;
+  adminNotificationsCreated: number;
 };
 
 export type AdminCategoryDto = {
@@ -863,6 +895,52 @@ export type UserRequestDto = {
 };
 
 export const shopbeApi = {
+  notifications: {
+    list: (
+      accessToken: string,
+      params?: { unreadOnly?: boolean; page?: number; pageSize?: number },
+      signal?: AbortSignal
+    ) => {
+      const query = new URLSearchParams();
+      if (params?.unreadOnly) query.append("unreadOnly", "true");
+      if (params?.page) query.append("page", params.page.toString());
+      if (params?.pageSize) query.append("pageSize", params.pageSize.toString());
+      const queryString = query.toString();
+      return requestJson<NotificationPageDto>(`/api/notifications${queryString ? `?${queryString}` : ""}`, {
+        accessToken,
+        signal,
+      });
+    },
+    unreadCount: (accessToken: string, signal?: AbortSignal) =>
+      requestJson<UnreadCountDto>("/api/notifications/unread-count", {
+        accessToken,
+        signal,
+      }),
+    markRead: (accessToken: string, id: string, signal?: AbortSignal) =>
+      requestJson<void>(`/api/notifications/${id}/read`, {
+        accessToken,
+        method: "PUT",
+        signal,
+      }),
+    markAllRead: (accessToken: string, signal?: AbortSignal) =>
+      requestJson<void>("/api/notifications/read-all", {
+        accessToken,
+        method: "PUT",
+        signal,
+      }),
+    getPreferences: (accessToken: string, signal?: AbortSignal) =>
+      requestJson<NotificationPreferenceDto>("/api/notifications/preferences", {
+        accessToken,
+        signal,
+      }),
+    updatePreferences: (accessToken: string, body: NotificationPreferenceDto, signal?: AbortSignal) =>
+      requestJson<NotificationPreferenceDto>("/api/notifications/preferences", {
+        accessToken,
+        method: "PUT",
+        body,
+        signal,
+      }),
+  },
   admin: {
     dashboardOverview: (accessToken: string, signal?: AbortSignal) =>
       requestJson<AdminDashboardOverviewDto>("/api/admin/dashboard/overview", { accessToken, signal }),
@@ -904,6 +982,22 @@ export const shopbeApi = {
       requestJson<AdminTopProductDto[]>(`/api/admin/analytics/top-products?take=${take}`, { accessToken, signal }),
     topSellers: (accessToken: string, take = 10, signal?: AbortSignal) =>
       requestJson<AdminTopSellerDto[]>(`/api/admin/analytics/top-sellers?take=${take}`, { accessToken, signal }),
+    sendMarketingNotification: (
+      accessToken: string,
+      body: { title: string; message: string; emailSubject?: string },
+      signal?: AbortSignal
+    ) =>
+      requestJson<AdminNotificationActionResultDto>("/api/admin/notifications/marketing", {
+        accessToken,
+        body,
+        signal,
+      }),
+    createLowStockAlerts: (accessToken: string, threshold = 10, signal?: AbortSignal) =>
+      requestJson<AdminLowStockNotificationResultDto>(`/api/admin/notifications/low-stock?threshold=${threshold}`, {
+        accessToken,
+        method: "POST",
+        signal,
+      }),
     categories: (accessToken: string, query?: Record<string, string | undefined>, signal?: AbortSignal) =>
       requestJson<AdminCategoryDto[]>(withQuery("/api/admin/categories", query ?? {}), { accessToken, signal }),
     createCategory: (accessToken: string, body: AdminCategoryUpsertDto, signal?: AbortSignal) =>

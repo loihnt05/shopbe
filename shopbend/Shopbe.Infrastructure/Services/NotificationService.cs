@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Shopbe.Application.Common.Interfaces.Notifications;
 using Shopbe.Domain.Entities.Notification;
@@ -9,7 +10,7 @@ namespace Shopbe.Infrastructure.Services;
 
 public sealed class NotificationService(
     ShopDbContext db,
-    IEmailQueue emailQueue,
+    IServiceScopeFactory scopeFactory,
     ILogger<NotificationService> logger) : INotificationService
 {
     public Task SendOrderPlacedAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -43,18 +44,26 @@ public sealed class NotificationService(
             var user = order.User;
             var amount = FormatMoney(payment.Amount, payment.Currency);
             var message = $"Payment for order #{ShortId(order.Id)} was successful.";
+            var preferences = await GetPreferencesAsync(user.Id, cancellationToken);
 
-            await CreateInAppAsync(user.Id, "Payment successful", message, cancellationToken);
-            await emailQueue.EnqueueAsync(
-                user.Email,
-                "Payment received for your Shopbe order",
-                BuildEmailHtml("Payment successful", $"We received your payment of {amount} for order #{ShortId(order.Id)}.", order.Id),
-                $"We received your payment of {amount} for order #{ShortId(order.Id)}.",
-                user.Id,
-                order.Id,
-                payment.Id,
-                $"payment-succeeded:{payment.Id}",
-                cancellationToken);
+            if (preferences.InAppNotificationsEnabled)
+            {
+                await CreateInAppAsync(user.Id, "Payment successful", message, cancellationToken);
+            }
+
+            if (preferences.PaymentEmailsEnabled)
+            {
+                await EnqueueEmailAsync(
+                    user.Email,
+                    "Payment received for your Shopbe order",
+                    BuildEmailHtml("Payment successful", $"We received your payment of {amount} for order #{ShortId(order.Id)}.", order.Id),
+                    $"We received your payment of {amount} for order #{ShortId(order.Id)}.",
+                    user.Id,
+                    order.Id,
+                    payment.Id,
+                    $"payment-succeeded:{payment.Id}",
+                    cancellationToken);
+            }
         }
         catch (Exception ex)
         {
@@ -81,18 +90,26 @@ public sealed class NotificationService(
             var order = payment.Order;
             var user = order.User;
             var message = $"Payment for order #{ShortId(order.Id)} failed. Please try another payment method.";
+            var preferences = await GetPreferencesAsync(user.Id, cancellationToken);
 
-            await CreateInAppAsync(user.Id, "Payment failed", message, cancellationToken);
-            await emailQueue.EnqueueAsync(
-                user.Email,
-                "Payment failed for your Shopbe order",
-                BuildEmailHtml("Payment failed", message, order.Id),
-                message,
-                user.Id,
-                order.Id,
-                payment.Id,
-                $"payment-failed:{payment.Id}",
-                cancellationToken);
+            if (preferences.InAppNotificationsEnabled)
+            {
+                await CreateInAppAsync(user.Id, "Payment failed", message, cancellationToken);
+            }
+
+            if (preferences.PaymentEmailsEnabled)
+            {
+                await EnqueueEmailAsync(
+                    user.Email,
+                    "Payment failed for your Shopbe order",
+                    BuildEmailHtml("Payment failed", message, order.Id),
+                    message,
+                    user.Id,
+                    order.Id,
+                    payment.Id,
+                    $"payment-failed:{payment.Id}",
+                    cancellationToken);
+            }
         }
         catch (Exception ex)
         {
@@ -145,22 +162,61 @@ public sealed class NotificationService(
                 return;
             }
 
-            await CreateInAppAsync(order.UserId, title, message, cancellationToken);
-            await emailQueue.EnqueueAsync(
-                order.User.Email,
-                subject,
-                BuildEmailHtml(title, message, order.Id),
-                message,
-                order.UserId,
-                order.Id,
-                null,
-                $"{idempotencyPrefix}:{order.Id}",
-                cancellationToken);
+            var preferences = await GetPreferencesAsync(order.UserId, cancellationToken);
+
+            if (preferences.InAppNotificationsEnabled)
+            {
+                await CreateInAppAsync(order.UserId, title, message, cancellationToken);
+            }
+
+            if (preferences.OrderStatusEmailsEnabled)
+            {
+                await EnqueueEmailAsync(
+                    order.User.Email,
+                    subject,
+                    BuildEmailHtml(title, message, order.Id),
+                    message,
+                    order.UserId,
+                    order.Id,
+                    null,
+                    $"{idempotencyPrefix}:{order.Id}",
+                    cancellationToken);
+            }
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to send {NotificationTitle} notification for order {OrderId}.", title, orderId);
         }
+    }
+
+    private async Task<NotificationPreferenceSnapshot> GetPreferencesAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var preferences = await db.NotificationPreferences
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+
+        return preferences is null
+            ? NotificationPreferenceSnapshot.Default
+            : new NotificationPreferenceSnapshot(
+                preferences.OrderStatusEmailsEnabled,
+                preferences.PaymentEmailsEnabled,
+                preferences.InAppNotificationsEnabled);
+    }
+
+    private async Task EnqueueEmailAsync(
+        string to,
+        string subject,
+        string bodyHtml,
+        string? bodyText,
+        Guid? userId,
+        Guid? orderId,
+        Guid? paymentId,
+        string? idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        using var scope = scopeFactory.CreateScope();
+        var emailQueue = scope.ServiceProvider.GetRequiredService<IEmailQueue>();
+        await emailQueue.EnqueueAsync(to, subject, bodyHtml, bodyText, userId, orderId, paymentId, idempotencyKey, cancellationToken);
     }
 
     private async Task CreateInAppAsync(Guid userId, string title, string message, CancellationToken cancellationToken)
@@ -214,5 +270,13 @@ public sealed class NotificationService(
     private static string ShortId(Guid id)
     {
         return id.ToString("N")[..8].ToUpperInvariant();
+    }
+
+    private sealed record NotificationPreferenceSnapshot(
+        bool OrderStatusEmailsEnabled,
+        bool PaymentEmailsEnabled,
+        bool InAppNotificationsEnabled)
+    {
+        public static NotificationPreferenceSnapshot Default { get; } = new(true, true, true);
     }
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Boxes, LayoutDashboard, LogOut, Package, ShoppingCart, Users, Store } from "lucide-react";
+import { BarChart3, Bell, Boxes, LayoutDashboard, LogOut, Package, ShoppingCart, Users, Store } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 const items = [
@@ -11,6 +11,7 @@ const items = [
   { href: "/admin/sellers", label: "Sellers", icon: Store },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
+  { href: "/admin/notifications", label: "Notifications", icon: Bell },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/categories", label: "Categories", icon: Boxes },
 ];
