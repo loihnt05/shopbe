@@ -18,9 +18,12 @@ public sealed class NotificationsController(
     public sealed record NotificationDto(
         Guid Id,
         string Channel,
+        string Type,
         string Title,
         string Message,
+        string? LinkUrl,
         bool IsRead,
+        DateTime? ReadAt,
         DateTime CreatedAt);
 
     public sealed record NotificationPageDto(
@@ -82,9 +85,12 @@ public sealed class NotificationsController(
             .Select(n => new NotificationDto(
                 n.Id,
                 n.Channel,
+                n.Type,
                 n.Title,
                 n.Message,
+                n.LinkUrl,
                 n.IsRead,
+                n.ReadAt,
                 n.CreatedAt))
             .ToListAsync(cancellationToken);
 
@@ -142,8 +148,10 @@ public sealed class NotificationsController(
 
         if (!notification.IsRead)
         {
+            var now = DateTime.UtcNow;
             notification.IsRead = true;
-            notification.UpdatedAt = DateTime.UtcNow;
+            notification.ReadAt = now;
+            notification.UpdatedAt = now;
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
@@ -160,6 +168,7 @@ public sealed class NotificationsController(
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(n => n.IsRead, true)
+                    .SetProperty(n => n.ReadAt, now)
                     .SetProperty(n => n.UpdatedAt, now),
                 cancellationToken);
 

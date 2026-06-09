@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { Bell, CheckCheck, RefreshCw } from "lucide-react";
 import { shopbeApi, type NotificationDto } from "@/lib/shopbeApi";
@@ -16,6 +17,7 @@ function formatDate(value: string) {
 
 export default function NotificationsPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [items, setItems] = useState<NotificationDto[]>([]);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
@@ -50,15 +52,25 @@ export default function NotificationsPage() {
     return () => controller.abort();
   }, [accessToken, status, unreadOnly]);
 
-  const markRead = async (id: string) => {
+  const openNotification = async (item: NotificationDto) => {
     if (!accessToken) return;
+    if (item.isRead) {
+      if (item.linkUrl) {
+        router.push(item.linkUrl);
+      }
+      return;
+    }
+
     const previous = items;
-    setItems((list) => list.map((item) => item.id === id ? { ...item, isRead: true } : item));
+    setItems((list) => list.map((candidate) => candidate.id === item.id ? { ...candidate, isRead: true, readAt: new Date().toISOString() } : candidate));
 
     try {
-      await shopbeApi.notifications.markRead(accessToken, id);
+      await shopbeApi.notifications.markRead(accessToken, item.id);
       if (unreadOnly) {
-        setItems((list) => list.filter((item) => item.id !== id));
+        setItems((list) => list.filter((candidate) => candidate.id !== item.id));
+      }
+      if (item.linkUrl) {
+        router.push(item.linkUrl);
       }
     } catch {
       setItems(previous);
@@ -68,7 +80,8 @@ export default function NotificationsPage() {
   const markAllRead = async () => {
     if (!accessToken) return;
     const previous = items;
-    setItems((list) => unreadOnly ? [] : list.map((item) => ({ ...item, isRead: true })));
+    const now = new Date().toISOString();
+    setItems((list) => unreadOnly ? [] : list.map((item) => ({ ...item, isRead: true, readAt: item.readAt ?? now })));
 
     try {
       await shopbeApi.notifications.markAllRead(accessToken);
@@ -170,7 +183,7 @@ export default function NotificationsPage() {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => markRead(item.id)}
+                onClick={() => openNotification(item)}
                 className="flex w-full gap-4 px-5 py-4 text-left hover:bg-slate-50"
               >
                 <span className={`mt-2 h-2.5 w-2.5 shrink-0 rounded-full ${item.isRead ? "bg-slate-200" : "bg-[#ee4d2d]"}`} />
@@ -180,6 +193,7 @@ export default function NotificationsPage() {
                     <span className="text-xs font-medium text-slate-400">{formatDate(item.createdAt)}</span>
                   </span>
                   <span className="mt-1 block text-sm leading-6 text-slate-600">{item.message}</span>
+                  <span className="mt-2 inline-flex rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-500">{item.type}</span>
                 </span>
               </button>
             ))}

@@ -48,7 +48,7 @@ public sealed class NotificationService(
 
             if (preferences.InAppNotificationsEnabled)
             {
-                await CreateInAppAsync(user.Id, "Payment successful", message, cancellationToken);
+                await CreateInAppAsync(user.Id, "PaymentUpdate", "Payment successful", message, $"/purchases", cancellationToken);
             }
 
             if (preferences.PaymentEmailsEnabled)
@@ -94,7 +94,7 @@ public sealed class NotificationService(
 
             if (preferences.InAppNotificationsEnabled)
             {
-                await CreateInAppAsync(user.Id, "Payment failed", message, cancellationToken);
+                await CreateInAppAsync(user.Id, "PaymentUpdate", "Payment failed", message, "/checkout", cancellationToken);
             }
 
             if (preferences.PaymentEmailsEnabled)
@@ -166,7 +166,7 @@ public sealed class NotificationService(
 
             if (preferences.InAppNotificationsEnabled)
             {
-                await CreateInAppAsync(order.UserId, title, message, cancellationToken);
+                await CreateInAppAsync(order.UserId, "OrderUpdate", title, message, $"/purchases", cancellationToken);
             }
 
             if (preferences.OrderStatusEmailsEnabled)
@@ -219,15 +219,23 @@ public sealed class NotificationService(
         await emailQueue.EnqueueAsync(to, subject, bodyHtml, bodyText, userId, orderId, paymentId, idempotencyKey, cancellationToken);
     }
 
-    private async Task CreateInAppAsync(Guid userId, string title, string message, CancellationToken cancellationToken)
+    private async Task CreateInAppAsync(
+        Guid userId,
+        string type,
+        string title,
+        string message,
+        string? linkUrl,
+        CancellationToken cancellationToken)
     {
         db.Notifications.Add(new Notification
         {
             Id = Guid.NewGuid(),
             UserId = userId,
             Channel = "InApp",
+            Type = type,
             Title = title,
             Message = message,
+            LinkUrl = linkUrl,
             IsRead = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow

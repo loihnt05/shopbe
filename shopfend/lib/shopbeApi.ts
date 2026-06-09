@@ -235,9 +235,12 @@ export type BackendPagedResult<T> = {
 export type NotificationDto = {
   id: string;
   channel: string;
+  type: string;
   title: string;
   message: string;
+  linkUrl?: string | null;
   isRead: boolean;
+  readAt?: string | null;
   createdAt: string;
 };
 

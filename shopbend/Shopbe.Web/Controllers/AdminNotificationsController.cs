@@ -65,8 +65,10 @@ public sealed class AdminNotificationsController(ShopDbContext dbContext, IEmail
                 Id = Guid.NewGuid(),
                 UserId = recipient.User.Id,
                 Channel = "InApp",
+                Type = "Promotion",
                 Title = title,
                 Message = message,
+                LinkUrl = "/products",
                 IsRead = false,
                 CreatedAt = now,
                 UpdatedAt = now
@@ -149,8 +151,10 @@ public sealed class AdminNotificationsController(ShopDbContext dbContext, IEmail
                     Id = Guid.NewGuid(),
                     UserId = admin.Id,
                     Channel = "InApp",
+                    Type = "Restock",
                     Title = "Low stock alert",
                     Message = $"{product.Name} has {product.Stock} units left.",
+                    LinkUrl = "/admin/products",
                     IsRead = false,
                     CreatedAt = now,
                     UpdatedAt = now

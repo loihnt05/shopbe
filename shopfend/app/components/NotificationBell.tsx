@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Bell, CheckCheck } from "lucide-react";
 import { shopbeApi, type NotificationDto } from "@/lib/shopbeApi";
@@ -26,6 +27,7 @@ function formatTime(value: string) {
 
 export default function NotificationBell() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationDto[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -89,24 +91,37 @@ export default function NotificationBell() {
     setLoading(true);
     try {
       await shopbeApi.notifications.markAllRead(accessToken);
-      setItems((current) => current.map((item) => ({ ...item, isRead: true })));
+      const now = new Date().toISOString();
+      setItems((current) => current.map((item) => ({ ...item, isRead: true, readAt: item.readAt ?? now })));
       setUnreadCount(0);
     } finally {
       setLoading(false);
     }
   };
 
-  const markRead = async (id: string) => {
-    const current = items.find((item) => item.id === id);
-    if (!current || current.isRead) return;
+  const openNotification = async (item: NotificationDto) => {
+    const current = items.find((candidate) => candidate.id === item.id);
+    if (!current) return;
 
-    setItems((list) => list.map((item) => item.id === id ? { ...item, isRead: true } : item));
+    if (current.isRead) {
+      setOpen(false);
+      if (item.linkUrl) {
+        router.push(item.linkUrl);
+      }
+      return;
+    }
+
+    setItems((list) => list.map((candidate) => candidate.id === item.id ? { ...candidate, isRead: true, readAt: new Date().toISOString() } : candidate));
     setUnreadCount((count) => Math.max(0, count - 1));
 
     try {
-      await shopbeApi.notifications.markRead(accessToken, id);
+      await shopbeApi.notifications.markRead(accessToken, item.id);
+      setOpen(false);
+      if (item.linkUrl) {
+        router.push(item.linkUrl);
+      }
     } catch {
-      setItems((list) => list.map((item) => item.id === id ? { ...item, isRead: false } : item));
+      setItems((list) => list.map((candidate) => candidate.id === item.id ? { ...candidate, isRead: false, readAt: null } : candidate));
       setUnreadCount((count) => count + 1);
     }
   };
@@ -152,14 +167,17 @@ export default function NotificationBell() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => markRead(item.id)}
+                  onClick={() => openNotification(item)}
                   className="flex w-full gap-3 border-b border-slate-100 px-4 py-3 text-left hover:bg-slate-50"
                 >
                   <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${item.isRead ? "bg-slate-200" : "bg-[#ee4d2d]"}`} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-slate-900">{item.title}</span>
                     <span className="line-clamp-2 text-xs leading-5 text-slate-600">{item.message}</span>
-                    <span className="mt-1 block text-[11px] font-medium text-slate-400">{formatTime(item.createdAt)}</span>
+                    <span className="mt-1 flex items-center gap-2 text-[11px] font-medium text-slate-400">
+                      <span>{formatTime(item.createdAt)}</span>
+                      <span>{item.type}</span>
+                    </span>
                   </span>
                 </button>
               ))
