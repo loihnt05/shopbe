@@ -1,12 +1,16 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Shopbe.Application.Common.Interfaces;
 using Shopbe.E2E.Tests.Fakes;
 using Shopbe.Infrastructure.Persistence;
+using StackExchange.Redis;
 
 namespace Shopbe.E2E.Tests.Infrastructure;
 
@@ -33,7 +37,7 @@ public sealed class ShopbeApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Authentication:Keycloak:ValidateAudience", "false");
         builder.UseSetting("HttpsRedirection:Enabled", "false");
 
-        builder.ConfigureServices(services =>
+        builder.ConfigureTestServices(services =>
         {
             services.AddLogging(logging =>
             {
@@ -65,6 +69,14 @@ public sealed class ShopbeApiFactory : WebApplicationFactory<Program>
             }
 
             services.AddScoped<IStripeService, FakeStripeService>();
+
+            // App settings register Redis against localhost. CI only starts the Postgres
+            // Testcontainer, so replace Redis-backed cache services for in-memory E2E cache.
+            services.RemoveAll<IConnectionMultiplexer>();
+            services.RemoveAll<IDistributedCache>();
+            services.RemoveAll<ICacheService>();
+            services.AddDistributedMemoryCache();
+            services.AddSingleton<ICacheService, FakeCacheService>();
 
             // Replace authentication with a test scheme that always signs in a known user.
             services.AddAuthentication(options =>
