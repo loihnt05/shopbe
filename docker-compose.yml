@@ -4,10 +4,16 @@ services:
     container_name: keycloak
     command: start-dev --import-realm
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
-      KEYCLOAK_ADMIN: admin   
+      KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME: auth.shopbee.page
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_PROXY: edge 
     volumes:
       - ./keycloak:/opt/keycloak/data/import:ro
       - keycloak_data:/opt/keycloak/data
@@ -20,7 +26,7 @@ services:
       POSTGRES_PASSWORD: shop
       POSTGRES_DB: shopbend
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -28,6 +34,8 @@ services:
     image: redis:7-alpine
     container_name: shopbend-redis
     command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
     restart: unless-stopped
     volumes:
       - redis_data:/data
@@ -36,7 +44,30 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-  
+  backend:
+    build:
+      context: .
+      dockerfile: shopbend/Shopbe.Web/Dockerfile
+    container_name: shopbe-backend
+    ports:
+      - "127.0.0.1:5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Server=postgres;Port=5432;Database=shopbend;Username=shop;Password=shop
+      ConnectionStrings__Redis: redis:6379
+      Authentication__Keycloak__Authority: http://keycloak:8080/realms/ShopBee
+      Authentication__Keycloak__RequireHttpsMetadata: "false"
+      Authentication__Keycloak__ValidateAudience: "false"
+      Cors__FrontendOrigins__0: https://shopbee.page
+      Cors__FrontendOrigins__1: https://www.shopbee.page
+      Cors__FrontendOrigins__2: http://shopbee.page
+      Cors__FrontendOrigins__3: http://www.shopbee.page
+    depends_on:
+      - postgres
+      - redis
+      - keycloak
+
 volumes:
   postgres_data:
     name: shopbend_postgres_data

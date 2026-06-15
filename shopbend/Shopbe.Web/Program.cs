@@ -59,6 +59,8 @@ builder.Services.AddCors(options =>
             "http://127.0.0.1:3001",
             "https://127.0.0.1:3000",
             "https://127.0.0.1:3001"
+	    "https://shopbee.page",
+            "https://www.shopbee.page"
         ];
 
     options.AddPolicy("Frontend", policy =>

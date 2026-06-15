@@ -1,0 +1,12 @@
+[0;1;31m×[0m pm2-g23520869.service - PM2 process manager
+     Loaded: loaded (/etc/systemd/system/pm2-g23520869.service; enabled; vendor preset: enabled)
+     Active: [0;1;31mfailed[0m (Result: protocol) since Mon 2026-06-15 13:48:57 UTC; 3s ago
+       Docs: https://pm2.keymetrics.io/
+    Process: 7250 ExecStart=/usr/lib/node_modules/pm2/bin/pm2 resurrect (code=exited, status=0/SUCCESS)
+        CPU: 291ms
+
+Jun 15 13:48:57 shopbe-server systemd[1]: pm2-g23520869.service: Scheduled restart job, restart counter is at 5.
+Jun 15 13:48:57 shopbe-server systemd[1]: Stopped PM2 process manager.
+Jun 15 13:48:57 shopbe-server systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185mpm2-g23520869.service: Start request repeated too quickly.[0m
+Jun 15 13:48:57 shopbe-server systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185mpm2-g23520869.service: Failed with result 'protocol'.[0m
+Jun 15 13:48:57 shopbe-server systemd[1]: [0;1;31m[0;1;39m[0;1;31mFailed to start PM2 process manager.[0m
