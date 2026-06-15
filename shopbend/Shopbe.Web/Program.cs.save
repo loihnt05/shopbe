@@ -1,0 +1,362 @@
+using System.Security.Claims;
+using System.Text.Json;
+using Hangfire;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Shopbe.Application;
+using Shopbe.Application.Common.Interfaces;
+using Shopbe.Infrastructure;
+using Shopbe.Infrastructure.Persistence;
+using Shopbe.Web.Common;
+using Shopbe.Web.Common.ExceptionHandling;
+using Shopbe.Web.Common.Api;
+
+var builder = WebApplication.CreateBuilder(args);
+var keycloakAuthority = builder.Configuration["Authentication:Keycloak:Authority"];
+var keycloakAuthorityExternal = builder.Configuration["Authentication:Keycloak:AuthorityExternal"];
+
+if (builder.Environment.IsDevelopment())
+{
+    var stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
+    var stripeWebhookSecret = builder.Configuration["Stripe:WebhookSecret"];
+
+    if (string.IsNullOrWhiteSpace(stripeSecretKey) || string.IsNullOrWhiteSpace(stripeWebhookSecret))
+    {
+        throw new InvalidOperationException(
+            "Missing Stripe configuration for Development. Put Stripe:SecretKey / Stripe:WebhookSecret in appsettings.Development.json (preferred) or provide them via user-secrets/environment variables.");
+    }
+}
+
+if (string.IsNullOrWhiteSpace(keycloakAuthority))
+{
+    throw new InvalidOperationException("Missing Authentication:Keycloak:Authority configuration.");
+}
+
+// Add services to the container.
+builder.Services.Configure<ApiResponseOptions>(builder.Configuration.GetSection(ApiResponseOptions.SectionName));
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ApiResponseEnvelopeFilter>();
+});
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddCors(options =>
+{
+    var frontendOrigins = builder.Configuration
+        .GetSection("Cors:FrontendOrigins")
+        .Get<string[]>()
+        ??
+        [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "https://localhost:3000",
+            "https://localhost:3001",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001",
+            "https://127.0.0.1:3000",
+            "https://127.0.0.1:3001"
+	    "https://shopbee.page",
+            "https://www.shopbee.page"
+        ];
+
+    options.AddPolicy("Frontend", policy =>
+    {
+        policy
+            .WithOrigins(frontendOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = keycloakAuthority;
+        options.RequireHttpsMetadata = builder.Configuration.GetValue("Authentication:Keycloak:RequireHttpsMetadata", 
+                                        !builder.Environment.IsDevelopment());
+
+        var validAudiences = builder.Configuration
+            .GetSection("Authentication:Keycloak:ValidAudiences")
+            .Get<string[]>();
+
+        // Keycloak can issue tokens with an issuer (iss) matching the URL used by the browser
+        // (e.g. http://localhost:8080/...) while the API container validates metadata using an
+        // internal docker hostname (e.g. http://keycloak:8080/...). Accept both.
+        var validIssuers = new[] { keycloakAuthority, keycloakAuthorityExternal }
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuers = validIssuers,
+            ValidateAudience = builder.Configuration.GetValue("Authentication:Keycloak:ValidateAudience", false),
+            ValidAudiences = validAudiences,
+            NameClaimType = "preferred_username",
+            RoleClaimType = ClaimTypes.Role
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                if (context.Principal?.Identity is not ClaimsIdentity identity)
+                {
+                    return Task.CompletedTask;
+                }
+
+                AddRoleClaims(identity, context.Principal.FindFirst("realm_access")?.Value, null);
+
+                var resourceAccessClaims = context.Principal
+                    .FindAll("resource_access")
+                    .Select(claim => claim.Value)
+                    .ToList();
+
+                foreach (var resourceAccessClaim in resourceAccessClaims)
+                {
+                    AddRoleClaims(identity, resourceAccessClaim, "resource");
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {   
+        Title = "Shopbe API",
+        Version = "v1"
+    });
+
+    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.OAuth2,
+        Flows = new OpenApiOAuthFlows
+        {
+            AuthorizationCode = new OpenApiOAuthFlow
+            {
+                AuthorizationUrl = new Uri($"{(string.IsNullOrWhiteSpace(keycloakAuthorityExternal) ? keycloakAuthority : keycloakAuthorityExternal)}/protocol/openid-connect/auth"),
+                TokenUrl = new Uri($"{(string.IsNullOrWhiteSpace(keycloakAuthorityExternal) ? keycloakAuthority : keycloakAuthorityExternal)}/protocol/openid-connect/token"),
+                Scopes = new Dictionary<string, string>
+                {
+                    { "openid", "OpenID Connect" },
+                    { "profile", "Profile" }
+                }
+            }
+        }
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "oauth2"
+                }
+            },
+            new[] { "openid", "profile" }
+        }
+    });
+});
+
+// Hangfire (used by IEmailQueue)
+// Default: in-memory storage so the app can start without extra infrastructure.
+// If you want persistent jobs, swap to a real storage provider (e.g. Hangfire.PostgreSql) and configure it here.
+builder.Services.AddHangfire(config =>
+{
+    config.UseSimpleAssemblyNameTypeSerializer();
+    config.UseRecommendedSerializerSettings();
+    config.UseInMemoryStorage();
+});
+
+// Run a background processing server unless explicitly disabled
+if (!builder.Configuration.GetValue("Hangfire:Server:Enabled", true))
+{
+    // no server
+}
+else
+{
+    builder.Services.AddHangfireServer();
+}
+
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+
+// User behavior lifecycle cleanup (recurring job)
+builder.Services.AddScoped<Shopbe.Infrastructure.Services.UserBehaviorCleanupJob>();
+builder.Services.AddScoped<Shopbe.Infrastructure.Services.Email.EmailRecoveryJob>();
+
+var app = builder.Build();
+
+// Apply EF Core migrations automatically (useful for local/dev & Docker compose)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ShopDbContext>();
+    db.Database.Migrate();
+
+    // Seed sample data in Development for quick manual testing.
+    if (app.Environment.IsDevelopment())
+    {
+        var logger = scope.ServiceProvider.GetService<ILoggerFactory>()?.CreateLogger("ShopbeDbSeeder");
+        await ShopbeDbSeeder.SeedAsync(db, logger);
+    }
+}
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.OAuthClientId(builder.Configuration["Authentication:Keycloak:SwaggerClientId"] ?? "shopbe-swagger");
+        options.OAuthScopes("openid", "profile");
+        options.OAuthUsePkce();
+    });
+
+    // Optional dashboard for local debugging
+    if (builder.Configuration.GetValue("Hangfire:Dashboard:Enabled", true))
+    {
+        app.UseHangfireDashboard(pathMatch: "/hangfire");
+    }
+}
+
+// Global exception handling (RFC7807 ProblemDetails)
+app.UseMiddleware<GlobalExceptionMiddleware>();
+
+// Schedule recurring cleanup for expired user behavior events.
+// Default: daily at 03:00 (server local time). Can be disabled via configuration.
+if (builder.Configuration.GetValue("UserBehavior:Cleanup:Enabled", true))
+{
+    var cron = builder.Configuration["UserBehavior:Cleanup:Cron"] ?? "0 3 * * *";
+    var batchSize = builder.Configuration.GetValue("UserBehavior:Cleanup:BatchSize", 20_000);
+
+    // IMPORTANT:
+    // Avoid Hangfire static APIs (RecurringJob.*) because they depend on JobStorage.Current.
+    // In DI-driven ASP.NET Core apps (and especially WebApplicationFactory/E2E tests),
+    // JobStorage.Current may not be initialized, causing startup failures.
+    using (var scope = app.Services.CreateScope())
+    {
+        var recurringJobs = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+        recurringJobs.AddOrUpdate<Shopbe.Infrastructure.Services.UserBehaviorCleanupJob>(
+            recurringJobId: "user-behavior-cleanup",
+            methodCall: job => job.RunAsync(batchSize, CancellationToken.None),
+            cronExpression: cron,
+            options: new RecurringJobOptions());
+    }
+}
+
+// Schedule recurring recovery for persisted email messages that are still pending or retryable.
+if (builder.Configuration.GetValue("Email:Recovery:Enabled", true))
+{
+    var cron = builder.Configuration["Email:Recovery:Cron"] ?? "*/10 * * * *";
+    var batchSize = builder.Configuration.GetValue("Email:Recovery:BatchSize", 100);
+    var retryDelayMinutes = builder.Configuration.GetValue("Email:Recovery:RetryDelayMinutes", 5);
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var recurringJobs = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+        recurringJobs.AddOrUpdate<Shopbe.Infrastructure.Services.Email.EmailRecoveryJob>(
+            recurringJobId: "email-recovery",
+            methodCall: job => job.RunAsync(batchSize, retryDelayMinutes, CancellationToken.None),
+            cronExpression: cron,
+            options: new RecurringJobOptions());
+    }
+}
+
+// Stripe CLI/webhooks may forward over HTTP in local dev; avoid redirecting this endpoint
+// because redirects can drop the Stripe-Signature header.
+var enableHttpsRedirection = builder.Configuration.GetValue(
+    "HttpsRedirection:Enabled",
+    !builder.Environment.IsDevelopment());
+
+if (enableHttpsRedirection)
+{
+    app.UseWhen(
+        context => !context.Request.Path.StartsWithSegments("/api/payments/stripe/webhook"),
+        appBuilder => appBuilder.UseHttpsRedirection());
+}
+
+app.UseCors("Frontend");
+app.UseAuthentication();
+
+// Automatically sync Keycloak user (sub/email/name claims) into the application database.
+app.UseMiddleware<UserSyncMiddleware>();
+
+app.UseAuthorization();
+
+// Serve locally stored uploads (e.g., review images)
+var uploadsRoot = Path.Combine(app.Environment.ContentRootPath, "uploads");
+Directory.CreateDirectory(uploadsRoot);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsRoot),
+    RequestPath = "/uploads"
+});
+
+app.MapControllers();
+
+
+app.Run();
+
+static void AddRoleClaims(ClaimsIdentity identity, string? json, string? resourcePrefix)
+{
+    if (string.IsNullOrWhiteSpace(json))
+    {
+        return;
+    }
+
+    using var document = JsonDocument.Parse(json);
+    var root = document.RootElement;
+
+    if (resourcePrefix is null)
+    {
+        if (root.TryGetProperty("roles", out var rolesElement) && rolesElement.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var role in rolesElement.EnumerateArray())
+            {
+                var value = role.GetString();
+                if (!string.IsNullOrWhiteSpace(value) && !identity.HasClaim(ClaimTypes.Role, value))
+                {
+                    identity.AddClaim(new Claim(ClaimTypes.Role, value));
+                }
+            }
+        }
+
+        return;
+    }
+
+    foreach (var resource in root.EnumerateObject())
+    {
+        if (!resource.Value.TryGetProperty("roles", out var rolesElement) || rolesElement.ValueKind != JsonValueKind.Array)
+        {
+            continue;
+        }
+
+        foreach (var role in rolesElement.EnumerateArray())
+        {
+            var value = role.GetString();
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                continue;
+            }
+
+            var claimValue = $"{resource.Name}:{value}";
+            if (!identity.HasClaim(ClaimTypes.Role, claimValue))
+            {
+                identity.AddClaim(new Claim(ClaimTypes.Role, claimValue));
+            }
+        }
+    }
+}
+
+hehe// Expose Program for integration/E2E tests (WebApplicationFactory<Program>).
+public partial class Program;
