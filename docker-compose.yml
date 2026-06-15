@@ -63,6 +63,7 @@ services:
       Cors__FrontendOrigins__1: https://www.shopbee.page
       Cors__FrontendOrigins__2: http://shopbee.page
       Cors__FrontendOrigins__3: http://www.shopbee.page
+      Cors__FrontendOrigins__4: shopbe-crcej6vmh-loihnt05s-projects.vercel.app
     depends_on:
       - postgres
       - redis
