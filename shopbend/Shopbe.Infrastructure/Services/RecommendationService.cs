@@ -162,15 +162,33 @@ public sealed class RecommendationService(ShopDbContext db, ICacheService cache)
             query = query.Where(p => !excludeIds.Contains(p.Id));
         }
 
-        var products = await query
+        var productIds = await query
             .OrderBy(p => EF.Functions.Random())
-            .Include(p => p.Images)
-            .Include(p => p.Variants)
+            .Select(p => p.Id)
             .Take(limit)
+            .ToListAsync();
+
+        if (productIds.Count == 0)
+        {
+            return [];
+        }
+
+        var products = await db.Products
+            .AsNoTracking()
+            .Where(p => productIds.Contains(p.Id))
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
+            .Include(p => p.Images)
+            .Include(p => p.Reviews)
+            .Include(p => p.Variants)
             .AsSplitQuery()
             .ToListAsync();
 
-        return products.Select(p => ProductDtoMapper.ToResponse(p, "Discover something new")).ToList();
+        var byId = products.ToDictionary(p => p.Id);
+        return productIds
+            .Where(id => byId.ContainsKey(id))
+            .Select(id => ProductDtoMapper.ToResponse(byId[id], "Discover something new"))
+            .ToList();
     }
 
     public async Task<List<ProductResponseDto>> GetFrequentlyBoughtTogetherAsync(Guid productId, int count = 5)
