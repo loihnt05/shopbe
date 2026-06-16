@@ -588,7 +588,8 @@ public static class ShopbeDbSeeder
             BasePrice = 35000000,
             SoldCount = 45,
             CategoryId = category.Id,
-            IsActive = true
+            IsActive = true,
+            ApprovalStatus = ApprovalStatus.Approved
         };
         db.Products.Add(product);
         await db.SaveChangesAsync(ct);
@@ -914,7 +915,8 @@ public static class ShopbeDbSeeder
             BasePrice = 250000,
             SoldCount = 150,
             CategoryId = category.Id,
-            IsActive = true
+            IsActive = true,
+            ApprovalStatus = ApprovalStatus.Approved
         };
         db.Products.Add(product);
         await db.SaveChangesAsync(ct);

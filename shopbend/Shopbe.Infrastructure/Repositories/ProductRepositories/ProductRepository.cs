@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Shopbe.Application.Common.Interfaces.IProduct;
 using Shopbe.Domain.Entities.Product;
+using Shopbe.Domain.Enums;
 using Shopbe.Infrastructure.Persistence;
 
 namespace Shopbe.Infrastructure.Repositories.ProductRepositories;
@@ -69,6 +70,7 @@ public class ProductRepository(ShopDbContext context) : IProductRepository
     {
         var query = context.Products
             .AsNoTracking()
+            .Where(p => p.IsActive && p.DeletedAt == null && p.ApprovalStatus == ApprovalStatus.Approved)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(name))

@@ -8,6 +8,12 @@ namespace Shopbe.Infrastructure.Services;
 
 public sealed class RecommendationService(ShopDbContext db, ICacheService cache) : IRecommendationService
 {
+    private static IQueryable<Shopbe.Domain.Entities.Product.Product> PublicProducts(
+        IQueryable<Shopbe.Domain.Entities.Product.Product> query)
+    {
+        return query.Where(p => p.IsActive && p.DeletedAt == null && p.ApprovalStatus == ApprovalStatus.Approved);
+    }
+
     public async Task<List<ProductResponseDto>> GetTopSellingAsync(int count = 10)
     {
         count = NormalizeCount(count, 10);
@@ -29,6 +35,7 @@ public sealed class RecommendationService(ShopDbContext db, ICacheService cache)
                 pv => pv.Id,
                 (x, pv) => new { pv.ProductId, x.Qty }
             )
+            .Join(PublicProducts(db.Products.AsNoTracking()), x => x.ProductId, p => p.Id, (x, p) => x)
             .GroupBy(x => x.ProductId)
             .Select(g => new { ProductId = g.Key, Qty = g.Sum(x => x.Qty) })
             .OrderByDescending(x => x.Qty)
@@ -39,10 +46,13 @@ public sealed class RecommendationService(ShopDbContext db, ICacheService cache)
         if (topProductIds.Count == 0)
             return [];
 
-        var products = await db.Products
+        var products = await PublicProducts(db.Products)
             .AsNoTracking()
             .Where(p => topProductIds.Contains(p.Id))
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
             .Include(p => p.Images)
+            .Include(p => p.Reviews)
             .Include(p => p.Variants)
             .AsSplitQuery()
             .ToListAsync();
@@ -68,7 +78,7 @@ public sealed class RecommendationService(ShopDbContext db, ICacheService cache)
             return cached;
         }
 
-        var product = await db.Products
+        var product = await PublicProducts(db.Products)
             .AsNoTracking()
             .Where(p => p.Id == productId)
             .Select(p => new { p.CategoryId, p.BasePrice })
@@ -81,11 +91,14 @@ public sealed class RecommendationService(ShopDbContext db, ICacheService cache)
         var minPrice = product.BasePrice * 0.75m;
         var maxPrice = product.BasePrice * 1.25m;
 
-        var products = await db.Products
+        var products = await PublicProducts(db.Products)
             .AsNoTracking()
             .Where(p => p.CategoryId == product.CategoryId && p.Id != productId)
             .OrderBy(p => Math.Abs((double)(p.BasePrice - product.BasePrice)))
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
             .Include(p => p.Images)
+            .Include(p => p.Reviews)
             .Include(p => p.Variants)
             .Take(count)
             .AsSplitQuery()
@@ -132,12 +145,14 @@ public sealed class RecommendationService(ShopDbContext db, ICacheService cache)
             .Distinct()
             .ToListAsync();
 
-        var products = await db.Products
+        var products = await PublicProducts(db.Products)
             .AsNoTracking()
             .Where(p => topCategoryIds.Contains(p.CategoryId) && !purchasedProductIds.Contains(p.Id))
             .OrderByDescending(p => p.SoldCount)
             .Include(p => p.Category)
+            .Include(p => p.Brand)
             .Include(p => p.Images)
+            .Include(p => p.Reviews)
             .Include(p => p.Variants)
             .Take(count)
             .AsSplitQuery()
@@ -153,9 +168,8 @@ public sealed class RecommendationService(ShopDbContext db, ICacheService cache)
     {
         limit = NormalizeCount(limit, 10);
 
-        var query = db.Products
-            .AsNoTracking()
-            .Where(p => p.IsActive);
+        var query = PublicProducts(db.Products)
+            .AsNoTracking();
 
         if (excludeIds != null && excludeIds.Count != 0)
         {
@@ -173,7 +187,7 @@ public sealed class RecommendationService(ShopDbContext db, ICacheService cache)
             return [];
         }
 
-        var products = await db.Products
+        var products = await PublicProducts(db.Products)
             .AsNoTracking()
             .Where(p => productIds.Contains(p.Id))
             .Include(p => p.Category)
@@ -226,6 +240,7 @@ public sealed class RecommendationService(ShopDbContext db, ICacheService cache)
             .GroupBy(oi => oi.ProductVariantId)
             .Select(g => new { VariantId = g.Key, Count = g.Count() })
             .Join(db.ProductVariants.AsNoTracking(), x => x.VariantId, v => v.Id, (x, v) => new { v.ProductId, x.Count })
+            .Join(PublicProducts(db.Products.AsNoTracking()), x => x.ProductId, p => p.Id, (x, p) => x)
             .GroupBy(x => x.ProductId)
             .Select(g => new { ProductId = g.Key, Count = g.Sum(x => x.Count) })
             .OrderByDescending(x => x.Count)
@@ -233,10 +248,13 @@ public sealed class RecommendationService(ShopDbContext db, ICacheService cache)
             .Select(x => x.ProductId)
             .ToListAsync();
 
-        var products = await db.Products
+        var products = await PublicProducts(db.Products)
             .AsNoTracking()
             .Where(p => otherProductIds.Contains(p.Id))
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
             .Include(p => p.Images)
+            .Include(p => p.Reviews)
             .Include(p => p.Variants)
             .AsSplitQuery()
             .ToListAsync();
@@ -260,10 +278,13 @@ public sealed class RecommendationService(ShopDbContext db, ICacheService cache)
             .Select(x => x.ProductId)
             .ToListAsync();
 
-        var products = await db.Products
+        var products = await PublicProducts(db.Products)
             .AsNoTracking()
             .Where(p => productIds.Contains(p.Id))
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
             .Include(p => p.Images)
+            .Include(p => p.Reviews)
             .Include(p => p.Variants)
             .AsSplitQuery()
             .ToListAsync();

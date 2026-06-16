@@ -54,10 +54,10 @@ public sealed class RecommendationFlowTests : IClassFixture<PostgresFixture>
             await db.SaveChangesAsync();
             cat1Id = cat1.Id; cat2Id = cat2.Id;
 
-            var p1 = new Product { Name = "Product 1", Slug = "p-1", BasePrice = 100, CategoryId = cat1Id, IsActive = true, SellerId = seller.Id };
-            var p2 = new Product { Name = "Product 2", Slug = "p-2", BasePrice = 120, CategoryId = cat1Id, IsActive = true, SellerId = seller.Id };
-            var p3 = new Product { Name = "Product 3", Slug = "p-3", BasePrice = 200, CategoryId = cat2Id, IsActive = true, SellerId = seller.Id };
-            var p4 = new Product { Name = "Product 4", Slug = "p-4", BasePrice = 220, CategoryId = cat2Id, IsActive = true, SellerId = seller.Id };
+            var p1 = new Product { Name = "Product 1", Slug = "p-1", BasePrice = 100, CategoryId = cat1Id, IsActive = true, SellerId = seller.Id, ApprovalStatus = ApprovalStatus.Approved };
+            var p2 = new Product { Name = "Product 2", Slug = "p-2", BasePrice = 120, CategoryId = cat1Id, IsActive = true, SellerId = seller.Id, ApprovalStatus = ApprovalStatus.Approved };
+            var p3 = new Product { Name = "Product 3", Slug = "p-3", BasePrice = 200, CategoryId = cat2Id, IsActive = true, SellerId = seller.Id, ApprovalStatus = ApprovalStatus.Approved };
+            var p4 = new Product { Name = "Product 4", Slug = "p-4", BasePrice = 220, CategoryId = cat2Id, IsActive = true, SellerId = seller.Id, ApprovalStatus = ApprovalStatus.Approved };
             
             db.Products.AddRange(p1, p2, p3, p4);
             await db.SaveChangesAsync();

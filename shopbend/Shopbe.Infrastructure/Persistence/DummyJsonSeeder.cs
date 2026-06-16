@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Shopbe.Application.Product.Products.Dtos;
 using Shopbe.Domain.Entities.Category;
 using Shopbe.Domain.Entities.Product;
+using Shopbe.Domain.Enums;
 
 namespace Shopbe.Infrastructure.Persistence;
 
@@ -118,6 +119,7 @@ public static class DummyJsonSeeder
                 CategoryId = category.Id,
                 BrandId = brand?.Id,
                 IsActive = true,
+                ApprovalStatus = ApprovalStatus.Approved,
                 SellerId = adminUser.Id
             };
             db.Products.Add(product);
