@@ -57,7 +57,7 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
     : 0;
 
   const thumbnailSrc = resolveApiUrl(
-    product.primaryImageUrl ?? product.images?.find((image) => image.isPrimary)?.imageUrl ?? product.images?.[0]?.imageUrl ?? ""
+    product.primaryImageUrl || product.images?.find((image) => image.isPrimary)?.imageUrl || product.images?.[0]?.imageUrl || ""
   );
 
   return (

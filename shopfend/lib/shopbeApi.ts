@@ -688,25 +688,27 @@ async function requestJson<T>(
 export function productResponseToListItem(item: unknown): ProductListItem {
   const obj = asRecord(item) ?? {};
 
+  const pickValue = (k: string): unknown => obj[k] ?? obj[k.charAt(0).toUpperCase() + k.slice(1)];
+
   const pickString = (k: string): string | undefined => {
-    const v = obj[k];
-    return typeof v === "string" ? v : undefined;
+    const v = pickValue(k);
+    return typeof v === "string" && v.trim() ? v : undefined;
   };
 
   const pickStringOrNull = (k: string): string | null | undefined => {
-    const v = obj[k];
-    if (typeof v === "string") return v;
+    const v = pickValue(k);
+    if (typeof v === "string") return v.trim() ? v : undefined;
     if (v === null) return null;
     return undefined;
   };
 
   const pickNumber = (k: string): number | undefined => {
-    const v = obj[k];
+    const v = pickValue(k);
     return typeof v === "number" ? v : undefined;
   };
 
   const pickBoolean = (k: string): boolean => {
-    const v = obj[k];
+    const v = pickValue(k);
     return typeof v === "boolean" ? v : false;
   };
 
@@ -714,11 +716,12 @@ export function productResponseToListItem(item: unknown): ProductListItem {
     if (!Array.isArray(imgs)) return undefined;
     return imgs.map((img: unknown) => {
       const i = asRecord(img) ?? {};
+      const imageUrl = i.imageUrl ?? i.ImageUrl;
       return {
-        id: (i.id as string) ?? "",
-        imageUrl: (i.imageUrl as string) ?? "",
-        isPrimary: (i.isPrimary as boolean) ?? false,
-        altText: (i.altText as string | null) ?? null,
+        id: ((i.id ?? i.Id) as string) ?? "",
+        imageUrl: typeof imageUrl === "string" ? imageUrl : "",
+        isPrimary: ((i.isPrimary ?? i.IsPrimary) as boolean) ?? false,
+        altText: ((i.altText ?? i.AltText) as string | null) ?? null,
       };
     });
   };
@@ -745,7 +748,7 @@ export function productResponseToListItem(item: unknown): ProductListItem {
     });
   };
 
-  const images = mapImages(obj.images);
+  const images = mapImages(pickValue("images"));
   const primaryImageUrl =
     pickStringOrNull("primaryImageUrl") ??
     pickStringOrNull("imageUrl") ??
