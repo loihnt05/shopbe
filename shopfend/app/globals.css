@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "tailwindcss" source("..");
 
 @theme {
   --color-brand: #ee4d2d;
@@ -13,6 +13,8 @@
 :root {
   --background: #f8fafc;
   --foreground: #111827;
+  --brand: #ee4d2d;
+  --brand-hover: #d73211;
 }
 
 @layer base {
