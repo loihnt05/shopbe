@@ -1,25 +1,9 @@
 import { useSession, signIn } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { shopbeApi, type ProductListItem, type WishlistItem } from "@/lib/shopbeApi";
+import { resolveApiUrl, shopbeApi, type ProductListItem, type WishlistItem } from "@/lib/shopbeApi";
 import { formatMoney } from "@/lib/format";
 import { StarIcon } from "./icons";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-  "http://localhost:5072";
-
-function resolveImageSrc(value?: string | null): string | undefined {
-  if (!value) return undefined;
-  if (/^https?:\/\//i.test(value)) return value;
-
-  try {
-    return new URL(value, API_BASE_URL).toString();
-  } catch {
-    return value;
-  }
-}
 
 export default function ProductCard({ product }: { product: ProductListItem }) {
   const { data: session } = useSession();
@@ -72,7 +56,7 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
     ? Math.round((1 - (product.discountPrice! / product.price!)) * 100) 
     : 0;
 
-  const thumbnailSrc = resolveImageSrc(product.primaryImageUrl ?? "");
+  const thumbnailSrc = resolveApiUrl(product.primaryImageUrl ?? "");
 
   return (
     <Link
@@ -81,13 +65,13 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
     >
       <div className="relative aspect-square w-full bg-slate-50 grid place-items-center shrink-0">
         {thumbnailSrc ? (
-          <Image
+          // Using a plain img here avoids Next/Image rendering issues with backend-hosted URLs.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             src={thumbnailSrc}
             alt={product.name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
-            unoptimized
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         ) : (
           <div className="text-slate-400 text-xs">No image</div>
