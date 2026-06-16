@@ -56,7 +56,9 @@ export default function ProductCard({ product }: { product: ProductListItem }) {
     ? Math.round((1 - (product.discountPrice! / product.price!)) * 100) 
     : 0;
 
-  const thumbnailSrc = resolveApiUrl(product.primaryImageUrl ?? "");
+  const thumbnailSrc = resolveApiUrl(
+    product.primaryImageUrl ?? product.images?.find((image) => image.isPrimary)?.imageUrl ?? product.images?.[0]?.imageUrl ?? ""
+  );
 
   return (
     <Link

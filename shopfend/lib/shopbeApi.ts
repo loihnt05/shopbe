@@ -745,6 +745,13 @@ export function productResponseToListItem(item: unknown): ProductListItem {
     });
   };
 
+  const images = mapImages(obj.images);
+  const primaryImageUrl =
+    pickStringOrNull("primaryImageUrl") ??
+    pickStringOrNull("imageUrl") ??
+    images?.find((image) => image.isPrimary)?.imageUrl ??
+    images?.[0]?.imageUrl;
+
   return {
     id: pickString("productId") ?? pickString("id") ?? "",
     name: pickString("name") ?? "",
@@ -753,7 +760,7 @@ export function productResponseToListItem(item: unknown): ProductListItem {
     price: pickNumber("price"),
     discountPrice: pickNumber("discountPrice"),
     currency: pickString("currency"),
-    primaryImageUrl: pickStringOrNull("primaryImageUrl") ?? pickStringOrNull("imageUrl"),
+    primaryImageUrl,
     totalStockQuantity: pickNumber("totalStockQuantity"),
     soldCount: pickNumber("soldCount"),
     averageRating: pickNumber("averageRating"),
@@ -764,7 +771,7 @@ export function productResponseToListItem(item: unknown): ProductListItem {
     brandName: pickStringOrNull("brandName"),
     isActive: pickBoolean("isActive"),
     recommendationReason: pickStringOrNull("recommendationReason"),
-    images: mapImages(obj.images),
+    images,
     variants: mapVariants(obj.variants),
   };
 }
