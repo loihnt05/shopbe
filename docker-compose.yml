@@ -2,6 +2,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:24.0
     container_name: keycloak
+    restart: unless-stopped
     command: start-dev --import-realm
     ports:
       - "127.0.0.1:8080:8080"
@@ -13,7 +14,7 @@ services:
       KC_HOSTNAME: auth.shopbee.page
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_PROXY: edge 
+      KC_PROXY: edge
     volumes:
       - ./keycloak:/opt/keycloak/data/import:ro
       - keycloak_data:/opt/keycloak/data
@@ -21,6 +22,7 @@ services:
     image: postgres:16
     container_name: shopbend-postgres
     # restart: always
+    restart: unless-stopped    
     environment:
       POSTGRES_USER: shop
       POSTGRES_PASSWORD: shop
@@ -49,6 +51,7 @@ services:
       context: .
       dockerfile: shopbend/Shopbe.Web/Dockerfile
     container_name: shopbe-backend
+    restart: unless-stopped
     ports:
       - "127.0.0.1:5000:8080"
     environment:
@@ -56,14 +59,14 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Server=postgres;Port=5432;Database=shopbend;Username=shop;Password=shop
       ConnectionStrings__Redis: redis:6379
-      Authentication__Keycloak__Authority: http://keycloak:8080/realms/ShopBee
+      Authentication__Keycloak__Authority: https://auth.shopbee.page/realms/ShopBee
       Authentication__Keycloak__RequireHttpsMetadata: "false"
       Authentication__Keycloak__ValidateAudience: "false"
       Cors__FrontendOrigins__0: https://shopbee.page
       Cors__FrontendOrigins__1: https://www.shopbee.page
       Cors__FrontendOrigins__2: http://shopbee.page
       Cors__FrontendOrigins__3: http://www.shopbee.page
-      Cors__FrontendOrigins__4: shopbe-crcej6vmh-loihnt05s-projects.vercel.app
+      Cors__FrontendOrigins__4: https://shopbe-nine.vercel.app
     depends_on:
       - postgres
       - redis
