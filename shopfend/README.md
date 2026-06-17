@@ -1,36 +1,124 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ShopBee Frontend
 
-## Getting Started
+This is the Next.js frontend for ShopBee. It contains the customer storefront, admin portal, seller portal, authentication UI, cart/checkout flow, wishlist, purchases, recommendations, notifications, and chat pages.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- NextAuth with Keycloak
+- Tailwind CSS
+- Vitest and Testing Library
+- ESLint with Next.js config
+
+## Local Setup
+
+Install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create `.env.local`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=replace-with-a-long-random-string
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+KEYCLOAK_URL=http://localhost:8080
+KEYCLOAK_REALM=ShopBee
+KEYCLOAK_CLIENT_ID=shopfend
+KEYCLOAK_CLIENT_SECRET=replace-if-client-is-confidential
 
-## Learn More
+KEYCLOAK_ISSUER=http://localhost:8080/realms/ShopBee
+NEXT_PUBLIC_KEYCLOAK_ISSUER=http://localhost:8080/realms/ShopBee
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5072
 
-To learn more about Next.js, take a look at the following resources:
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_replace_me
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Start the dev server:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm dev
+```
 
-## Deploy on Vercel
+Open `http://localhost:3000`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm dev       # start local dev server
+pnpm lint      # run ESLint
+pnpm build     # production build
+pnpm start     # run production server after build
+pnpm test      # run Vitest tests
+pnpm test:watch
+```
+
+## API Client
+
+The frontend talks to the backend through `lib/shopbeApi.ts`.
+
+Important behavior:
+
+- `NEXT_PUBLIC_API_BASE_URL` controls the backend base URL.
+- `resolveApiUrl` converts backend-relative upload paths into absolute URLs.
+- `productResponseToListItem` normalizes product responses from multiple backend endpoints.
+
+Product cards expect one of:
+
+- `primaryImageUrl`
+- a primary image in `images`
+- the first image in `images`
+
+## Auth
+
+NextAuth uses Keycloak as the main identity provider. Protected routes are enforced by `middleware.ts`.
+
+Expected role names:
+
+- `Admin`
+- `Seller`
+- `Customer`
+
+Admin routes live under `/admin/*`.
+Seller routes live under `/seller/*`.
+Customer-facing routes are public or session-aware depending on the feature.
+
+## Quality Checks
+
+Run before opening a PR:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm lint
+pnpm build
+pnpm test
+```
+
+The GitHub Actions workflow currently runs install, lint, and build. Vitest is available locally and can be added to CI when desired.
+
+## Deployment
+
+The app can be deployed to Vercel or another Next.js-capable host.
+
+Required production variables:
+
+```env
+NEXTAUTH_URL=https://your-frontend-domain
+NEXTAUTH_SECRET=replace-with-production-secret
+KEYCLOAK_ISSUER=https://your-keycloak-domain/realms/ShopBee
+KEYCLOAK_CLIENT_ID=shopfend
+KEYCLOAK_CLIENT_SECRET=replace-if-client-is-confidential
+NEXT_PUBLIC_API_BASE_URL=https://your-api-domain
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_or_test_key
+```
+
+Also configure the backend CORS allowed origins to include the deployed frontend domain.
+
+## Notes
+
+- The production build currently warns that Next.js `middleware` is deprecated in favor of `proxy`; this is not a build failure.
+- Do not commit real OAuth, Keycloak, Stripe, or model-provider secrets.
