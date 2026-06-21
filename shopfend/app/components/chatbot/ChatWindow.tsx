@@ -71,11 +71,11 @@ export default function ChatWindow({ messages, isTyping, onClose, onSendMessage 
       exit={{ opacity: 0, scale: 0.95, y: 20 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       className={`
-        flex flex-col mb-4 overflow-hidden
+        flex min-h-0 flex-col mb-4 overflow-hidden
         bg-white/95 backdrop-blur-2xl border border-slate-200 shadow-[0_32px_128px_rgba(0,0,0,0.18)]
         transition-all duration-500 rounded-[24px]
         ${isFullscreen 
-          ? "fixed inset-4 z-[200] w-auto h-auto sm:w-auto sm:h-auto" 
+          ? "fixed inset-4 z-[200] h-[calc(100dvh-2rem)] w-auto sm:w-auto" 
           : "w-[calc(100vw-2rem)] h-[70vh] sm:w-[400px] sm:h-[680px]"
         }
         relative flex flex-col
@@ -125,7 +125,7 @@ export default function ChatWindow({ messages, isTyping, onClose, onSendMessage 
       <div 
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-6 py-4 space-y-6 scroll-smooth scrollbar-hide bg-[#FAFAFA]/30"
+        className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 space-y-6 scroll-smooth bg-[#FAFAFA]/30 sb-scrollbar"
       >
         <div className="flex flex-col gap-4 min-h-full justify-end">
           <div className="text-center py-4">
@@ -162,7 +162,7 @@ export default function ChatWindow({ messages, isTyping, onClose, onSendMessage 
       </AnimatePresence>
 
       {/* Input Area */}
-      <div className="p-4 bg-white/60 backdrop-blur-xl border-t border-slate-100">
+      <div className="shrink-0 p-4 bg-white/60 backdrop-blur-xl border-t border-slate-100">
         <div className="max-w-3xl mx-auto space-y-3">
           <QuickActions onAction={onSendMessage} />
 

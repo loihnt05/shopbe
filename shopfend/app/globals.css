@@ -56,6 +56,32 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  .sb-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.9) transparent;
+  }
+
+  .sb-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .sb-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sb-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.9);
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background-clip: content-box;
+  }
+
+  .sb-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.95);
+    background-clip: content-box;
+  }
 }
 
 @keyframes slideIn {
