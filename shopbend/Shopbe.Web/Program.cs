@@ -60,6 +60,7 @@ builder.Services.AddCors(options =>
             "https://127.0.0.1:3000",
             "https://127.0.0.1:3001",
 	    "https://shopbee.page",
+            "https://shopbe-nine.vercel.app",
             "https://www.shopbee.page"
         ];
 
@@ -212,7 +213,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsProduction() || app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>
