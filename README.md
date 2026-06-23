@@ -251,10 +251,10 @@ When the backend starts in Development, `ShopbeDbSeeder` creates:
 - demo orders for dashboard and purchase-flow verification
 - coupons and shipping reference data
 
-For larger local or staging datasets, use the seeder project:
+For larger local or staging datasets, use the seeder project. It generates a polished no-network marketplace catalog by default, including seller-owned approved products, product images, variants, customers, and orders:
 
 ```bash
-dotnet run --project shopbend/Shopbe.Seeder -- --migrate true --products 2000 --users 500 --orders 1000
+dotnet run --project shopbend/Shopbe.Seeder -- --migrate true --products 20000 --users 5000 --orders 20000 --use-dummy false
 ```
 
 ## Verification

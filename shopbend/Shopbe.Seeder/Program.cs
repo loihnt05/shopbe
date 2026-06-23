@@ -7,8 +7,10 @@ using Microsoft.Extensions.Logging;
 using Shopbe.Domain.Entities.Category;
 using Shopbe.Domain.Entities.Order;
 using Shopbe.Domain.Entities.Product;
+using Shopbe.Domain.Entities.Seller;
 using Shopbe.Domain.Entities.ShoppingCart;
 using Shopbe.Domain.Entities.User;
+using Shopbe.Domain.Enums;
 using Shopbe.Infrastructure.Persistence;
 
 // Usage examples:
@@ -18,6 +20,7 @@ using Shopbe.Infrastructure.Persistence;
 // Notes:
 // - This is intended for dev/staging environments.
 // - It is safe to re-run with --mode ensure (default): it will top-up counts based on existing rows.
+// - By default it creates a large polished no-network catalog. Use --use-dummy true to pull a smaller external catalog.
 
 var (options, parseErrors) = SeedOptions.Parse(args);
 if (parseErrors.Count > 0)
@@ -128,7 +131,7 @@ internal sealed record SeedOptions(
         "  --max-items <n>             max items per order (default: 5)\n" +
         "  --batch <n>                 EF SaveChanges batch size (default: 2000)\n" +
         "  --seed <n>                  random seed (default: 1337)\n" +
-        "  --use-dummy [true|false]    use dummyjson.com for products instead of Bogus (default: true)\n" +
+        "  --use-dummy [true|false]    use dummyjson.com for products instead of the polished local generator (default: false)\n" +
         "  --verbose                   info logs\n";
 
     public static (SeedOptions options, List<string> errors) Parse(string[] args)
@@ -149,7 +152,7 @@ internal sealed record SeedOptions(
         int seed = 1337;
         int batch = 2000;
         bool verbose = false;
-        bool useDummy = true;
+        bool useDummy = false;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -250,7 +253,45 @@ internal sealed record SeedOptions(
 
 internal sealed class ShopbeLargeDataSeeder
 {
-    private sealed record VariantRow(Guid Id, string Sku, string ProductName, decimal Price);
+    private sealed record VariantRow(Guid Id, string Sku, string ProductName, decimal Price, Guid SellerId);
+    private sealed record CatalogCategory(string Name, string Slug, string[] SearchTerms);
+    private sealed record ProductTemplate(string CategorySlug, string Brand, string[] ProductTypes, string[] Adjectives, string[] Materials);
+
+    private static readonly CatalogCategory[] BeautifulCategories =
+    [
+        new("Smart Tech", "smart-tech", ["wireless earbuds", "smart watch", "laptop desk setup", "smart home device"]),
+        new("Home Studio", "home-studio", ["minimal home decor", "ceramic vase", "desk lamp", "linen bedding"]),
+        new("Modern Wardrobe", "modern-wardrobe", ["fashion apparel", "leather bag", "sneakers", "cotton shirt"]),
+        new("Beauty Lab", "beauty-lab", ["skincare bottle", "cosmetics", "perfume", "beauty tools"]),
+        new("Active Life", "active-life", ["fitness gear", "running shoes", "yoga mat", "sports bottle"]),
+        new("Kitchen Craft", "kitchen-craft", ["kitchenware", "coffee maker", "ceramic plate", "cookware"]),
+        new("Travel Ready", "travel-ready", ["travel backpack", "luggage", "camera bag", "weekend bag"]),
+        new("Kids & Baby", "kids-baby", ["wooden toy", "baby clothing", "kids room", "plush toy"]),
+        new("Pet Comfort", "pet-comfort", ["pet bed", "pet bowl", "dog toy", "cat furniture"]),
+        new("Outdoor Living", "outdoor-living", ["camping gear", "outdoor chair", "garden light", "picnic set"])
+    ];
+
+    private static readonly string[] BeautifulBrands =
+    [
+        "Aurel Studio", "Luna & Co", "Northline", "Vera Haus", "Orchid Works", "Cobalt Lane",
+        "Mira Mode", "Atlas Goods", "Velvet Ridge", "Sora Living", "Kinfolk Supply", "Nimbus Lab",
+        "Evermade", "Solace Home", "Hearth & Harbor", "Brightside", "Terra & Thread", "Nova Kit",
+        "Bloom Atelier", "Peak Theory", "Kindred Baby", "Paw & Porter", "Urban Nomad", "Olive Works"
+    ];
+
+    private static readonly ProductTemplate[] ProductTemplates =
+    [
+        new("smart-tech", "Nimbus Lab", ["Wireless Earbuds", "Smart Watch", "Portable Speaker", "Charging Dock", "Mechanical Keyboard", "USB-C Hub"], ["Aurora", "Pulse", "Studio", "Pro", "Slim"], ["aluminum", "matte polymer", "braided nylon"]),
+        new("home-studio", "Sora Living", ["Ceramic Vase", "Desk Lamp", "Linen Sheet Set", "Storage Basket", "Wall Shelf", "Scented Candle"], ["Calm", "Nordic", "Cloud", "Dawn", "Soft"], ["ceramic", "oak", "linen", "brass"]),
+        new("modern-wardrobe", "Mira Mode", ["Cotton Shirt", "Leather Tote", "Everyday Sneakers", "Tailored Jacket", "Ribbed Knit Top", "Crossbody Bag"], ["Essential", "Atelier", "City", "Weekend", "Signature"], ["cotton", "leather", "suede", "canvas"]),
+        new("beauty-lab", "Bloom Atelier", ["Hydrating Serum", "Silk Hair Mask", "Mineral Sunscreen", "Body Oil", "Perfume Mist", "Makeup Brush Set"], ["Radiant", "Dew", "Velvet", "Rose", "Glow"], ["glass", "botanical oils", "mineral blend"]),
+        new("active-life", "Peak Theory", ["Training Shoes", "Yoga Mat", "Insulated Bottle", "Run Shorts", "Resistance Band Kit", "Gym Duffel"], ["Motion", "Core", "Sprint", "Flex", "Trail"], ["recycled polyester", "rubber", "stainless steel"]),
+        new("kitchen-craft", "Hearth & Harbor", ["Pour-Over Kettle", "Stoneware Dinner Set", "Chef Knife", "Coffee Grinder", "Cast Iron Pan", "Glass Storage Set"], ["Heritage", "Morning", "Craft", "Classic", "Pure"], ["stoneware", "stainless steel", "walnut", "borosilicate glass"]),
+        new("travel-ready", "Urban Nomad", ["Carry-On Luggage", "Travel Backpack", "Packing Cube Set", "Camera Sling", "Passport Wallet", "Weekender Bag"], ["Voyage", "Metro", "Summit", "Roam", "Transit"], ["ripstop nylon", "vegan leather", "polycarbonate"]),
+        new("kids-baby", "Kindred Baby", ["Organic Onesie", "Wooden Stacker", "Nursery Blanket", "Bath Towel Set", "Story Book Set", "Soft Play Mat"], ["Tiny", "Cozy", "Sunny", "Gentle", "Little"], ["organic cotton", "beech wood", "muslin"]),
+        new("pet-comfort", "Paw & Porter", ["Pet Bed", "Ceramic Food Bowl", "Walking Harness", "Treat Pouch", "Cat Scratcher", "Plush Toy Set"], ["Happy", "Comfy", "Daily", "Snuggle", "Trail"], ["canvas", "ceramic", "fleece", "vegan leather"]),
+        new("outdoor-living", "Terra & Thread", ["Camping Chair", "Solar Garden Light", "Picnic Blanket", "Cooler Bag", "Lantern", "Outdoor Planter"], ["Field", "Camp", "Garden", "Sunset", "Trail"], ["powder-coated steel", "waxed canvas", "rattan", "recycled plastic"])
+    ];
 
     public async Task WipeAsync(ShopDbContext db, ILogger logger, CancellationToken ct = default)
     {
@@ -321,6 +362,7 @@ internal sealed class ShopbeLargeDataSeeder
 
         await SeedShippingLocationsAsync(db, logger, ct);
         await SeedAttributesAsync(db, logger, ct);
+        await EnsureCoreUsersAndSellersAsync(db, logger, ct);
 
         if (options.UseDummy)
         {
@@ -681,7 +723,8 @@ internal sealed class ShopbeLargeDataSeeder
         var batch = new List<Category>(Math.Min(toCreate, options.BatchSize));
         for (var i = 0; i < toCreate; i++)
         {
-            var name = faker.Commerce.Categories(1)[0];
+            var curated = i < BeautifulCategories.Length ? BeautifulCategories[i] : null;
+            var name = curated?.Name ?? faker.Commerce.Categories(1)[0];
             var slugBase = Slugify(name);
             var slug = UniqueSlug(slugBase, usedSlugs);
 
@@ -732,7 +775,8 @@ internal sealed class ShopbeLargeDataSeeder
         var batch = new List<Brand>(Math.Min(toCreate, options.BatchSize));
         for (var i = 0; i < toCreate; i++)
         {
-            var name = UniqueName(faker.Company.CompanyName(), usedNames);
+            var baseName = i < BeautifulBrands.Length ? BeautifulBrands[i] : faker.Company.CompanyName();
+            var name = UniqueName(baseName, usedNames);
             var slug = UniqueSlug(Slugify(name), usedSlugs);
             batch.Add(new Brand
             {
@@ -770,10 +814,15 @@ internal sealed class ShopbeLargeDataSeeder
         }
 
         var faker = new Bogus.Faker("en");
-        var categoryIds = await db.Categories.AsNoTracking().Select(c => c.Id).ToListAsync(ct);
-        var brandIds = await db.Brands.AsNoTracking().Select(b => b.Id).ToListAsync(ct);
-        if (categoryIds.Count == 0) throw new InvalidOperationException("No categories found. Seed categories first.");
-        if (brandIds.Count == 0) throw new InvalidOperationException("No brands found. Seed brands first.");
+        var categories = await db.Categories.AsNoTracking().Select(c => new { c.Id, c.Name, c.Slug }).ToListAsync(ct);
+        var brands = await db.Brands.AsNoTracking().Select(b => new { b.Id, b.Name, b.Slug }).ToListAsync(ct);
+        var sellerIds = await db.Users.AsNoTracking()
+            .Where(u => u.Role == UserRole.Seller || u.Role == UserRole.Admin)
+            .Select(u => u.Id)
+            .ToListAsync(ct);
+        if (categories.Count == 0) throw new InvalidOperationException("No categories found. Seed categories first.");
+        if (brands.Count == 0) throw new InvalidOperationException("No brands found. Seed brands first.");
+        if (sellerIds.Count == 0) throw new InvalidOperationException("No sellers found. Seed core users first.");
 
         var usedProductSlugs = new HashSet<string>(
             await db.Products.AsNoTracking().Select(p => p.Slug).ToListAsync(ct),
@@ -790,20 +839,33 @@ internal sealed class ShopbeLargeDataSeeder
 
         for (var i = 0; i < toCreate; i++)
         {
-            var name = faker.Commerce.ProductName();
+            var template = ProductTemplates[faker.Random.Int(0, ProductTemplates.Length - 1)];
+            var productType = faker.PickRandom(template.ProductTypes);
+            var adjective = faker.PickRandom(template.Adjectives);
+            var material = faker.PickRandom(template.Materials);
+            var color = faker.PickRandom("Black", "White", "Sage", "Clay", "Navy", "Ivory", "Walnut", "Blush", "Graphite");
+            var collection = faker.PickRandom("Studio", "Daily", "Market", "Reserve", "Classic", "Edition", "Select", "Prime");
+            var name = $"{adjective} {productType} - {color} {collection}";
             var slug = UniqueSlug(Slugify(name), usedProductSlugs);
-            var basePrice = decimal.Parse(faker.Commerce.Price(5, 500)) * 1000m;
-            var categoryId = categoryIds[faker.Random.Int(0, categoryIds.Count - 1)];
-            var brandId = brandIds[faker.Random.Int(0, brandIds.Count - 1)];
+            var basePrice = decimal.Round(faker.Random.Decimal(90_000m, 4_500_000m) / 1000m, 0) * 1000m;
+            var category = categories.FirstOrDefault(c => c.Slug == template.CategorySlug)
+                ?? categories[faker.Random.Int(0, categories.Count - 1)];
+            var brand = brands.FirstOrDefault(b => string.Equals(b.Name, template.Brand, StringComparison.OrdinalIgnoreCase))
+                ?? brands[faker.Random.Int(0, brands.Count - 1)];
+            var sellerId = sellerIds[faker.Random.Int(0, sellerIds.Count - 1)];
 
             var p = new Product
             {
                 Name = name,
                 Slug = slug,
-                Description = faker.Commerce.ProductDescription(),
+                Description = $"A polished {material} {productType.ToLowerInvariant()} designed for everyday use, styled for the ShopBee demo catalog.",
                 BasePrice = basePrice,
-                CategoryId = categoryId,
-                BrandId = brandId,
+                DiscountPrice = faker.Random.Int(0, 100) < 30 ? decimal.Round(basePrice * faker.Random.Decimal(0.82m, 0.94m) / 1000m, 0) * 1000m : null,
+                SoldCount = faker.Random.Int(0, 1800),
+                CategoryId = category.Id,
+                BrandId = brand.Id,
+                SellerId = sellerId,
+                ApprovalStatus = ApprovalStatus.Approved,
                 IsActive = true
             };
             productBatch.Add(p);
@@ -844,7 +906,7 @@ internal sealed class ShopbeLargeDataSeeder
             imagesBatch.Add(new ProductImage
             {
                 ProductId = p.Id,
-                ImageUrl = $"https://picsum.photos/seed/{p.Slug}/800/800",
+                ImageUrl = BuildProductImageUrl(p, faker),
                 AltText = p.Name,
                 IsPrimary = true,
                 SortOrder = 0
@@ -859,7 +921,7 @@ internal sealed class ShopbeLargeDataSeeder
                 {
                     ProductId = p.Id,
                     Sku = sku,
-                    Price = p.BasePrice + faker.Random.Decimal(-10000m, 50000m),
+                    Price = Math.Max(1000m, p.BasePrice + faker.Random.Decimal(-20000m, 120000m)),
                     StockQuantity = faker.Random.Int(0, 500),
                     IsActive = true
                 });
@@ -911,8 +973,10 @@ internal sealed class ShopbeLargeDataSeeder
                 Email = email,
                 FullName = $"{first} {last}",
                 PhoneNumber = NormalizePhone(faker.Phone.PhoneNumber()),
-                Role = null,
-                Status = null
+                Role = UserRole.Customer,
+                Status = UserStatus.Active,
+                Country = "Vietnam",
+                Language = "vi-VN"
             };
             batchUsers.Add(user);
 
@@ -992,7 +1056,7 @@ internal sealed class ShopbeLargeDataSeeder
 
         var variantData = await db.ProductVariants.AsNoTracking()
             .Join(db.Products.AsNoTracking(), v => v.ProductId, p => p.Id,
-                (v, p) => new VariantRow(v.Id, v.Sku, p.Name, v.Price))
+                (v, p) => new VariantRow(v.Id, v.Sku, p.Name, v.Price, p.SellerId))
             .ToListAsync(ct);
         if (users.Count == 0) throw new InvalidOperationException("No users found. Seed users first.");
         if (variantData.Count == 0) throw new InvalidOperationException("No product variants found. Seed products first.");
@@ -1070,7 +1134,8 @@ internal sealed class ShopbeLargeDataSeeder
                     ProductNameSnapshot = v.ProductName,
                     Quantity = qty,
                     UnitPrice = unitPrice,
-                    TotalPrice = lineTotal
+                    TotalPrice = lineTotal,
+                    SellerId = v.SellerId
                 });
             }
 
@@ -1085,6 +1150,75 @@ internal sealed class ShopbeLargeDataSeeder
 
         orderBatch.Clear();
         itemBatch.Clear();
+    }
+
+    private static async Task EnsureCoreUsersAndSellersAsync(ShopDbContext db, ILogger logger, CancellationToken ct)
+    {
+        var seeds = new[]
+        {
+            new { Email = "admin@shopbee.vn", Name = "System Admin", Role = UserRole.Admin, Shop = (string?)null, City = "Ho Chi Minh City" },
+            new { Email = "seller1@shopbee.vn", Name = "Linh Nguyen", Role = UserRole.Seller, Shop = (string?)"Luna Tech", City = "Ho Chi Minh City" },
+            new { Email = "seller2@shopbee.vn", Name = "Minh Tran", Role = UserRole.Seller, Shop = (string?)"Northwind Home", City = "Ha Noi" },
+            new { Email = "seller3@shopbee.vn", Name = "An Pham", Role = UserRole.Seller, Shop = (string?)"Bloom Atelier", City = "Da Nang" },
+            new { Email = "seller4@shopbee.vn", Name = "Vy Le", Role = UserRole.Seller, Shop = (string?)"Urban Nomad", City = "Ho Chi Minh City" }
+        };
+
+        var created = 0;
+        foreach (var seed in seeds)
+        {
+            var user = await db.Users
+                .Include(u => u.SellerProfile)
+                .Include(u => u.ShoppingCart)
+                .FirstOrDefaultAsync(u => u.Email == seed.Email, ct);
+
+            if (user is null)
+            {
+                user = new User
+                {
+                    KeycloakId = $"seed-{seed.Email}",
+                    Email = seed.Email,
+                    FullName = seed.Name,
+                    Role = seed.Role,
+                    Status = UserStatus.Active,
+                    PhoneNumber = "0900000000",
+                    Country = "Vietnam",
+                    Language = "vi-VN"
+                };
+                db.Users.Add(user);
+                created++;
+                await db.SaveChangesAsync(ct);
+            }
+            else
+            {
+                user.FullName = seed.Name;
+                user.Role = seed.Role;
+                user.Status = UserStatus.Active;
+                user.Country ??= "Vietnam";
+                user.Language ??= "vi-VN";
+            }
+
+            user.ShoppingCart ??= new ShoppingCart { UserId = user.Id };
+
+            if (seed.Role == UserRole.Seller)
+            {
+                user.SellerProfile ??= new SellerProfile { UserId = user.Id };
+                user.SellerProfile.ShopName = seed.Shop ?? seed.Name;
+                user.SellerProfile.ShopDescription = "Curated ShopBee demo seller with a polished storefront catalog.";
+                user.SellerProfile.ContactEmail = seed.Email;
+                user.SellerProfile.ContactPhone = user.PhoneNumber;
+                user.SellerProfile.Address = "Seeded marketplace address";
+                user.SellerProfile.City = seed.City;
+                user.SellerProfile.Status = SellerStatus.Active;
+                user.SellerProfile.CommissionRate = 0.05m;
+                user.SellerProfile.Rating = 4.6m;
+            }
+
+            await db.SaveChangesAsync(ct);
+        }
+
+        logger.LogWarning("Core users/sellers: ok (+{Created}, total sellers {Sellers}).",
+            created,
+            await db.Users.CountAsync(u => u.Role == UserRole.Seller, ct));
     }
 
     private static string Slugify(string value)
@@ -1109,13 +1243,41 @@ internal sealed class ShopbeLargeDataSeeder
 
     private static string UniqueSku(string skuBase, HashSet<string> used)
     {
-        var sku = skuBase;
+        var sku = LimitLength(skuBase, 100);
         var i = 1;
         while (!used.Add(sku))
         {
-            sku = $"{skuBase}_{i++}";
+            var suffix = $"_{i++}";
+            sku = $"{LimitLength(skuBase, 100 - suffix.Length)}{suffix}";
         }
         return sku;
+    }
+
+    private static string BuildProductImageUrl(Product product, Bogus.Faker faker)
+    {
+        var fallbackTerms = BeautifulCategories.SelectMany(c => c.SearchTerms).ToArray();
+        var term = faker.PickRandom(fallbackTerms);
+        var query = Uri.EscapeDataString($"{term} product");
+        return $"https://source.unsplash.com/800x800/?{query}&sig={StableSignature(product.Slug)}";
+    }
+
+    private static int StableSignature(string value)
+    {
+        unchecked
+        {
+            var hash = 17;
+            foreach (var ch in value)
+            {
+                hash = hash * 31 + ch;
+            }
+
+            return Math.Abs(hash);
+        }
+    }
+
+    private static string LimitLength(string value, int maxLength)
+    {
+        return value.Length <= maxLength ? value : value[..maxLength];
     }
 
     private static string UniqueEmail(string emailBase, HashSet<string> used)
@@ -1161,9 +1323,6 @@ internal sealed class ShopbeLargeDataSeeder
         return digits.Length <= 20 ? digits : digits[..20];
     }
 }
-
-
-
 
 
 

@@ -1,17 +1,18 @@
 # Shopbe.Seeder
 
-Console app to seed **large amounts of realistic-ish data** into the Shopbe PostgreSQL database.
+Console app to seed **large amounts of polished demo data** into the Shopbe PostgreSQL database.
 
 It generates:
 
 - Categories
 - Brands
 - Products + product images + variants
+- Core admin/seller demo accounts with seller profiles
 - Users + addresses + shopping carts
 - Orders + order items (with snapshot fields)
 
 The default mode is **idempotent “top-up”**: it checks existing counts and only creates the missing rows up to the requested target.
-By default, **products** are seeded from [dummyjson.com](https://dummyjson.com/products) (~200 realistic products). If you need more (thousands), use `--use-dummy false` to fall back to Bogus (fake data).
+By default, products are generated locally with curated marketplace categories, brands, names, seller ownership, and image URLs. This avoids network dependency and can create thousands of rows. If you want the smaller external product catalog, pass `--use-dummy true`.
 
 ## Run locally
 
@@ -32,7 +33,8 @@ dotnet run --project Shopbe.Seeder -- \
   --users 5000 \
   --orders 20000 \
   --max-items 5 \
-  --batch 2000
+  --batch 2000 \
+  --use-dummy false
 ```
 
 ### Smaller “quick smoke test” seed
@@ -42,7 +44,7 @@ cd shopbend
 
 dotnet run --project Shopbe.Seeder -- \
   --connection "Host=localhost;Port=5432;Database=shopbe;Username=shopbe;Password=shopbe" \
-  --categories 10 --brands 20 --products 200 --users 50 --orders 200 --batch 200
+  --categories 10 --brands 24 --products 500 --users 100 --orders 300 --batch 200
 ```
 
 ## Wipe & reseed
@@ -55,12 +57,11 @@ cd shopbend
 dotnet run --project Shopbe.Seeder -- \
   --connection "Host=localhost;Port=5432;Database=shopbe;Username=shopbe;Password=shopbe" \
   --mode wipe \
-  --categories 50 --brands 200 --products 20000 --users 5000 --orders 20000
+  --categories 50 --brands 200 --products 20000 --users 5000 --orders 20000 --use-dummy false
 ```
 
 ## Notes / performance
 
 - For *very large* datasets (hundreds of thousands to millions of rows), EF Core will be slower.
   If you need that, we can extend this with bulk insert (e.g. EFCore.BulkExtensions) or PostgreSQL COPY.
-- Seeding orders is currently simplified (no shipments/payments/coupons), but the relationships are valid.
-
+- Seeding orders is currently simplified (no shipments/payments/coupons), but the relationships are valid and order items keep seller ownership snapshots.
