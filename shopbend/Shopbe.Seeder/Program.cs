@@ -1255,10 +1255,7 @@ internal sealed class ShopbeLargeDataSeeder
 
     private static string BuildProductImageUrl(Product product, Bogus.Faker faker)
     {
-        var fallbackTerms = BeautifulCategories.SelectMany(c => c.SearchTerms).ToArray();
-        var term = faker.PickRandom(fallbackTerms);
-        var query = Uri.EscapeDataString($"{term} product");
-        return $"https://source.unsplash.com/800x800/?{query}&sig={StableSignature(product.Slug)}";
+        return $"https://picsum.photos/seed/shopbee-{StableSignature(product.Slug)}/800/800";
     }
 
     private static int StableSignature(string value)
@@ -1323,6 +1320,5 @@ internal sealed class ShopbeLargeDataSeeder
         return digits.Length <= 20 ? digits : digits[..20];
     }
 }
-
 
 

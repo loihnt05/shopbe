@@ -125,6 +125,16 @@ export default function ProductDetailPage({
     }));
   }, [product]);
 
+  const requiredAttributeNames = useMemo(
+    () => attributeGroups.map((group) => group.name),
+    [attributeGroups]
+  );
+
+  const isAllAttributesSelected = useMemo(
+    () => requiredAttributeNames.every((name) => Boolean(selectedAttributes[name])),
+    [requiredAttributeNames, selectedAttributes]
+  );
+
   // Set default selection to first available variant
   useEffect(() => {
     if (product?.variants?.length && initializedRef.current !== id) {
@@ -143,18 +153,22 @@ export default function ProductDetailPage({
   useEffect(() => {
     if (!product?.variants || initializedRef.current !== id) return;
     const match = product.variants.find((v) => {
-      if (!v.attributes || v.attributes.length === 0) return false;
-      
-      // Ensure it matches all selected attributes
-      const matchesAll = v.attributes.every(
-        (attr) => selectedAttributes[attr.name] === attr.value
+      if (!v.isActive) return false;
+
+      if (requiredAttributeNames.length === 0) {
+        return !v.attributes || v.attributes.length === 0;
+      }
+
+      if (!isAllAttributesSelected) return false;
+
+      return requiredAttributeNames.every((name) =>
+        v.attributes?.some(
+          (attr) => attr.name === name && attr.value === selectedAttributes[name]
+        )
       );
-      
-      // Also ensure it doesn't have extra attributes not in selection
-      return matchesAll && v.attributes.length === Object.keys(selectedAttributes).length;
     });
     setSelectedVariant(match || null);
-  }, [selectedAttributes, product]);
+  }, [selectedAttributes, product, id, requiredAttributeNames, isAllAttributesSelected]);
 
   const isOptionAvailable = (attrName: string, value: string) => {
     if (!product?.variants) return false;
@@ -259,6 +273,11 @@ export default function ProductDetailPage({
     }
     
     const variantId = selectedVariant?.id;
+    if (!isAllAttributesSelected) {
+      setError("Please select every option before adding this item to cart.");
+      return;
+    }
+
     if (!variantId) {
       setError("Please select a valid combination of options.");
       return;
@@ -542,11 +561,17 @@ export default function ProductDetailPage({
                 <div className="flex items-center gap-3 flex-1">
                   {session ? (
                     <button
-                      disabled={busy || !selectedVariant || selectedVariant.stockQuantity === 0}
+                      disabled={busy || !isAllAttributesSelected || !selectedVariant || selectedVariant.stockQuantity === 0}
                       onClick={addToCart}
                       className="sb-btn-primary flex-1 py-4 rounded-xl text-sm font-bold shadow-lg shadow-brand/20 disabled:shadow-none disabled:opacity-50 disabled:grayscale transition-all hover:scale-[1.02] active:scale-95"
                     >
-                      {busy ? "Processing…" : selectedVariant?.stockQuantity === 0 ? "OUT OF STOCK" : "ADD TO CART"}
+                      {busy
+                        ? "Processing…"
+                        : !isAllAttributesSelected
+                          ? "SELECT ALL OPTIONS"
+                          : selectedVariant?.stockQuantity === 0
+                            ? "OUT OF STOCK"
+                            : "ADD TO CART"}
                     </button>
                   ) : (
                     <button

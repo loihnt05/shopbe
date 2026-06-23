@@ -43,20 +43,25 @@ export default function QuickAddToCartModal({
   }, [product.variants]);
 
   const attributeNames = Object.keys(attributeGroups);
+  const isAllAttributesSelected = attributeNames.every((name) => selectedAttributes[name]);
 
   // Find the variant that matches all selected attributes
   const selectedVariant = useMemo(() => {
     if (!product.variants) return null;
+    if (!isAllAttributesSelected) return null;
+
     return product.variants.find((v) => {
+      if (!v.isActive) return false;
+
       return attributeNames.every((name) => {
         const selectedValue = selectedAttributes[name];
         return v.attributes?.some((a) => a.name === name && a.value === selectedValue);
       });
     });
-  }, [product.variants, selectedAttributes, attributeNames]);
+  }, [product.variants, selectedAttributes, attributeNames, isAllAttributesSelected]);
 
-  const isAllAttributesSelected = attributeNames.every((name) => selectedAttributes[name]);
   const outOfStock = selectedVariant ? (selectedVariant.stockQuantity ?? 0) <= 0 : false;
+  const canAddToCart = isAllAttributesSelected && Boolean(selectedVariant) && !outOfStock;
 
   const handleAddToCart = async () => {
     if (!selectedVariant || !session?.accessToken) return;
@@ -182,11 +187,11 @@ export default function QuickAddToCartModal({
           {/* Action Button */}
           <button
             onClick={handleAddToCart}
-            disabled={!isAllAttributesSelected || outOfStock || isAdding}
+            disabled={!canAddToCart || isAdding}
             className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all active:scale-[0.98] ${
-              !isAllAttributesSelected 
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none' 
-              : outOfStock 
+              !isAllAttributesSelected
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+              : !selectedVariant || outOfStock
               ? 'bg-gray-200 text-gray-500 cursor-not-allowed shadow-none'
               : 'bg-brand text-white hover:bg-brand/90 hover:shadow-brand/25'
             }`}
@@ -196,7 +201,7 @@ export default function QuickAddToCartModal({
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Processing...
               </span>
-            ) : outOfStock ? (
+            ) : !selectedVariant || outOfStock ? (
               "Out of Stock"
             ) : isAllAttributesSelected ? (
               "Add to Cart"
