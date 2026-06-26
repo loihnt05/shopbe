@@ -1,0 +1,145 @@
+%%{init: {
+  "theme": "base",
+  "flowchart": { 
+    "htmlLabels": true,
+    "nodeSpacing": 130,
+    "rankSpacing": 150
+  },
+  "themeVariables": {
+    "background": "#F8FAFC",
+    "primaryColor": "#EEF6FF",
+    "primaryTextColor": "#0F172A",
+    "primaryBorderColor": "#3B82F6",
+    "lineColor": "#64748B",
+    "fontFamily": "Inter, Arial, sans-serif",
+    "fontSize": "40px"
+  }
+}}%%
+
+flowchart TD
+    subgraph CLIENT_LAYER[Client Layer]
+        U["<img src='https://cdn.simpleicons.org/googlechrome/4285F4' width='140' height='140'/><br/>User Browser"]
+
+        subgraph FE[Frontend - shopfend]
+            NX["<img src='https://cdn.simpleicons.org/nextdotjs/000000' width='140' height='140'/><br/>Next.js 16 App Router"]
+            UI[Customer Storefront / Seller Portal / Admin Portal]
+            NA["<img src='https://cdn.simpleicons.org/auth0/EB5424' width='140' height='140'/><br/>NextAuth.js"]
+            API_CLIENT["<img src='https://cdn.simpleicons.org/typescript/3178C6' width='140' height='140'/><br/>Typed API Client<br/>lib/shopbeApi.ts"]
+            STRIPE_UI["<img src='https://cdn.simpleicons.org/stripe/635BFF' width='140' height='140'/><br/>Stripe Elements UI"]
+        end
+    end
+
+    subgraph INFRA_LAYER[Infrastructure & Security Layer]
+        subgraph PROXY[Production Proxy]
+            NGINX["<img src='https://cdn.simpleicons.org/nginx/009639' width='140' height='140'/><br/>Nginx Reverse Proxy<br/>HTTPS / SSL"]
+        end
+
+        subgraph AUTH[Authentication]
+            KC["<img src='https://cdn.simpleicons.org/keycloak/4D4D4D' width='140' height='140'/><br/>Keycloak<br/>Realm: ShopBee"]
+            SOCIAL["<img src='https://cdn.simpleicons.org/google/4285F4' width='110' height='110'/> <img src='https://cdn.simpleicons.org/github/181717' width='110' height='110'/><br/>Google / GitHub OAuth"]
+        end
+    end
+
+    subgraph APP_LAYER[Application Layer]
+        subgraph BE[Backend - shopbend]
+            WEB["<img src='https://cdn.simpleicons.org/dotnet/512BD4' width='140' height='140'/><br/>ASP.NET Core Web API<br/>Shopbe.Web"]
+            SWAGGER["<img src='https://cdn.simpleicons.org/swagger/85EA2D' width='140' height='140'/><br/>Swagger / OpenAPI"]
+            CORS[CORS Policy]
+            JWT[JWT Bearer Auth]
+            MW[Global Exception Middleware<br/>User Sync Middleware]
+            CTRL[REST Controllers]
+
+            APP["<img src='https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/dotnetcore/dotnetcore-original.svg' width='140' height='140'/><br/>Shopbe.Application<br/>CQRS / MediatR Handlers"]
+
+            DOMAIN["<img src='https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/csharp/csharp-original.svg' width='140' height='140'/><br/>Shopbe.Domain<br/>Entities / Enums"]
+
+            INFRA["<img src='https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original.svg' width='140' height='140'/><br/>Shopbe.Infrastructure<br/>Repositories / Services"]
+
+            HANGFIRE["<img src='https://cdn.simpleicons.org/dotnet/512BD4' width='140' height='140'/><br/>Hangfire Jobs<br/>Email Recovery / Cleanup"]
+        end
+    end
+
+    subgraph STORAGE_LAYER[Storage Layer]
+        subgraph DATA[Data Layer]
+            PG[("<img src='https://cdn.simpleicons.org/postgresql/4169E1' width='140' height='140'/><br/>PostgreSQL 16<br/>Main OLTP Database")]
+            REDIS[("<img src='https://cdn.simpleicons.org/redis/DC382D' width='140' height='140'/><br/>Redis 7<br/>Distributed Cache")]
+            UPLOADS[(Local Upload Storage<br/>/uploads)]
+            KCDB[("<img src='https://cdn.simpleicons.org/keycloak/4D4D4D' width='140' height='140'/><br/>Keycloak Data Volume")]
+        end
+    end
+
+    subgraph THIRD_PARTY_LAYER[Third-party Services Layer]
+        subgraph EXTERNAL[External Services]
+            STRIPE["<img src='https://cdn.simpleicons.org/stripe/635BFF' width='140' height='140'/><br/>Stripe API<br/>PaymentIntent / Webhook"]
+            OPENAI["<img src='https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/openai.svg' width='140' height='140'/><br/>OpenAI API<br/>Chatbot"]
+            SMTP[SMTP Server<br/>Email Sending]
+        end
+    end
+
+    U -->|HTTPS| NGINX
+    NGINX -->|shopbee.page| NX
+    NGINX -->|api.shopbee.page| WEB
+    NGINX -->|auth.shopbee.page| KC
+
+    NX --> UI
+    UI --> NA
+    NA -->|Login / OAuth2 OIDC| KC
+    KC -->|Social Login| SOCIAL
+    KC -->|JWT Access Token| NA
+
+    UI --> API_CLIENT
+    API_CLIENT -->|REST JSON<br/>Authorization: Bearer token| WEB
+
+    WEB --> CORS
+    WEB --> JWT
+    WEB --> MW
+    WEB --> SWAGGER
+    WEB --> CTRL
+    CTRL --> APP
+    APP --> DOMAIN
+    APP --> INFRA
+
+    INFRA -->|EF Core / Npgsql| PG
+    INFRA -->|IDistributedCache / StackExchange.Redis| REDIS
+    INFRA -->|File Storage| UPLOADS
+    INFRA -->|Stripe.net| STRIPE
+    INFRA -->|OpenAI SDK| OPENAI
+    INFRA -->|MailKit| SMTP
+
+    WEB --> HANGFIRE
+    HANGFIRE --> INFRA
+    HANGFIRE --> PG
+
+    KC --> KCDB
+
+    STRIPE_UI -->|Confirm payment| STRIPE
+    STRIPE -->|Webhook<br/>/api/payments/stripe/webhook| WEB
+
+    classDef frontend fill:#E0F2FE,stroke:#0284C7,stroke-width:1.5px,color:#0F172A,font-size:40px;
+    classDef backend fill:#F3E8FF,stroke:#7E22CE,stroke-width:1.5px,color:#0F172A,font-size:40px;
+    classDef data fill:#DCFCE7,stroke:#16A34A,stroke-width:1.5px,color:#0F172A,font-size:40px;
+    classDef auth fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#0F172A,font-size:40px;
+    classDef external fill:#FCE7F3,stroke:#DB2777,stroke-width:1.5px,color:#0F172A,font-size:40px;
+    classDef proxy fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#0F172A,font-size:40px;
+    classDef user fill:#DBEAFE,stroke:#2563EB,stroke-width:1.5px,color:#0F172A,font-size:40px;
+
+    class U user;
+    class NX,UI,NA,API_CLIENT,STRIPE_UI frontend;
+    class WEB,SWAGGER,CORS,JWT,MW,CTRL,APP,DOMAIN,INFRA,HANGFIRE backend;
+    class PG,REDIS,UPLOADS,KCDB data;
+    class KC,SOCIAL auth;
+    class STRIPE,OPENAI,SMTP external;
+    class NGINX proxy;
+
+    style CLIENT_LAYER fill:#EFF6FF,stroke:#2563EB,stroke-width:3px,color:#0F172A
+    style INFRA_LAYER fill:#F8FAFC,stroke:#475569,stroke-width:3px,color:#0F172A
+    style APP_LAYER fill:#FAF5FF,stroke:#7E22CE,stroke-width:3px,color:#0F172A
+    style STORAGE_LAYER fill:#F0FDF4,stroke:#16A34A,stroke-width:3px,color:#0F172A
+    style THIRD_PARTY_LAYER fill:#FDF2F8,stroke:#DB2777,stroke-width:3px,color:#0F172A
+
+    style FE fill:#F0F9FF,stroke:#0284C7,stroke-width:2px,color:#0F172A
+    style PROXY fill:#ECFDF5,stroke:#059669,stroke-width:2px,color:#0F172A
+    style AUTH fill:#FFFBEB,stroke:#D97706,stroke-width:2px,color:#0F172A
+    style BE fill:#F5F3FF,stroke:#7E22CE,stroke-width:2px,color:#0F172A
+    style DATA fill:#ECFDF5,stroke:#16A34A,stroke-width:2px,color:#0F172A
+    style EXTERNAL fill:#FCE7F3,stroke:#DB2777,stroke-width:2px,color:#0F172A
